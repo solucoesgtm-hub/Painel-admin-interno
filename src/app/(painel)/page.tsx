@@ -1,22 +1,24 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, CalendarClock, Flame, Inbox, Repeat, TrendingUp, Wallet } from "lucide-react";
-import { GraficoColunas } from "@/components/graficos";
 import {
-  Avatar,
-  BotaoLink,
-  CabecalhoCartao,
-  CabecalhoPagina,
-  Cartao,
-  Etiqueta,
-  EstadoVazio,
-  Medidor,
-  Metrica,
-} from "@/components/ui/base";
-import { APROVACOES, EDITAIS, FATURAMENTO_MESES, MEI, MENSALIDADES } from "@/lib/demo/dados";
+  AlertTriangle,
+  ArrowRight,
+  BadgeCheck,
+  CalendarClock,
+  CalendarX2,
+  CheckCircle2,
+  FileSearch,
+  Hourglass,
+  Inbox,
+  Scale,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import { Avatar, CabecalhoCartao, Cartao, cn, type Tom } from "@/components/ui/base";
+import { APROVACOES, EDITAIS, FATURAMENTO_MESES, MEI, MENSALIDADES, PERFIL_GTM } from "@/lib/demo/dados";
 import { brl, dataCurta, diasEntre, hojeISO, pct, relativo, somarDias } from "@/lib/formato";
-import { estaParado } from "@/lib/regras/funil";
-import { limiteMei, situacaoMei } from "@/lib/regras/mei";
 import { situacaoMensalidade } from "@/lib/regras/financeiro";
+import { ETAPAS, estaParado, type EtapaId } from "@/lib/regras/funil";
+import { limiteMei, situacaoMei } from "@/lib/regras/mei";
 import { listarLeads, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
@@ -25,163 +27,304 @@ function saudacao() {
   return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
 }
 
+type Prioridade = {
+  id: string;
+  tom: Tom;
+  icone: LucideIcon;
+  titulo: string;
+  detalhe: string;
+  href: string;
+  acao: string;
+};
+
+const COR_ETAPA: Record<EtapaId, string> = {
+  lead: "#8b90a6",
+  visita: "#7fa2ff",
+  proposta: "#3f6fd8",
+  fechado: "#1baf7a",
+  em_desenvolvimento: "#eda100",
+  manutencao: "#137140",
+  perdido: "#b3301d",
+};
+
+const nomes = (lista: { nome: string }[], max = 2) => {
+  const n = lista.slice(0, max).map((l) => l.nome.replace(/\s*\(exemplo\)$/, ""));
+  return lista.length > max ? `${n.join(", ")} e mais ${lista.length - max}` : n.join(" e ");
+};
+
 export default async function Inicio() {
   const socio = await exigirSocio();
   const [leads, socios] = await Promise.all([listarLeads(), listarSocios()]);
   const hoje = hojeISO();
-  const fimSemana = somarDias(hoje, 7);
+  const abertos = leads.filter((l) => l.etapa !== "perdido");
 
+  // ---------- Prioridades do dia, da mais urgente para a menos ----------
+  const atrasados = abertos.filter((l) => l.proximoPassoData < hoje);
+  const paraHoje = abertos.filter((l) => l.proximoPassoData === hoje);
+  const parados = leads.filter((l) => estaParado(l.etapa, l.etapaDesde));
+  const mensalidadesAtrasadas = MENSALIDADES.filter((m) => situacaoMensalidade(m.vencimento, m.pagoEm) === "atrasado");
+  const editaisUrgentes = EDITAIS.filter(
+    (e) => ["em_analise", "aplicando"].includes(e.situacao) && diasEntre(hoje, e.prazo) >= 0 && diasEntre(hoje, e.prazo) <= 7,
+  );
+  const certidoes = PERFIL_GTM.certidoes.filter((c) => diasEntre(hoje, c.validade) <= 15);
+  const ano = Number(hoje.slice(0, 4));
+  const limite = limiteMei(ano, new Date(`${MEI.abertura}T12:00:00`));
+  const mei = situacaoMei(MEI.faturadoNoAno, limite);
+
+  const prioridades: Prioridade[] = [];
+  if (atrasados.length)
+    prioridades.push({ id: "atrasados", tom: "risco", icone: CalendarX2, href: "/leads",
+      titulo: `${atrasados.length} próximo${atrasados.length > 1 ? "s passos atrasados" : " passo atrasado"}`,
+      detalhe: nomes(atrasados), acao: "Resolver" });
+  if (mensalidadesAtrasadas.length)
+    prioridades.push({ id: "mensalidades", tom: "risco", icone: Wallet, href: "/financeiro",
+      titulo: `${mensalidadesAtrasadas.length} mensalidade${mensalidadesAtrasadas.length > 1 ? "s" : ""} em atraso`,
+      detalhe: `${brl(mensalidadesAtrasadas.reduce((a, m) => a + m.valor, 0))} a receber · ${nomes(mensalidadesAtrasadas.map((m) => ({ nome: m.cliente })))}`,
+      acao: "Cobrar" });
+  for (const e of editaisUrgentes)
+    prioridades.push({ id: `edital-${e.id}`, tom: "alerta", icone: FileSearch, href: `/editais/${e.id}`,
+      titulo: `${e.numero} vence ${relativo(e.prazo)}`, detalhe: `${brl(e.valor)} · ${e.orgao}`, acao: "Abrir" });
+  for (const c of certidoes) {
+    const d = diasEntre(hoje, c.validade);
+    prioridades.push({ id: `cert-${c.nome}`, tom: d < 0 ? "risco" : "alerta", icone: BadgeCheck, href: "/editais",
+      titulo: d < 0 ? `${c.nome} vencida` : `${c.nome} vence ${relativo(c.validade)}`,
+      detalhe: "Renove antes de enviar qualquer edital.", acao: "Ver" });
+  }
+  if (APROVACOES.length)
+    prioridades.push({ id: "aprovacoes", tom: "info", icone: Inbox, href: "/automacao",
+      titulo: `${APROVACOES.length} aprovaç${APROVACOES.length > 1 ? "ões" : "ão"} esperando um sócio`,
+      detalhe: APROVACOES.slice(0, 2).map((a) => a.titulo.split(" — ")[0]).join(" · "), acao: "Revisar" });
+  if (paraHoje.length)
+    prioridades.push({ id: "hoje", tom: "info", icone: CalendarClock, href: "/leads",
+      titulo: `${paraHoje.length} passo${paraHoje.length > 1 ? "s" : ""} para hoje`, detalhe: nomes(paraHoje), acao: "Ver" });
+  if (parados.length)
+    prioridades.push({ id: "parados", tom: "alerta", icone: Hourglass, href: "/leads",
+      titulo: `${parados.length} lead${parados.length > 1 ? "s parados" : " parado"} há mais de 7 dias`,
+      detalhe: nomes(parados), acao: "Destravar" });
+  if (mei.nivel !== "ok")
+    prioridades.push({ id: "mei", tom: "alerta", icone: Scale, href: "/financeiro",
+      titulo: `Teto do MEI em ${pct(mei.uso)}`, detalhe: `Restam ${brl(mei.restante)} no ano. Planeje a migração para ME.`, acao: "Ver" });
+
+  // ---------- Caixa ----------
   const mesAtual = FATURAMENTO_MESES.at(-1)!;
   const mesAnterior = FATURAMENTO_MESES.at(-2)!;
   const variacao = (mesAtual.entradas - mesAnterior.entradas) / mesAnterior.entradas;
-  const mrr = MENSALIDADES.reduce((a, m) => a + m.valor, 0);
-  const atrasadas = MENSALIDADES.filter((m) => situacaoMensalidade(m.vencimento, m.pagoEm) === "atrasado");
-  const quentes = leads.filter((l) => l.veredito === "quente" && !["perdido", "manutencao"].includes(l.etapa));
-  const parados = leads.filter((l) => estaParado(l.etapa, l.etapaDesde));
+  const recorrente = MENSALIDADES.reduce((a, m) => a + m.valor, 0);
 
-  const anoAtual = Number(hoje.slice(0, 4));
-  const limite = limiteMei(anoAtual, new Date(`${MEI.abertura}T12:00:00`));
-  const mei = situacaoMei(MEI.faturadoNoAno, limite);
+  // ---------- Funil ----------
+  const etapasFunil = ETAPAS.filter((e) => e.id !== "perdido").map((e) => {
+    const nela = leads.filter((l) => l.etapa === e.id);
+    return { ...e, total: nela.length, valor: nela.reduce((a, l) => a + l.mensalidade, 0) };
+  });
+  const totalFunil = etapasFunil.reduce((a, e) => a + e.total, 0);
+  const emNegociacao = leads
+    .filter((l) => ["visita", "proposta"].includes(l.etapa))
+    .reduce((a, l) => a + l.mensalidade, 0);
 
-  const editais = EDITAIS.filter((e) => ["em_analise", "aplicando"].includes(e.situacao)).sort((a, b) => a.prazo.localeCompare(b.prazo));
-  const passos = leads
-    .filter((l) => l.etapa !== "perdido" && l.proximoPassoData <= fimSemana)
+  // ---------- Semana do sócio ----------
+  const fimSemana = somarDias(hoje, 7);
+  const minhaSemana = abertos
+    .filter((l) => l.donoId === socio.id && l.proximoPassoData <= fimSemana)
     .sort((a, b) => a.proximoPassoData.localeCompare(b.proximoPassoData));
+  const equipe = socios.map((s) => ({
+    ...s,
+    pendentes: abertos.filter((l) => l.donoId === s.id && l.proximoPassoData <= fimSemana).length,
+  }));
+
+  const tons: Record<Tom, { fundo: string; icone: string }> = {
+    risco: { fundo: "bg-risco-suave", icone: "text-risco" },
+    alerta: { fundo: "bg-alerta-suave", icone: "text-alerta" },
+    info: { fundo: "bg-azul-suave", icone: "text-azul-escuro" },
+    ok: { fundo: "bg-ok-suave", icone: "text-ok" },
+    neutro: { fundo: "bg-superficie-2", icone: "text-tinta-2" },
+  };
 
   return (
     <>
-      <CabecalhoPagina
-        titulo={`${saudacao()}, ${socio.nome}`}
-        descricao="O que precisa de atenção hoje: caixa, funil, aprovações e prazos."
-        acoes={
-          <>
-            <BotaoLink href="/diagnostico" icone={ArrowUpRight}>Novo diagnóstico</BotaoLink>
-            <BotaoLink href="/leads?novo=1" variante="primario">Novo lead</BotaoLink>
-          </>
-        }
-      />
+      <header className="animate-surgir mb-7">
+        <h1 className="text-[30px] font-semibold leading-[1.05] tracking-[-0.035em] text-tinta sm:text-[40px]">
+          {saudacao()}, {socio.nome}
+        </h1>
+        <p className="mt-2 text-[15px] text-tinta-3">
+          {prioridades.length === 0
+            ? "Nada pendente agora. Bom momento para prospectar."
+            : `${prioridades.length} ${prioridades.length > 1 ? "coisas pedem" : "coisa pede"} atenção hoje, da mais urgente para a menos.`}
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metrica destaque className="animate-surgir escala-1" rotulo="Faturamento do mês" valor={brl(mesAtual.entradas)} icone={Wallet} tom="azul"
-          detalhe={<span className={variacao >= 0 ? "text-[#5fd39a]" : "text-[#ff8f7a]"}>{variacao >= 0 ? "▲" : "▼"} {pct(Math.abs(variacao))} vs. mês anterior</span>} />
-        <Metrica className="animate-surgir escala-2" rotulo="Mensalidades ativas" valor={brl(mrr)} icone={Repeat} tom="ok"
-          detalhe={<>{MENSALIDADES.length} contratos · {atrasadas.length > 0 ? <span className="text-risco">{atrasadas.length} em atraso</span> : "nenhum em atraso"}</>} />
-        <Metrica className="animate-surgir escala-3" rotulo="Leads quentes" valor={quentes.length} icone={Flame} tom="risco"
-          detalhe={parados.length ? <span className="inline-flex items-center gap-1 text-alerta"><AlertTriangle aria-hidden className="size-3.5" />{parados.length} parados há +7 dias</span> : "Nenhum card parado"} />
-        <Metrica className="animate-surgir escala-4" rotulo="Aprovações pendentes" valor={APROVACOES.length} icone={Inbox} tom="alerta"
-          detalhe={<Link href="/automacao" className="text-azul underline-offset-2 hover:underline">Abrir caixa de aprovações</Link>} />
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Cartao className="animate-surgir escala-2 xl:col-span-2">
-          <CabecalhoCartao titulo="Entradas por mês" descricao="Últimos 6 meses, em reais"
-            acao={<BotaoLink href="/financeiro" variante="fantasma" className="min-h-9 px-2 text-azul">Financeiro</BotaoLink>} />
-          <div className="px-3 pb-4 pt-5 sm:px-5">
-            <GraficoColunas dados={FATURAMENTO_MESES} x="mes" series={[{ chave: "entradas", nome: "Entradas" }]} formato="brl" rotuloTopo destaqueUltimo />
-          </div>
-        </Cartao>
-
-        <Cartao className="animate-surgir escala-3 flex flex-col">
-          <CabecalhoCartao titulo="Teto do MEI" descricao={`Faturado em ${anoAtual} contra o limite`} />
-          <div className="flex flex-1 flex-col justify-between gap-6 p-5">
-            <div>
-              <p className="numeros text-[34px] font-semibold leading-none tracking-tight">{pct(mei.uso)}</p>
-              <p className="mt-2 text-sm text-tinta-3">
-                {brl(MEI.faturadoNoAno)} de {brl(limite)}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Medidor valor={mei.uso} marca={0.8} rotulo="Uso do teto do MEI" tom={mei.nivel === "ok" ? "azul" : mei.nivel === "alerta" ? "alerta" : "risco"} />
-              <div className="flex justify-between text-xs text-tinta-3">
-                <span>0%</span>
-                <span className="ml-auto mr-[14%]">alerta 80%</span>
-                <span>100%</span>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* ---------- Hoje ---------- */}
+        <Cartao className="animate-surgir lg:col-span-2">
+          <CabecalhoCartao titulo="Hoje" descricao="Atrasos, prazos e decisões, por ordem de urgência" />
+          {prioridades.length === 0 ? (
+            <div className="flex items-center gap-4 px-6 py-10">
+              <span className="grid size-12 shrink-0 place-items-center rounded-full bg-ok-suave text-ok">
+                <CheckCircle2 aria-hidden className="size-6" />
+              </span>
+              <div>
+                <p className="font-medium">Tudo em dia</p>
+                <p className="text-sm text-tinta-3">Sem atrasos, prazos próximos ou aprovações pendentes.</p>
               </div>
             </div>
-            <div className="flex items-center justify-between rounded-md bg-offwhite px-3 py-2.5 text-sm">
-              <span className="text-tinta-3">Ainda cabe no ano</span>
-              <span className="numeros font-semibold">{brl(mei.restante)}</span>
+          ) : (
+            <ol className="divide-y divide-areia">
+              {prioridades.map((p) => {
+                const t = tons[p.tom];
+                return (
+                  <li key={p.id}>
+                    <Link href={p.href} className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-superficie-2/70 sm:px-6">
+                      <span className={cn("grid size-10 shrink-0 place-items-center rounded-full", t.fundo)}>
+                        <p.icone aria-hidden className={cn("size-[18px]", t.icone)} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[15px] font-medium leading-snug text-tinta">{p.titulo}</span>
+                        <span className="mt-0.5 block truncate text-[13px] text-tinta-3">{p.detalhe}</span>
+                      </span>
+                      <span className="hidden shrink-0 items-center gap-1 text-sm font-medium text-azul-escuro sm:inline-flex">
+                        {p.acao}
+                        <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                      <ArrowRight aria-hidden className="size-4 shrink-0 text-tinta-3 sm:hidden" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </Cartao>
+
+        {/* ---------- Caixa do mês ---------- */}
+        <section
+          aria-labelledby="caixa-titulo"
+          className="animate-surgir escala-1 relative flex flex-col overflow-hidden rounded-xl bg-grafite p-6 lg:self-start text-white shadow-[0_18px_40px_-18px_rgb(18_21_31/0.55)]"
+        >
+          <span aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-azul/40 blur-3xl" />
+          <div className="relative flex items-center justify-between">
+            <h2 id="caixa-titulo" className="text-base font-semibold">Caixa do mês</h2>
+            <Link href="/financeiro" className="inline-flex min-h-9 items-center gap-1 rounded-full px-2 text-sm text-azul-claro hover:text-white">
+              Financeiro <ArrowRight aria-hidden className="size-4" />
+            </Link>
+          </div>
+          <p className="numeros relative mt-6 text-[40px] font-semibold leading-none tracking-[-0.03em]">{brl(mesAtual.entradas)}</p>
+          <p className="relative mt-2 text-sm text-nevoa">
+            entradas ·{" "}
+            <span className={variacao >= 0 ? "text-[#5fd39a]" : "text-[#ff8f7a]"}>
+              {variacao >= 0 ? "▲" : "▼"} {pct(Math.abs(variacao))}
+            </span>{" "}
+            vs. mês anterior
+          </p>
+          <dl className="relative mt-6 grid grid-cols-2 gap-4 border-t border-white/10 pt-5 text-sm">
+            <div>
+              <dt className="text-nevoa">Recorrente</dt>
+              <dd className="numeros mt-0.5 text-lg font-semibold">{brl(recorrente)}</dd>
             </div>
-            {mei.nivel !== "ok" ? (
-              <Etiqueta tom={mei.nivel === "alerta" ? "alerta" : "risco"} icone={AlertTriangle}>
-                {mei.nivel === "alerta" ? "Acima de 80% — planejar migração para ME" : "Limite ultrapassado"}
-              </Etiqueta>
+            <div>
+              <dt className="text-nevoa">Saídas</dt>
+              <dd className="numeros mt-0.5 text-lg font-semibold">{brl(mesAtual.saidas)}</dd>
+            </div>
+          </dl>
+          <div className="relative mt-auto pt-6">
+            <div className="mb-2 flex justify-between text-sm">
+              <span className="text-nevoa">Teto do MEI</span>
+              <span className="numeros font-medium">{pct(mei.uso)}</span>
+            </div>
+            <div
+              role="meter"
+              aria-label="Uso do teto do MEI"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(mei.uso * 100)}
+              className="relative h-2 rounded-full bg-white/10"
+            >
+              <div className={cn("h-full rounded-full", mei.nivel === "ok" ? "bg-azul-claro" : "bg-[#f2b84b]")} style={{ width: `${Math.min(mei.uso, 1) * 100}%` }} />
+              <span aria-hidden className="absolute -top-1 h-4 w-0.5 rounded bg-white/60" style={{ left: "80%" }} />
+            </div>
+            <p className="mt-2 text-xs text-nevoa">Restam {brl(mei.restante)} no ano · alerta em 80%</p>
+          </div>
+        </section>
+
+        {/* ---------- Funil ---------- */}
+        <Cartao className="animate-surgir escala-2 lg:col-span-2">
+          <CabecalhoCartao
+            titulo="Funil"
+            descricao={`${totalFunil} ativos · ${brl(emNegociacao)}/mês em negociação`}
+            acao={<Link href="/leads" className="inline-flex min-h-9 items-center gap-1 rounded-full px-2 text-sm font-medium text-azul-escuro hover:underline">Abrir funil <ArrowRight aria-hidden className="size-4" /></Link>}
+          />
+          <div className="p-5 sm:p-6">
+            {totalFunil === 0 ? (
+              <p className="py-6 text-center text-sm text-tinta-3">
+                Nenhum lead ativo. <Link href="/leads?novo=1" className="font-medium text-azul-escuro underline underline-offset-2">Cadastre o primeiro</Link>.
+              </p>
             ) : (
-              <Etiqueta tom="ok">Dentro do limite</Etiqueta>
+              <>
+                <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+                  {etapasFunil.filter((e) => e.total).map((e) => (
+                    <span key={e.id} style={{ flexGrow: e.total, background: COR_ETAPA[e.id] }} />
+                  ))}
+                </div>
+                <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+                  {etapasFunil.map((e) => (
+                    <li key={e.id} className="flex items-start gap-2.5">
+                      <span aria-hidden className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: COR_ETAPA[e.id] }} />
+                      <span>
+                        <span className="block text-[13px] text-tinta-3">{e.nome}</span>
+                        <span className="numeros block text-xl font-semibold leading-tight">{e.total}</span>
+                        {e.valor > 0 && <span className="numeros block text-xs text-tinta-3">{brl(e.valor)}/mês</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </div>
         </Cartao>
-      </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Cartao className="animate-surgir escala-3 xl:col-span-2">
-          <CabecalhoCartao titulo="Próximos passos da semana" descricao="Por sócio, até a mesma data da semana que vem" />
-          <div className="grid grid-cols-1 divide-y divide-areia md:grid-cols-3 md:divide-x md:divide-y-0">
-            {socios.map((s) => {
-              const meus = passos.filter((p) => p.donoId === s.id);
-              return (
-                <div key={s.id} className="p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Avatar nome={s.nome} cor={s.cor} tamanho="sm" />
-                    <p className="text-sm font-semibold">{s.nome}</p>
-                    <span className="numeros ml-auto text-xs text-tinta-3">{meus.length}</span>
-                  </div>
-                  {meus.length === 0 ? (
-                    <p className="rounded-md border border-dashed border-areia-2 px-3 py-4 text-center text-xs text-tinta-3">Semana livre de pendências.</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {meus.slice(0, 4).map((p) => {
-                        const atrasado = p.proximoPassoData < hoje;
-                        return (
-                          <li key={p.id}>
-                            <Link href={`/leads/${p.id}`} className="block rounded-md border border-areia bg-superficie px-3 py-2.5 transition hover:border-azul/40 hover:shadow-cartao">
-                              <p className="text-[13px] font-medium leading-snug">{p.proximoPasso}</p>
-                              <p className="mt-0.5 truncate text-xs text-tinta-3">{p.nome}</p>
-                              <p className={`mt-1.5 inline-flex items-center gap-1 text-xs font-medium ${atrasado ? "text-risco" : "text-tinta-2"}`}>
-                                <CalendarClock aria-hidden className="size-3.5" />
-                                {atrasado ? `Atrasado · ${relativo(p.proximoPassoData)}` : `${dataCurta(p.proximoPassoData)} · ${relativo(p.proximoPassoData)}`}
-                              </p>
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Cartao>
-
-        <Cartao className="animate-surgir escala-4">
-          <CabecalhoCartao titulo="Prazos de editais" descricao="Em análise ou aplicando"
-            acao={<BotaoLink href="/editais" variante="fantasma" className="min-h-9 px-2 text-azul">Ver todos</BotaoLink>} />
-          {editais.length === 0 ? (
-            <EstadoVazio icone={TrendingUp} titulo="Nenhum edital aberto" texto="Quando o radar encontrar um edital, ele aparece aqui com o prazo." />
+        {/* ---------- Sua semana ---------- */}
+        <Cartao className="animate-surgir escala-3 flex flex-col">
+          <CabecalhoCartao titulo="Sua semana" descricao="Seus próximos passos até 7 dias" />
+          {minhaSemana.length === 0 ? (
+            <p className="px-6 py-8 text-sm text-tinta-3">Nenhum passo seu nos próximos 7 dias.</p>
           ) : (
             <ul className="divide-y divide-areia">
-              {editais.map((e) => {
-                const dias = diasEntre(hoje, e.prazo);
+              {minhaSemana.slice(0, 5).map((l) => {
+                const atrasado = l.proximoPassoData < hoje;
                 return (
-                  <li key={e.id}>
-                    <Link href={`/editais/${e.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-offwhite/70">
-                      <div className={`grid w-12 shrink-0 place-items-center rounded-md py-1.5 text-center ${dias <= 7 ? "bg-risco-suave text-risco" : "bg-azul-suave text-azul-escuro"}`}>
-                        <span className="numeros text-lg font-semibold leading-none">{dias}</span>
-                        <span className="text-[10px] uppercase tracking-wide">dias</span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{e.numero}</p>
-                        <p className="truncate text-xs text-tinta-3">{e.objeto}</p>
-                        <p className="mt-1 text-xs text-tinta-2">Prazo {dataCurta(e.prazo)} · {brl(e.valor)}</p>
-                      </div>
+                  <li key={l.id}>
+                    <Link href={`/leads/${l.id}`} className="block px-5 py-3 hover:bg-superficie-2/70 sm:px-6">
+                      <span className="block text-sm font-medium leading-snug">{l.proximoPasso}</span>
+                      <span className="mt-0.5 flex items-center justify-between gap-2 text-xs">
+                        <span className="truncate text-tinta-3">{l.nome}</span>
+                        <span className={cn("shrink-0 font-medium", atrasado ? "text-risco" : "text-tinta-2")}>
+                          {atrasado ? `atrasado ${relativo(l.proximoPassoData)}` : `${dataCurta(l.proximoPassoData)} · ${relativo(l.proximoPassoData)}`}
+                        </span>
+                      </span>
                     </Link>
                   </li>
                 );
               })}
             </ul>
           )}
+          <div className="mt-auto flex items-center gap-4 border-t border-areia px-5 py-3.5 sm:px-6">
+            <span className="text-xs text-tinta-3">Equipe na semana</span>
+            <ul className="flex flex-wrap gap-3">
+              {equipe.map((s) => (
+                <li key={s.id} className="inline-flex items-center gap-1.5 text-xs text-tinta-2" title={`${s.nome}: ${s.pendentes} passos na semana`}>
+                  <Avatar nome={s.nome} cor={s.cor} tamanho="sm" />
+                  <span className="numeros font-medium">{s.pendentes}</span>
+                  <span className="sr-only">passos de {s.nome}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </Cartao>
       </div>
+
+      {(atrasados.length > 0 || parados.length > 0) && (
+        <p className="mt-4 flex items-center gap-2 text-xs text-tinta-3">
+          <AlertTriangle aria-hidden className="size-3.5" />
+          Atrasos e cards parados também aparecem marcados no funil.
+        </p>
+      )}
     </>
   );
 }

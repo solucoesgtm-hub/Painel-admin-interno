@@ -12,6 +12,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Package,
   Users,
   Wallet,
@@ -112,32 +114,54 @@ function Conta({ usuario, sair }: { usuario: Usuario; sair?: () => Promise<void>
   );
 }
 
-function ListaNav({ contadores, aoNavegar }: { contadores: Record<string, number>; aoNavegar?: () => void }) {
+function ListaNav({
+  contadores,
+  aoNavegar,
+  compacta = false,
+}: {
+  contadores: Record<string, number>;
+  aoNavegar?: () => void;
+  compacta?: boolean;
+}) {
   const atual = usePathname();
   return (
-    <nav aria-label="Principal" className="flex flex-col gap-7">
-      {GRUPOS.map((g) => (
+    <nav aria-label="Principal" className={cn("flex flex-col", compacta ? "gap-3" : "gap-7")}>
+      {GRUPOS.map((g, gi) => (
         <div key={g.titulo}>
-          <p className="mb-2 px-3 text-[12px] font-medium text-nevoa/80">{g.titulo}</p>
+          {compacta ? (
+            gi > 0 && <span aria-hidden className="mx-auto mb-3 block h-px w-8 bg-white/[0.08]" />
+          ) : (
+            <p className="mb-2 px-3 text-[12px] font-medium text-nevoa/80">{g.titulo}</p>
+          )}
           <ul className="flex flex-col gap-0.5">
             {g.itens.map((i) => {
               const sel = ativo(atual, i.href);
+              const n = contadores[i.href];
               return (
                 <li key={i.href}>
                   <Link
                     href={i.href}
                     onClick={aoNavegar}
                     aria-current={sel ? "page" : undefined}
+                    aria-label={compacta ? `${i.nome}${n ? `, ${n} pendentes` : ""}` : undefined}
+                    title={compacta ? i.nome : undefined}
                     className={cn(
-                      "group flex min-h-11 items-center gap-3 rounded-lg px-3 text-[14px] transition-[background,color] duration-150 focus-visible:outline-azul-claro",
+                      "group relative flex min-h-11 items-center rounded-lg text-[14px] transition-[background,color] duration-150 focus-visible:outline-azul-claro",
+                      compacta ? "justify-center" : "gap-3 px-3",
                       sel
                         ? "bg-azul text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_8px_20px_-10px_rgb(63_111_216/0.9)]"
                         : "text-[#c3c8d8] hover:bg-white/[0.06] hover:text-white",
                     )}
                   >
                     <i.icone aria-hidden className={cn("size-[18px] shrink-0", sel ? "text-white" : "text-nevoa group-hover:text-white")} />
-                    <span className="flex-1">{i.nome}</span>
-                    <Contador n={contadores[i.href]} />
+                    {compacta ? (
+                      n ? <span aria-hidden className="absolute right-2.5 top-2 size-2 rounded-full bg-[#ff8a4c] ring-2 ring-grafite" /> : null
+                    ) : (
+                      <>
+                        <span className="flex-1">{i.nome}</span>
+                        <Contador n={n} />
+                      </>
+                    )}
                   </Link>
                 </li>
               );
@@ -153,24 +177,56 @@ export function MenuLateral({
   contadores,
   usuario,
   sair,
+  recolhida,
+  aoAlternar,
 }: {
   contadores: Record<string, number>;
   usuario: Usuario;
   sair?: () => Promise<void>;
+  recolhida: boolean;
+  aoAlternar: () => void;
 }) {
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col bg-grafite lg:flex">
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-30 hidden flex-col overflow-hidden bg-grafite transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:flex",
+        recolhida ? "w-[76px]" : "w-[264px]",
+      )}
+    >
       <span aria-hidden className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-azul/25 blur-3xl" />
-      <div className="relative flex h-20 items-center px-6">
+      <div className={cn("relative flex h-16 shrink-0 items-center", recolhida ? "justify-center" : "px-5")}>
         <Link href="/" aria-label="GTM Hub, início" className="rounded-lg">
-          <Logo />
+          <Logo compacto={recolhida} />
         </Link>
       </div>
-      <div className="rolagem-escura relative flex-1 overflow-y-auto px-3 pb-6 pt-2">
-        <ListaNav contadores={contadores} />
+      <div className={cn("rolagem-escura relative flex-1 overflow-y-auto overflow-x-hidden pb-6 pt-3", recolhida ? "px-3.5" : "px-3")}>
+        <ListaNav contadores={contadores} compacta={recolhida} />
       </div>
       <div className="relative border-t border-white/[0.07] p-3">
-        <Conta usuario={usuario} sair={sair} />
+        {recolhida ? (
+          <span
+            title={usuario.nome}
+            className="mx-auto grid size-10 place-items-center rounded-full text-sm font-semibold text-white ring-2 ring-white/10"
+            style={{ background: usuario.cor }}
+          >
+            {usuario.nome.slice(0, 1)}
+          </span>
+        ) : (
+          <Conta usuario={usuario} sair={sair} />
+        )}
+        <button
+          type="button"
+          onClick={aoAlternar}
+          aria-label={recolhida ? "Expandir menu" : "Recolher menu"}
+          title={recolhida ? "Expandir menu" : "Recolher menu"}
+          className={cn(
+            "mt-2 flex min-h-10 w-full items-center gap-3 rounded-lg text-[13px] text-nevoa transition-colors hover:bg-white/[0.06] hover:text-white",
+            recolhida ? "justify-center" : "px-3",
+          )}
+        >
+          {recolhida ? <PanelLeftOpen aria-hidden className="size-[18px]" /> : <PanelLeftClose aria-hidden className="size-[18px]" />}
+          {!recolhida && "Recolher menu"}
+        </button>
       </div>
     </aside>
   );

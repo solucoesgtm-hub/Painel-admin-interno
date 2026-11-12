@@ -1,6 +1,7 @@
+import { cn } from "@/components/ui/base";
 // Marca provisória do GTM Hub (substituir pelos arquivos de docs/marca quando chegarem).
 // Por padrão para fundo grafite; `escuro` usa texto escuro sobre o conteúdo claro.
-export function Logo({ escuro = false }: { escuro?: boolean }) {
+export function Logo({ escuro = false, compacto = false }: { escuro?: boolean; compacto?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <svg aria-hidden viewBox="0 0 36 36" className="size-9 shrink-0">
@@ -10,7 +11,7 @@ export function Logo({ escuro = false }: { escuro?: boolean }) {
         <path d="M10 18h5" stroke="#cfe0ff" strokeWidth="2.8" strokeLinecap="round" />
         <path d="M20 24.5l3-12.5 2.6 7.2 2.4-4.6" stroke="#ffffff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       </svg>
-      <span className={escuro ? "text-tinta" : "text-white"}>
+      <span className={cn(compacto && "sr-only", escuro ? "text-tinta" : "text-white")}>
         <span className="block text-[15px] font-semibold leading-none tracking-tight">GTM Hub</span>
         <span className={`mt-1 block text-[11px] leading-none ${escuro ? "text-tinta-3" : "text-nevoa"}`}>Soluções</span>
       </span>
