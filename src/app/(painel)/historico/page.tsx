@@ -11,7 +11,7 @@ export default async function Historico() {
   const eventos = await listarHistorico();
   return (
     <>
-      <CabecalhoPagina sobretitulo="Empresa" titulo="Histórico de alterações"
+      <CabecalhoPagina titulo="Histórico de alterações"
         descricao="Toda criação, edição e exclusão: quem fez (sócio ou agente), o quê e quando. Nunca é editado nem apagado." />
       <ListaHistorico eventos={eventos} />
     </>

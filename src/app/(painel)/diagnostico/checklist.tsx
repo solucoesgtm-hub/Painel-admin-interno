@@ -233,7 +233,7 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
             {([["Por semana", eco.semanal], ["Por mês", eco.mensal], ["Por ano", eco.anual]] as const).map(([r, val]) => (
               <div key={r} className="px-3 py-3 text-center">
                 <p className="text-[11px] uppercase tracking-wide text-tinta-3">{r}</p>
-                <p className="numeros mt-0.5 text-[15px] font-semibold text-azul-claro sm:text-lg">{brl(val)}</p>
+                <p className="numeros mt-0.5 text-[15px] font-semibold text-azul-escuro sm:text-lg">{brl(val)}</p>
               </div>
             ))}
           </div>
@@ -253,7 +253,7 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
                     <button key={n} type="button" role="radio" aria-checked={e.notas[f.id] === n}
                       onClick={() => atualizar({ notas: { ...e.notas, [f.id as Fator]: n } })}
                       className={cn("numeros min-h-11 rounded-md border text-sm font-medium transition",
-                        e.notas[f.id] === n ? "border-azul bg-azul text-white" : e.notas[f.id] > n ? "border-azul/20 bg-azul-suave text-azul-claro" : "border-areia-2 bg-superficie text-tinta-3")}>
+                        e.notas[f.id] === n ? "border-azul bg-azul text-white" : e.notas[f.id] > n ? "border-azul/20 bg-azul-suave text-azul-escuro" : "border-areia-2 bg-superficie text-tinta-3")}>
                       {n}
                     </button>
                   ))}
@@ -266,7 +266,7 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
 
       <aside className="lg:sticky lg:top-24 lg:self-start">
         <Cartao className="overflow-hidden">
-          <div className="textura-grade relative overflow-hidden bg-gradient-to-br from-azul/35 via-azul/10 to-transparent p-6 text-white">
+          <div className="relative overflow-hidden bg-grafite p-6 text-white">
             <p className="text-xs uppercase tracking-[0.14em] text-[#8b90a6]">Pontuação</p>
             <div className="mt-2 flex items-end justify-between">
               <p className="numeros text-5xl font-semibold leading-none">{pontos}<span className="text-lg text-[#8b90a6]">/100</span></p>
@@ -308,7 +308,7 @@ function Secao({ id, n, nome, icone: Icone, descricao, children }: { id: string;
   return (
     <Cartao id={id} className="scroll-mt-24">
       <header className="flex items-center gap-3 border-b border-areia px-5 py-4">
-        <span className="grid size-9 place-items-center rounded-md bg-azul-suave text-azul-claro"><Icone aria-hidden className="size-[18px]" /></span>
+        <span className="grid size-9 place-items-center rounded-md bg-azul-suave text-azul-escuro"><Icone aria-hidden className="size-[18px]" /></span>
         <div>
           <p className="numeros text-[11px] font-medium uppercase tracking-[0.14em] text-tinta-3">Seção {n} de 6</p>
           <h2 className="text-[15px] font-semibold">{nome}</h2>

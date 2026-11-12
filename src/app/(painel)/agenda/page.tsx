@@ -10,7 +10,7 @@ export default async function Agenda() {
   await exigirSocio();
   return (
     <>
-      <CabecalhoPagina sobretitulo="Visão geral" titulo="Agenda"
+      <CabecalhoPagina titulo="Agenda"
         descricao="Visitas, próximos passos e prazos de editais. A sincronização com o Google Agenda entra na Fase 4." />
       <Calendario eventos={EVENTOS} socios={SOCIOS} />
     </>

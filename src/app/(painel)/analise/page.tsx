@@ -17,7 +17,7 @@ export default async function Analise() {
 
   return (
     <>
-      <CabecalhoPagina sobretitulo="Comercial" titulo="Análise de leads"
+      <CabecalhoPagina titulo="Análise de leads"
         descricao="Onde o funil perde força, de onde vêm os melhores leads e se a pontuação do diagnóstico acerta o resultado." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

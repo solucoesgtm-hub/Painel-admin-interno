@@ -17,7 +17,7 @@ export default async function Editais() {
 
   return (
     <>
-      <CabecalhoPagina sobretitulo="Captação" titulo="Triagem de editais"
+      <CabecalhoPagina titulo="Triagem de editais"
         descricao="Cada requisito é comparado ao Perfil GTM com página e trecho do edital. Sem página citada, fica como Verificar."
         acoes={<>
           <Botao variante="secundario" icone={Link2} disabled title="Disponível na Fase 3">Por link</Botao>

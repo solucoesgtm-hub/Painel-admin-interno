@@ -21,7 +21,7 @@ export default async function Projetos() {
   const ativos = PROJETOS.filter((p) => p.situacao !== "entregue");
   return (
     <>
-      <CabecalhoPagina sobretitulo="Entrega" titulo="Projetos"
+      <CabecalhoPagina titulo="Projetos"
         descricao={`Um projeto por entrega, ligado a um cliente. ${ativos.length} em aberto.`} />
       <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {PROJETOS.map((p, i) => {

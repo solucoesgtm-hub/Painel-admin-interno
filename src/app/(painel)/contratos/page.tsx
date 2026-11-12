@@ -13,7 +13,7 @@ export default async function Contratos() {
   const renovar = CONTRATOS.filter((c) => c.assinado && diasEntre(hoje, c.fim) <= 45 && diasEntre(hoje, c.fim) >= 0);
   return (
     <>
-      <CabecalhoPagina sobretitulo="Entrega" titulo="Contratos"
+      <CabecalhoPagina titulo="Contratos"
         descricao="Modelo preenchido com os dados do cliente e da proposta, PDF assinado, vigência e alerta de renovação."
         acoes={<Botao icone={FilePlus2} disabled title="Disponível na Fase 6">Gerar contrato</Botao>} />
 

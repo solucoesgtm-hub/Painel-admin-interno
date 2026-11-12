@@ -51,7 +51,6 @@ export default async function Inicio() {
   return (
     <>
       <CabecalhoPagina
-        sobretitulo="Resumo do dia"
         titulo={`${saudacao()}, ${socio.nome}`}
         descricao="O que precisa de atenção hoje: caixa, funil, aprovações e prazos."
         acoes={
@@ -63,8 +62,8 @@ export default async function Inicio() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metrica className="animate-surgir escala-1 border-azul/40 bg-gradient-to-br from-azul/35 via-azul/10 to-transparent shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_24px_60px_-28px_rgb(63_111_216/0.9)]" rotulo="Faturamento do mês" valor={brl(mesAtual.entradas)} icone={Wallet} tom="azul"
-          detalhe={<span className={variacao >= 0 ? "text-ok" : "text-risco"}>{variacao >= 0 ? "▲" : "▼"} {pct(Math.abs(variacao))} vs. mês anterior</span>} />
+        <Metrica destaque className="animate-surgir escala-1" rotulo="Faturamento do mês" valor={brl(mesAtual.entradas)} icone={Wallet} tom="azul"
+          detalhe={<span className={variacao >= 0 ? "text-[#5fd39a]" : "text-[#ff8f7a]"}>{variacao >= 0 ? "▲" : "▼"} {pct(Math.abs(variacao))} vs. mês anterior</span>} />
         <Metrica className="animate-surgir escala-2" rotulo="Mensalidades ativas" valor={brl(mrr)} icone={Repeat} tom="ok"
           detalhe={<>{MENSALIDADES.length} contratos · {atrasadas.length > 0 ? <span className="text-risco">{atrasadas.length} em atraso</span> : "nenhum em atraso"}</>} />
         <Metrica className="animate-surgir escala-3" rotulo="Leads quentes" valor={quentes.length} icone={Flame} tom="risco"
@@ -166,7 +165,7 @@ export default async function Inicio() {
                 return (
                   <li key={e.id}>
                     <Link href={`/editais/${e.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-offwhite/70">
-                      <div className={`grid w-12 shrink-0 place-items-center rounded-md py-1.5 text-center ${dias <= 7 ? "bg-risco-suave text-risco" : "bg-azul-suave text-azul-claro"}`}>
+                      <div className={`grid w-12 shrink-0 place-items-center rounded-md py-1.5 text-center ${dias <= 7 ? "bg-risco-suave text-risco" : "bg-azul-suave text-azul-escuro"}`}>
                         <span className="numeros text-lg font-semibold leading-none">{dias}</span>
                         <span className="text-[10px] uppercase tracking-wide">dias</span>
                       </div>

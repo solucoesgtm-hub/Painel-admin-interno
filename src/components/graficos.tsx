@@ -16,10 +16,10 @@ import {
 } from "recharts";
 import { brl, brlCurto, num } from "@/lib/formato";
 
-// Validadas no fundo escuro: faixa de luminosidade, daltonismo (CVD) e contraste >= 3:1.
-export const SERIES = ["#5b82ec", "#e0662e", "#1fa87c", "#b8861f"];
-const TINTA_3 = "#8d93ab";
-const GRADE = "rgba(255,255,255,0.07)";
+// Validadas no fundo claro: daltonismo (CVD) e visão normal; tons claros levam rótulo direto.
+export const SERIES = ["#3f6fd8", "#eb6834", "#1baf7a", "#eda100"];
+const TINTA_3 = "#5b6176";
+const GRADE = "#e2e6ee";
 
 type Formato = "brl" | "num" | "dias" | "pct";
 const fmt = (f: Formato, v: number) =>
@@ -29,12 +29,12 @@ const fmtEixo = (f: Formato, v: number) => (f === "brl" ? brlCurto(v) : f === "p
 function Dica({ active, payload, label, formato }: TooltipContentProps<number, string> & { formato: Formato }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-areia-2 bg-superficie-2 px-3.5 py-2.5 text-xs shadow-flutuante">
-      <p className="mb-1 font-medium text-white">{label}</p>
+    <div className="rounded-xl border border-areia bg-papel px-3.5 py-2.5 text-xs shadow-flutuante">
+      <p className="mb-1 font-medium text-tinta">{label}</p>
       {payload.map((p) => (
         <p key={String(p.dataKey)} className="flex items-center gap-2 text-tinta-2">
           <span aria-hidden className="size-2 rounded-full" style={{ background: p.color }} />
-          {p.name}: <span className="numeros font-medium text-white">{fmt(formato, Number(p.value))}</span>
+          {p.name}: <span className="numeros font-medium text-tinta">{fmt(formato, Number(p.value))}</span>
         </p>
       ))}
     </div>
@@ -68,7 +68,7 @@ export function GraficoColunas({
           <CartesianGrid vertical={false} stroke={GRADE} strokeDasharray="0" />
           <XAxis dataKey={x} tickLine={false} axisLine={{ stroke: GRADE }} tick={eixo} />
           <YAxis tickLine={false} axisLine={false} tick={eixo} width={formato === "brl" ? 64 : 36} tickFormatter={(v) => fmtEixo(formato, v)} />
-          <Tooltip cursor={{ fill: "rgba(143,176,255,0.06)" }} content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />} />
+          <Tooltip cursor={{ fill: "rgba(63,111,216,0.06)" }} content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />} />
           {series.length > 1 && (
             <Legend
               verticalAlign="top"
@@ -81,9 +81,9 @@ export function GraficoColunas({
           {series.map((s, i) => (
             <Bar key={s.chave} dataKey={s.chave} name={s.nome} fill={s.cor ?? SERIES[i]} radius={[4, 4, 0, 0]} maxBarSize={36}>
               {destaqueUltimo && series.length === 1 &&
-                dados.map((_, j) => <Cell key={j} fill={j === dados.length - 1 ? "#5b82ec" : "#2c3b63"} />)}
+                dados.map((_, j) => <Cell key={j} fill={j === dados.length - 1 ? "#3f6fd8" : "#b7c8f2"} />)}
               {rotuloTopo && (
-                <LabelList dataKey={s.chave} position="top" formatter={(v) => fmtEixo(formato, Number(v))} style={{ ...eixo, fill: "#b8bdd1", fontSize: 11 }} />
+                <LabelList dataKey={s.chave} position="top" formatter={(v) => fmtEixo(formato, Number(v))} style={{ ...eixo, fill: "#3d4356", fontSize: 11 }} />
               )}
             </Bar>
           ))}
@@ -118,9 +118,9 @@ export function GraficoBarrasH({
         <BarChart data={dados} layout="vertical" margin={{ top: 0, right: 48, left: 0, bottom: 0 }} barCategoryGap="30%">
           <XAxis type="number" hide />
           <YAxis type="category" dataKey={rotulo} tickLine={false} axisLine={false} tick={eixo} width={larguraRotulo} />
-          <Tooltip cursor={{ fill: "rgba(143,176,255,0.06)" }} content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />} />
+          <Tooltip cursor={{ fill: "rgba(63,111,216,0.06)" }} content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />} />
           <Bar dataKey={valor} name={nome} fill={cor} radius={[0, 4, 4, 0]} maxBarSize={20}>
-            <LabelList dataKey={valor} position="right" formatter={(v) => fmt(formato, Number(v))} style={{ ...eixo, fill: "#eef0f8", fontWeight: 500 }} />
+            <LabelList dataKey={valor} position="right" formatter={(v) => fmt(formato, Number(v))} style={{ ...eixo, fill: "#12151f", fontWeight: 500 }} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

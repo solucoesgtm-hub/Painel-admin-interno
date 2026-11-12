@@ -12,7 +12,7 @@ export default async function Equipe() {
   const [socios, leads] = await Promise.all([listarSocios(), listarLeads()]);
   return (
     <>
-      <CabecalhoPagina sobretitulo="Empresa" titulo="Equipe" descricao="Os três sócios são administradores, cada um com login próprio." />
+      <CabecalhoPagina titulo="Equipe" descricao="Os três sócios são administradores, cada um com login próprio." />
       <ul className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {socios.map((s, i) => {
           const meusLeads = leads.filter((l) => l.donoId === s.id && !["perdido", "manutencao"].includes(l.etapa)).length;
@@ -27,7 +27,7 @@ export default async function Equipe() {
                     <h2 className="text-lg font-semibold">{s.nome}</h2>
                     {s.id === eu.id && <Etiqueta tom="info">Você</Etiqueta>}
                   </div>
-                  <p className="text-sm font-medium text-azul-claro">{s.area}</p>
+                  <p className="text-sm font-medium text-azul-escuro">{s.area}</p>
                   <p className="mt-1 text-sm text-tinta-3">{s.foco}</p>
                   <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-tinta-3"><Mail aria-hidden className="size-3.5" />{s.email}</p>
                   <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-areia pt-4">

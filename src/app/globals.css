@@ -1,79 +1,79 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
-   Tokens do GTM Hub — tema escuro premium.
-   Marca preservada: azul #3F6FD8 / #7FA2FF e fonte Lexend.
-   Os nomes dos tokens são os mesmos da versão clara, para que todas as telas
-   mudem juntas: "offwhite" é o fundo da página, "papel" é o vidro dos cartões,
-   "areia" são as bordas e "tinta" é o texto.
+   Tokens do GTM Hub — barra lateral grafite + conteúdo claro em branco frio.
+   Marca: azul #3F6FD8 / #7FA2FF e fonte Lexend.
+   Nomes: "offwhite" = fundo da página, "papel" = cartões, "areia" = bordas,
+   "tinta" = texto, "grafite" = barra lateral e superfícies escuras.
 ------------------------------------------------------------------- */
 @theme {
   --font-sans: var(--font-lexend), ui-sans-serif, system-ui, sans-serif;
 
-  /* Fundos */
-  --color-offwhite: #080a10;
-  --color-grafite: #0d1018;
-  --color-grafite-2: #151926;
-  --color-grafite-3: #1d2232;
-  --color-grafite-4: #2a3046;
-  --color-papel: rgb(19 23 35 / 0.72);
-  --color-superficie: #161a27;
-  --color-superficie-2: #1c2132;
+  /* Fundos claros */
+  --color-offwhite: #f3f5f9;
+  --color-papel: #ffffff;
+  --color-superficie: #ffffff;
+  --color-superficie-2: #eef1f6;
 
-  /* Bordas (filetes claros sobre o escuro) */
-  --color-areia: rgb(255 255 255 / 0.075);
-  --color-areia-2: rgb(255 255 255 / 0.15);
+  /* Escuros: barra lateral, painéis de destaque, avisos flutuantes */
+  --color-grafite: #12151f;
+  --color-grafite-2: #1a1e2b;
+  --color-grafite-3: #242a3b;
+  --color-grafite-4: #30374c;
+  --color-nevoa: #9aa1b9; /* texto secundário sobre grafite */
+
+  /* Bordas */
+  --color-areia: #e2e6ee;
+  --color-areia-2: #cdd3df;
 
   /* Marca */
   --color-azul: #3f6fd8;
-  --color-azul-escuro: #345fc4;
-  --color-azul-claro: #8fb0ff;
-  --color-azul-suave: rgb(63 111 216 / 0.18);
-  --color-quente: #ff8a4c;
-  --color-quente-suave: rgb(255 138 76 / 0.14);
+  --color-azul-escuro: #2c55b3;
+  --color-azul-claro: #7fa2ff;
+  --color-azul-suave: #e9effd;
+  --color-quente: #c2410c;
+  --color-quente-suave: #fdeee5;
 
   /* Texto */
-  --color-tinta: #eef0f8;
-  --color-tinta-2: #b8bdd1;
-  --color-tinta-3: #8d93ab;
+  --color-tinta: #12151f;
+  --color-tinta-2: #3d4356;
+  --color-tinta-3: #5b6176;
 
   /* Situações (sempre com ícone + texto) */
-  --color-ok: #5fd39a;
-  --color-ok-suave: rgb(95 211 154 / 0.12);
-  --color-alerta: #f2b84b;
-  --color-alerta-suave: rgb(242 184 75 / 0.12);
-  --color-risco: #ff7b6b;
-  --color-risco-suave: rgb(255 123 107 / 0.12);
-  --color-info: #8fb0ff;
-  --color-info-suave: rgb(127 162 255 / 0.14);
-  --color-neutro: #a7acbf;
-  --color-neutro-suave: rgb(255 255 255 / 0.06);
+  --color-ok: #137140;
+  --color-ok-suave: #e2f3e9;
+  --color-alerta: #8a5a00;
+  --color-alerta-suave: #fbf1dc;
+  --color-risco: #b3301d;
+  --color-risco-suave: #fbe8e4;
+  --color-info: #2c55b3;
+  --color-info-suave: #e9effd;
+  --color-neutro: #555b6e;
+  --color-neutro-suave: #eceff4;
 
-  /* Séries de gráficos — validadas no fundo escuro (CVD, visão normal, contraste) */
-  --color-serie-1: #5b82ec;
-  --color-serie-2: #e0662e;
-  --color-serie-3: #1fa87c;
-  --color-serie-4: #b8861f;
+  /* Séries de gráficos — validadas no fundo claro (CVD, visão normal) */
+  --color-serie-1: #3f6fd8;
+  --color-serie-2: #eb6834;
+  --color-serie-3: #1baf7a;
+  --color-serie-4: #eda100;
 
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 
-  --shadow-cartao: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 18px 40px -24px rgb(0 0 0 / 0.75);
-  --shadow-flutuante: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(255 255 255 / 0.06),
-    0 30px 70px -20px rgb(0 0 0 / 0.8);
-  --shadow-brilho: 0 10px 30px -10px rgb(63 111 216 / 0.75);
+  --shadow-cartao: 0 1px 2px rgb(18 21 31 / 0.04), 0 10px 28px -18px rgb(18 21 31 / 0.22);
+  --shadow-flutuante: 0 2px 6px rgb(18 21 31 / 0.06), 0 28px 60px -20px rgb(18 21 31 / 0.35);
 
-  --animate-surgir: surgir 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  --animate-entrar-modal: entrar-modal 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-surgir: surgir 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-entrar-modal: entrar-modal 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 
   @keyframes surgir {
-    from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
-    to { opacity: 1; transform: none; filter: none; }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
   }
   @keyframes entrar-modal {
-    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
     to { opacity: 1; transform: none; }
   }
 }
@@ -81,7 +81,7 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
-    color-scheme: dark;
+    color-scheme: light;
     background: var(--color-offwhite);
   }
   body {
@@ -90,62 +90,31 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     background-color: var(--color-offwhite);
-    /* Atmosfera: brilho azul no alto, calor alaranjado no canto oposto */
-    background-image:
-      radial-gradient(1100px 620px at 8% -12%, rgb(63 111 216 / 0.26), transparent 62%),
-      radial-gradient(900px 520px at 105% -8%, rgb(255 138 76 / 0.11), transparent 60%),
-      radial-gradient(800px 600px at 50% 120%, rgb(63 111 216 / 0.10), transparent 60%);
-    background-attachment: fixed;
-  }
-  /* Grão fino por cima de tudo, para tirar o aspecto "chapado" do escuro */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.05;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    /* Uma luz azul fria no alto da área de conteúdo; o resto fica limpo */
+    background-image: radial-gradient(1000px 420px at 70% -160px, rgb(63 111 216 / 0.10), transparent 70%);
+    background-repeat: no-repeat;
   }
   :focus-visible {
-    outline: 2px solid var(--color-azul-claro);
+    outline: 2px solid var(--color-azul);
     outline-offset: 2px;
     border-radius: 6px;
   }
   ::selection {
-    background: var(--color-azul);
-    color: #fff;
+    background: var(--color-azul-claro);
+    color: var(--color-grafite);
   }
-  option {
-    background: var(--color-superficie);
-    color: var(--color-tinta);
-  }
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(0.8);
-  }
+  ::placeholder { color: var(--color-tinta-3); opacity: 0.8; }
 }
 
 @layer utilities {
   .numeros { font-variant-numeric: tabular-nums; }
-  .escala-1 { animation-delay: 40ms; }
-  .escala-2 { animation-delay: 90ms; }
-  .escala-3 { animation-delay: 140ms; }
-  .escala-4 { animation-delay: 190ms; }
-  .escala-5 { animation-delay: 240ms; }
-  /* Vidro: cartões e barras translúcidas sobre a atmosfera do fundo */
-  .vidro {
-    background-color: var(--color-papel);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-  }
-  /* Grade fina usada em áreas de destaque */
-  .textura-grade {
-    background-image:
-      linear-gradient(rgb(143 176 255 / 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(143 176 255 / 0.06) 1px, transparent 1px);
-    background-size: 24px 24px;
-  }
-  .rolagem-fina { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.15) transparent; }
+  .escala-1 { animation-delay: 30ms; }
+  .escala-2 { animation-delay: 70ms; }
+  .escala-3 { animation-delay: 110ms; }
+  .escala-4 { animation-delay: 150ms; }
+  .escala-5 { animation-delay: 190ms; }
+  .rolagem-fina { scrollbar-width: thin; scrollbar-color: var(--color-areia-2) transparent; }
+  .rolagem-escura { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.14) transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {

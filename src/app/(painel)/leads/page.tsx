@@ -12,7 +12,6 @@ export default async function PaginaLeads({ searchParams }: { searchParams: Prom
   return (
     <>
       <CabecalhoPagina
-        sobretitulo="Comercial"
         titulo="Leads e clientes"
         descricao="Do primeiro contato à manutenção. Todo card tem dono, próximo passo e data; cards parados há mais de 7 dias ficam marcados."
       />

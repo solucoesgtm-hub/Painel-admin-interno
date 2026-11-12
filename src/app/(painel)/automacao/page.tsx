@@ -14,7 +14,7 @@ export default async function Automacao() {
   const tetoTotal = AGENTES.reduce((a, g) => a + g.teto, 0);
   return (
     <>
-      <CabecalhoPagina sobretitulo="Gestão" titulo="Automação"
+      <CabecalhoPagina titulo="Automação"
         descricao="Ações preparadas por agentes esperam um sócio aprovar, editar ou recusar. Nada sai do sistema sem decisão humana." />
 
       <CaixaAprovacoes iniciais={APROVACOES} socioNome={socio.nome} />

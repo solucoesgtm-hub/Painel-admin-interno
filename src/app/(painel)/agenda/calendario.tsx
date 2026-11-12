@@ -50,8 +50,8 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
     <Cartao className="animate-surgir overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-areia p-4 lg:flex-row lg:items-center">
         <div className="flex items-center gap-1">
-          <button type="button" aria-label="Anterior" onClick={() => navegar(-1)} className="grid size-11 place-items-center rounded-md hover:bg-white/[0.06]"><ChevronLeft aria-hidden className="size-5" /></button>
-          <button type="button" aria-label="Próximo" onClick={() => navegar(1)} className="grid size-11 place-items-center rounded-md hover:bg-white/[0.06]"><ChevronRight aria-hidden className="size-5" /></button>
+          <button type="button" aria-label="Anterior" onClick={() => navegar(-1)} className="grid size-11 place-items-center rounded-md hover:bg-superficie-2"><ChevronLeft aria-hidden className="size-5" /></button>
+          <button type="button" aria-label="Próximo" onClick={() => navegar(1)} className="grid size-11 place-items-center rounded-md hover:bg-superficie-2"><ChevronRight aria-hidden className="size-5" /></button>
           <button type="button" onClick={() => setRef(hoje)} className="min-h-11 rounded-md border border-areia-2 bg-superficie px-3 text-sm hover:border-tinta-3">Hoje</button>
           <h2 className="ml-3 text-lg font-semibold tracking-tight first-letter:uppercase" aria-live="polite">{titulo}</h2>
         </div>
@@ -129,7 +129,7 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
                   <span className={cn("numeros text-xs", d === hoje && "inline-grid size-6 place-items-center rounded-full bg-azul font-semibold text-white")}>{fmtDia(d, { day: "numeric" })}</span>
                   <span className="mt-1 hidden flex-col gap-0.5 sm:flex">
                     {doDia.slice(0, 3).map((e) => (
-                      <span key={e.id} className="truncate rounded px-1 text-[10.5px]" style={{ background: `${cor(e.socioId)}33`, color: "#eef0f8" }}>{e.titulo}</span>
+                      <span key={e.id} className="truncate rounded px-1 text-[10.5px]" style={{ background: `${cor(e.socioId)}1f`, color: "#12151f" }}>{e.titulo}</span>
                     ))}
                     {doDia.length > 3 && <span className="text-[10px] text-tinta-3">+{doDia.length - 3}</span>}
                   </span>

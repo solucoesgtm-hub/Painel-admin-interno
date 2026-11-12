@@ -13,7 +13,6 @@ export default async function PaginaDiagnostico({ searchParams }: { searchParams
   return (
     <>
       <CabecalhoPagina
-        sobretitulo="Visita ao cliente"
         titulo="Diagnóstico"
         descricao="Checklist em seis seções, feito para tocar no celular. Salva a cada alteração no aparelho e funciona sem sinal."
       />
