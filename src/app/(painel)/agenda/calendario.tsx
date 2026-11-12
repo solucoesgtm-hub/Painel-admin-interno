@@ -97,8 +97,11 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
                   {doDia.map((e) => {
                     const T = TIPO[e.tipo];
                     return (
-                      <li key={e.id} className="rounded-md border border-areia bg-white p-2 shadow-cartao" style={{ borderLeft: `3px solid ${cor(e.socioId)}` }}>
-                        <p className="numeros text-[11px] text-tinta-3">{e.inicio}–{e.fim}</p>
+                      <li key={e.id} className="rounded-md border border-areia bg-white p-2 shadow-cartao">
+                        <p className="numeros flex items-center gap-1.5 text-[11px] text-tinta-3">
+                          <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: cor(e.socioId) }} />
+                          {e.inicio}–{e.fim}
+                        </p>
                         <p className="text-[12.5px] font-medium leading-snug">{e.titulo}</p>
                         <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-tinta-3"><T.icone aria-hidden className="size-3" />{T.nome} · {socios.find((s) => s.id === e.socioId)?.nome}</p>
                       </li>
