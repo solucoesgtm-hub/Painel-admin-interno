@@ -1,65 +1,79 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
-   Tokens do GTM Hub — definidos uma vez, usados em tudo.
-   Identidade: grafite #141620, off-white #F2F1EC, areia #E2DED6,
-   azul #3F6FD8, azul claro #7FA2FF. Fonte Lexend.
+   Tokens do GTM Hub — tema escuro premium.
+   Marca preservada: azul #3F6FD8 / #7FA2FF e fonte Lexend.
+   Os nomes dos tokens são os mesmos da versão clara, para que todas as telas
+   mudem juntas: "offwhite" é o fundo da página, "papel" é o vidro dos cartões,
+   "areia" são as bordas e "tinta" é o texto.
 ------------------------------------------------------------------- */
 @theme {
   --font-sans: var(--font-lexend), ui-sans-serif, system-ui, sans-serif;
 
-  --color-grafite: #141620;
-  --color-grafite-2: #1c1f2c;
-  --color-grafite-3: #262a3a;
-  --color-grafite-4: #353a4e;
-  --color-offwhite: #f2f1ec;
-  --color-areia: #e2ded6;
-  --color-areia-2: #d3cec3;
-  --color-papel: #fbfaf7;
-  --color-azul: #3f6fd8;
-  --color-azul-escuro: #2f58b5;
-  --color-azul-claro: #7fa2ff;
-  --color-azul-suave: #e6edfb;
+  /* Fundos */
+  --color-offwhite: #080a10;
+  --color-grafite: #0d1018;
+  --color-grafite-2: #151926;
+  --color-grafite-3: #1d2232;
+  --color-grafite-4: #2a3046;
+  --color-papel: rgb(19 23 35 / 0.72);
+  --color-superficie: #161a27;
+  --color-superficie-2: #1c2132;
 
-  --color-tinta: #141620;
-  --color-tinta-2: #4a4d5a;
-  --color-tinta-3: #6b6e7a;
+  /* Bordas (filetes claros sobre o escuro) */
+  --color-areia: rgb(255 255 255 / 0.075);
+  --color-areia-2: rgb(255 255 255 / 0.15);
+
+  /* Marca */
+  --color-azul: #3f6fd8;
+  --color-azul-escuro: #345fc4;
+  --color-azul-claro: #8fb0ff;
+  --color-azul-suave: rgb(63 111 216 / 0.18);
+  --color-quente: #ff8a4c;
+  --color-quente-suave: rgb(255 138 76 / 0.14);
+
+  /* Texto */
+  --color-tinta: #eef0f8;
+  --color-tinta-2: #b8bdd1;
+  --color-tinta-3: #8d93ab;
 
   /* Situações (sempre com ícone + texto) */
-  --color-ok: #17803d;
-  --color-ok-suave: #e3f3e8;
-  --color-alerta: #9a6400;
-  --color-alerta-suave: #fbf0d9;
-  --color-risco: #b9381f;
-  --color-risco-suave: #fbe6e1;
-  --color-info: #2f58b5;
-  --color-info-suave: #e6edfb;
-  --color-neutro: #5b5e6a;
-  --color-neutro-suave: #ecebe6;
+  --color-ok: #5fd39a;
+  --color-ok-suave: rgb(95 211 154 / 0.12);
+  --color-alerta: #f2b84b;
+  --color-alerta-suave: rgb(242 184 75 / 0.12);
+  --color-risco: #ff7b6b;
+  --color-risco-suave: rgb(255 123 107 / 0.12);
+  --color-info: #8fb0ff;
+  --color-info-suave: rgb(127 162 255 / 0.14);
+  --color-neutro: #a7acbf;
+  --color-neutro-suave: rgb(255 255 255 / 0.06);
 
-  /* Séries de gráficos (validadas: CVD e visão normal OK) */
-  --color-serie-1: #3f6fd8;
-  --color-serie-2: #eb6834;
-  --color-serie-3: #1baf7a;
-  --color-serie-4: #eda100;
+  /* Séries de gráficos — validadas no fundo escuro (CVD, visão normal, contraste) */
+  --color-serie-1: #5b82ec;
+  --color-serie-2: #e0662e;
+  --color-serie-3: #1fa87c;
+  --color-serie-4: #b8861f;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
 
-  --shadow-cartao: 0 1px 0 rgb(20 22 32 / 0.04), 0 1px 2px rgb(20 22 32 / 0.04);
-  --shadow-flutuante: 0 12px 32px -8px rgb(20 22 32 / 0.22), 0 2px 6px rgb(20 22 32 / 0.08);
+  --shadow-cartao: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 18px 40px -24px rgb(0 0 0 / 0.75);
+  --shadow-flutuante: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(255 255 255 / 0.06),
+    0 30px 70px -20px rgb(0 0 0 / 0.8);
+  --shadow-brilho: 0 10px 30px -10px rgb(63 111 216 / 0.75);
 
-  --animate-surgir: surgir 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  --animate-entrar-modal: entrar-modal 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-surgir: surgir 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-entrar-modal: entrar-modal 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
   @keyframes surgir {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: none; }
+    from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+    to { opacity: 1; transform: none; filter: none; }
   }
   @keyframes entrar-modal {
-    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
     to { opacity: 1; transform: none; }
   }
 }
@@ -67,41 +81,71 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
-    color-scheme: light;
+    color-scheme: dark;
+    background: var(--color-offwhite);
   }
   body {
-    background: var(--color-offwhite);
+    min-height: 100dvh;
     color: var(--color-tinta);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01";
     -webkit-font-smoothing: antialiased;
+    background-color: var(--color-offwhite);
+    /* Atmosfera: brilho azul no alto, calor alaranjado no canto oposto */
+    background-image:
+      radial-gradient(1100px 620px at 8% -12%, rgb(63 111 216 / 0.26), transparent 62%),
+      radial-gradient(900px 520px at 105% -8%, rgb(255 138 76 / 0.11), transparent 60%),
+      radial-gradient(800px 600px at 50% 120%, rgb(63 111 216 / 0.10), transparent 60%);
+    background-attachment: fixed;
+  }
+  /* Grão fino por cima de tudo, para tirar o aspecto "chapado" do escuro */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   :focus-visible {
-    outline: 2px solid var(--color-azul);
+    outline: 2px solid var(--color-azul-claro);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
   ::selection {
-    background: var(--color-azul-claro);
-    color: var(--color-grafite);
+    background: var(--color-azul);
+    color: #fff;
+  }
+  option {
+    background: var(--color-superficie);
+    color: var(--color-tinta);
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
   }
 }
 
 @layer utilities {
   .numeros { font-variant-numeric: tabular-nums; }
   .escala-1 { animation-delay: 40ms; }
-  .escala-2 { animation-delay: 80ms; }
-  .escala-3 { animation-delay: 120ms; }
-  .escala-4 { animation-delay: 160ms; }
-  .escala-5 { animation-delay: 200ms; }
-  /* Textura sutil do menu lateral: linhas de grade, como papel técnico */
+  .escala-2 { animation-delay: 90ms; }
+  .escala-3 { animation-delay: 140ms; }
+  .escala-4 { animation-delay: 190ms; }
+  .escala-5 { animation-delay: 240ms; }
+  /* Vidro: cartões e barras translúcidas sobre a atmosfera do fundo */
+  .vidro {
+    background-color: var(--color-papel);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+  }
+  /* Grade fina usada em áreas de destaque */
   .textura-grade {
     background-image:
-      linear-gradient(rgb(127 162 255 / 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(127 162 255 / 0.05) 1px, transparent 1px);
-    background-size: 22px 22px;
+      linear-gradient(rgb(143 176 255 / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(143 176 255 / 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
-  .rolagem-fina { scrollbar-width: thin; scrollbar-color: var(--color-areia-2) transparent; }
+  .rolagem-fina { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.15) transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {

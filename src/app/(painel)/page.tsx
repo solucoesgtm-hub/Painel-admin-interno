@@ -63,7 +63,7 @@ export default async function Inicio() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metrica className="animate-surgir escala-1" rotulo="Faturamento do mês" valor={brl(mesAtual.entradas)} icone={Wallet} tom="azul"
+        <Metrica className="animate-surgir escala-1 border-azul/40 bg-gradient-to-br from-azul/35 via-azul/10 to-transparent shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_24px_60px_-28px_rgb(63_111_216/0.9)]" rotulo="Faturamento do mês" valor={brl(mesAtual.entradas)} icone={Wallet} tom="azul"
           detalhe={<span className={variacao >= 0 ? "text-ok" : "text-risco"}>{variacao >= 0 ? "▲" : "▼"} {pct(Math.abs(variacao))} vs. mês anterior</span>} />
         <Metrica className="animate-surgir escala-2" rotulo="Mensalidades ativas" valor={brl(mrr)} icone={Repeat} tom="ok"
           detalhe={<>{MENSALIDADES.length} contratos · {atrasadas.length > 0 ? <span className="text-risco">{atrasadas.length} em atraso</span> : "nenhum em atraso"}</>} />
@@ -135,7 +135,7 @@ export default async function Inicio() {
                         const atrasado = p.proximoPassoData < hoje;
                         return (
                           <li key={p.id}>
-                            <Link href={`/leads/${p.id}`} className="block rounded-md border border-areia bg-white px-3 py-2.5 transition hover:border-azul/40 hover:shadow-cartao">
+                            <Link href={`/leads/${p.id}`} className="block rounded-md border border-areia bg-superficie px-3 py-2.5 transition hover:border-azul/40 hover:shadow-cartao">
                               <p className="text-[13px] font-medium leading-snug">{p.proximoPasso}</p>
                               <p className="mt-0.5 truncate text-xs text-tinta-3">{p.nome}</p>
                               <p className={`mt-1.5 inline-flex items-center gap-1 text-xs font-medium ${atrasado ? "text-risco" : "text-tinta-2"}`}>
@@ -166,7 +166,7 @@ export default async function Inicio() {
                 return (
                   <li key={e.id}>
                     <Link href={`/editais/${e.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-offwhite/70">
-                      <div className={`grid w-12 shrink-0 place-items-center rounded-md py-1.5 text-center ${dias <= 7 ? "bg-risco-suave text-risco" : "bg-azul-suave text-azul-escuro"}`}>
+                      <div className={`grid w-12 shrink-0 place-items-center rounded-md py-1.5 text-center ${dias <= 7 ? "bg-risco-suave text-risco" : "bg-azul-suave text-azul-claro"}`}>
                         <span className="numeros text-lg font-semibold leading-none">{dias}</span>
                         <span className="text-[10px] uppercase tracking-wide">dias</span>
                       </div>

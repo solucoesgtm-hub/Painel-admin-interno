@@ -50,9 +50,9 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
     <Cartao className="animate-surgir overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-areia p-4 lg:flex-row lg:items-center">
         <div className="flex items-center gap-1">
-          <button type="button" aria-label="Anterior" onClick={() => navegar(-1)} className="grid size-11 place-items-center rounded-md hover:bg-areia/60"><ChevronLeft aria-hidden className="size-5" /></button>
-          <button type="button" aria-label="Próximo" onClick={() => navegar(1)} className="grid size-11 place-items-center rounded-md hover:bg-areia/60"><ChevronRight aria-hidden className="size-5" /></button>
-          <button type="button" onClick={() => setRef(hoje)} className="min-h-11 rounded-md border border-areia-2 bg-white px-3 text-sm hover:border-tinta-3">Hoje</button>
+          <button type="button" aria-label="Anterior" onClick={() => navegar(-1)} className="grid size-11 place-items-center rounded-md hover:bg-white/[0.06]"><ChevronLeft aria-hidden className="size-5" /></button>
+          <button type="button" aria-label="Próximo" onClick={() => navegar(1)} className="grid size-11 place-items-center rounded-md hover:bg-white/[0.06]"><ChevronRight aria-hidden className="size-5" /></button>
+          <button type="button" onClick={() => setRef(hoje)} className="min-h-11 rounded-md border border-areia-2 bg-superficie px-3 text-sm hover:border-tinta-3">Hoje</button>
           <h2 className="ml-3 text-lg font-semibold tracking-tight first-letter:uppercase" aria-live="polite">{titulo}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
@@ -62,17 +62,17 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
               return (
                 <button key={s.id} type="button" aria-pressed={on}
                   onClick={() => setFiltro(on ? filtro.filter((x) => x !== s.id) : [...filtro, s.id])}
-                  className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm", on ? "border-areia-2 bg-white" : "border-dashed border-areia-2 text-tinta-3 opacity-70")}>
+                  className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm", on ? "border-areia-2 bg-superficie" : "border-dashed border-areia-2 text-tinta-3 opacity-70")}>
                   <span aria-hidden className="size-2.5 rounded-full" style={{ background: on ? s.cor : "transparent", border: `2px solid ${s.cor}` }} />
                   {s.nome}
                 </button>
               );
             })}
           </div>
-          <div role="group" aria-label="Visualização" className="flex rounded-md border border-areia-2 bg-white p-0.5">
+          <div role="group" aria-label="Visualização" className="flex rounded-md border border-areia-2 bg-superficie p-0.5">
             {(["semana", "mes"] as const).map((v) => (
               <button key={v} type="button" aria-pressed={visao === v} onClick={() => setVisao(v)}
-                className={cn("min-h-10 rounded-[5px] px-3 text-sm", visao === v ? "bg-grafite text-white" : "text-tinta-2")}>
+                className={cn("min-h-10 rounded-[5px] px-3 text-sm", visao === v ? "bg-azul text-white" : "text-tinta-2")}>
                 {v === "semana" ? "Semana" : "Mês"}
               </button>
             ))}
@@ -97,7 +97,7 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
                   {doDia.map((e) => {
                     const T = TIPO[e.tipo];
                     return (
-                      <li key={e.id} className="rounded-md border border-areia bg-white p-2 shadow-cartao">
+                      <li key={e.id} className="rounded-md border border-areia bg-superficie p-2 shadow-cartao">
                         <p className="numeros flex items-center gap-1.5 text-[11px] text-tinta-3">
                           <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: cor(e.socioId) }} />
                           {e.inicio}–{e.fim}
@@ -129,7 +129,7 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
                   <span className={cn("numeros text-xs", d === hoje && "inline-grid size-6 place-items-center rounded-full bg-azul font-semibold text-white")}>{fmtDia(d, { day: "numeric" })}</span>
                   <span className="mt-1 hidden flex-col gap-0.5 sm:flex">
                     {doDia.slice(0, 3).map((e) => (
-                      <span key={e.id} className="truncate rounded px-1 text-[10.5px]" style={{ background: `${cor(e.socioId)}1f`, color: "#141620" }}>{e.titulo}</span>
+                      <span key={e.id} className="truncate rounded px-1 text-[10.5px]" style={{ background: `${cor(e.socioId)}33`, color: "#eef0f8" }}>{e.titulo}</span>
                     ))}
                     {doDia.length > 3 && <span className="text-[10px] text-tinta-3">+{doDia.length - 3}</span>}
                   </span>

@@ -101,10 +101,10 @@ export function Funil({
             <option value="todos">Todos os sócios</option>
             {socios.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
           </Selecao>
-          <div role="group" aria-label="Visualização" className="flex rounded-md border border-areia-2 bg-white p-0.5">
+          <div role="group" aria-label="Visualização" className="flex rounded-md border border-areia-2 bg-superficie p-0.5">
             {([["quadro", LayoutGrid, "Quadro"], ["lista", List, "Lista"]] as const).map(([v, I, n]) => (
               <button key={v} type="button" aria-pressed={visao === v} onClick={() => setVisao(v)}
-                className={cn("grid size-10 place-items-center rounded-[5px] text-tinta-3", visao === v && "bg-grafite text-white")}>
+                className={cn("grid size-10 place-items-center rounded-[5px] text-tinta-3", visao === v && "bg-azul text-white")}>
                 <I aria-hidden className="size-4" /><span className="sr-only">{n}</span>
               </button>
             ))}
@@ -139,7 +139,7 @@ export function Funil({
                   <header className="flex items-center gap-2 px-3 pb-2 pt-3">
                     <span aria-hidden className="size-2 rounded-full" style={{ background: COR_ETAPA[e.id] }} />
                     <h2 className="text-[13px] font-semibold">{e.nome}</h2>
-                    <span className="numeros rounded-full bg-white px-1.5 text-xs text-tinta-3 ring-1 ring-areia">{cards.length}</span>
+                    <span className="numeros rounded-full bg-superficie px-1.5 text-xs text-tinta-3 ring-1 ring-areia">{cards.length}</span>
                     {total > 0 && <span className="numeros ml-auto text-[11px] text-tinta-3">{brl(total)}/mês</span>}
                   </header>
                   <ol className="flex min-h-24 flex-1 flex-col gap-2 px-2 pb-2">
@@ -223,7 +223,7 @@ function CardLead({
       onDragStart={(e) => { e.dataTransfer.setData("text/plain", l.id); e.dataTransfer.effectAllowed = "move"; aoIniciar(); }}
       onDragEnd={aoTerminar}
       className={cn(
-        "group relative cursor-grab rounded-md border bg-white p-3 shadow-cartao transition active:cursor-grabbing",
+        "group relative cursor-grab rounded-md border bg-superficie p-3 shadow-cartao transition active:cursor-grabbing",
         parado ? "border-alerta/50" : "border-areia",
         arrastando ? "rotate-1 opacity-60" : "hover:-translate-y-px hover:border-azul/40 hover:shadow-flutuante",
       )}
@@ -262,7 +262,7 @@ function CardLead({
         id={`mover-${l.id}`}
         value={l.etapa}
         onChange={(e) => aoMover(e.target.value as EtapaId)}
-        className="mt-2.5 min-h-9 w-full rounded-[5px] border border-areia bg-white px-2 text-xs text-tinta-2 hover:border-tinta-3"
+        className="mt-2.5 min-h-9 w-full rounded-[5px] border border-areia bg-superficie px-2 text-xs text-tinta-2 hover:border-tinta-3"
       >
         {ETAPAS.map((e) => <option key={e.id} value={e.id}>Mover para: {e.nome}</option>)}
       </select>
@@ -359,7 +359,7 @@ function ModalPerda({ alvo, aoFechar, aoConfirmar }: { alvo: { id: string; nome:
       <fieldset className="space-y-2">
         <legend className="sr-only">Motivo da perda</legend>
         {[...MOTIVOS_PERDA, "Outro"].map((m) => (
-          <label key={m} className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-3 text-sm", motivo === m ? "border-azul bg-azul-suave" : "border-areia bg-white hover:border-tinta-3")}>
+          <label key={m} className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-3 text-sm", motivo === m ? "border-azul bg-azul-suave" : "border-areia bg-superficie hover:border-tinta-3")}>
             <input type="radio" name="motivo" value={m} checked={motivo === m} onChange={() => setMotivo(m)} className="size-4 accent-[#3f6fd8]" />
             {m}
           </label>

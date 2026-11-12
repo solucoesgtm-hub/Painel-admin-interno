@@ -37,13 +37,13 @@ export function Modal({
       onClick={(e) => e.target === ref.current && aoFechar()}
       aria-labelledby="modal-titulo"
       className={cn(
-        "m-auto w-[calc(100%-24px)] rounded-xl border border-areia bg-papel p-0 text-tinta shadow-flutuante backdrop:bg-grafite/50 backdrop:backdrop-blur-[2px] open:animate-entrar-modal",
+        "m-auto w-[calc(100%-24px)] rounded-xl border border-areia-2 bg-superficie p-0 text-tinta shadow-flutuante backdrop:bg-black/60 backdrop:backdrop-blur-sm open:animate-entrar-modal",
         { sm: "max-w-md", md: "max-w-xl", lg: "max-w-3xl" }[largura],
       )}
     >
       <div className="flex items-start justify-between gap-4 border-b border-areia px-6 py-5">
         <div>
-          <h2 id="modal-titulo" className="text-lg font-semibold tracking-tight">
+          <h2 id="modal-titulo" className="text-xl font-semibold tracking-tight text-white">
             {titulo}
           </h2>
           {descricao && <p className="mt-1 text-sm text-tinta-3">{descricao}</p>}
@@ -52,14 +52,14 @@ export function Modal({
           type="button"
           onClick={aoFechar}
           aria-label="Fechar"
-          className="grid size-11 shrink-0 place-items-center rounded-md text-tinta-3 hover:bg-areia/60 hover:text-tinta"
+          className="grid size-11 shrink-0 place-items-center rounded-full text-tinta-3 hover:bg-white/[0.08] hover:text-tinta"
         >
           <X aria-hidden className="size-5" />
         </button>
       </div>
       <div className="max-h-[70dvh] overflow-y-auto px-6 py-5">{children}</div>
       {rodape && (
-        <div className="flex flex-col-reverse gap-2 border-t border-areia bg-offwhite/50 px-6 py-4 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-areia bg-black/20 px-6 py-4 sm:flex-row sm:justify-end">
           {rodape}
         </div>
       )}

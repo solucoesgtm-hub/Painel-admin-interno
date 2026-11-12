@@ -62,7 +62,7 @@ export default async function FichaEdital({ params }: { params: Promise<{ id: st
               return (
                 <li key={r.id} className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto]">
                   <div>
-                    <p className="text-sm font-medium">{r.texto} {r.eliminatorio && <span className="ml-1 rounded bg-grafite px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">Eliminatório</span>}</p>
+                    <p className="text-sm font-medium">{r.texto} {r.eliminatorio && <span className="ml-1 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">Eliminatório</span>}</p>
                     {r.pagina && r.trecho ? (
                       <blockquote className="mt-2 flex gap-2 border-l-2 border-azul/40 pl-3 text-[13px] italic text-tinta-2">
                         <span>“{r.trecho}”</span>

@@ -17,7 +17,7 @@ const ACOES: Record<EventoHistorico["acao"], string> = {
 const COR_ACAO: Partial<Record<EventoHistorico["acao"], string>> = {
   criou: "bg-ok-suave text-ok",
   excluiu: "bg-risco-suave text-risco",
-  aprovou: "bg-azul-suave text-azul-escuro",
+  aprovou: "bg-azul-suave text-azul-claro",
   recusou: "bg-risco-suave text-risco",
 };
 
@@ -65,7 +65,7 @@ export function ListaHistorico({ eventos }: { eventos: EventoHistorico[] }) {
                   const Icone = e.ator.tipo === "agente" ? Bot : e.ator.tipo === "sistema" ? Cog : UserRound;
                   return (
                     <li key={e.id} className="relative flex gap-3 rounded-md py-2 pr-2">
-                      <span className={cn("relative z-10 grid size-9 shrink-0 place-items-center rounded-full ring-4 ring-papel", e.ator.tipo === "socio" ? "bg-grafite text-white" : "bg-azul-suave text-azul-escuro")}>
+                      <span className={cn("relative z-10 grid size-9 shrink-0 place-items-center rounded-full ring-4 ring-offwhite", e.ator.tipo === "socio" ? "bg-azul text-white" : "bg-azul-suave text-azul-claro")}>
                         <Icone aria-hidden className="size-4" />
                       </span>
                       <div className="min-w-0 flex-1">

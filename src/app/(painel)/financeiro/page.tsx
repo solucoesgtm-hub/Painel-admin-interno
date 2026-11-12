@@ -50,7 +50,7 @@ export default async function Financeiro() {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metrica className="animate-surgir escala-1" rotulo="Saldo em conta" valor={brl(saldo)} icone={Landmark} tom="azul" detalhe="Atualizado agora · provedor demo" />
+        <Metrica className="animate-surgir escala-1 border-azul/40 bg-gradient-to-br from-azul/35 via-azul/10 to-transparent shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_24px_60px_-28px_rgb(63_111_216/0.9)]" rotulo="Saldo em conta" valor={brl(saldo)} icone={Landmark} tom="azul" detalhe="Atualizado agora · provedor demo" />
         <Metrica className="animate-surgir escala-2" rotulo="Entradas do mês" valor={brl(mes.entradas)} icone={ArrowDownLeft} tom="ok" detalhe={`${EXTRATO.filter((e) => e.tipo === "entrada").length} recebimentos`} />
         <Metrica className="animate-surgir escala-3" rotulo="Saídas do mês" valor={brl(mes.saidas)} icone={ArrowUpRight} tom="risco" detalhe={`Custos fixos: ${brl(custoFixo)}`} />
         <Metrica className="animate-surgir escala-4" rotulo="Resultado do mês" valor={brl(resultado)} icone={PiggyBank} tom="azul" detalhe={`Margem de ${pct(resultado / mes.entradas)}`} />
@@ -60,7 +60,7 @@ export default async function Financeiro() {
         <Cartao className="animate-surgir escala-2 xl:col-span-2">
           <CabecalhoCartao titulo="Entradas e saídas" descricao="Últimos 6 meses, mesma escala" />
           <div className="px-3 pb-4 pt-3 sm:px-5">
-            <GraficoColunas dados={FATURAMENTO_MESES} x="mes" series={[{ chave: "entradas", nome: "Entradas" }, { chave: "saidas", nome: "Saídas", cor: "#eb6834" }]} formato="brl" altura={280} />
+            <GraficoColunas dados={FATURAMENTO_MESES} x="mes" series={[{ chave: "entradas", nome: "Entradas" }, { chave: "saidas", nome: "Saídas" }]} formato="brl" altura={280} />
           </div>
         </Cartao>
         <Cartao className="animate-surgir escala-3">

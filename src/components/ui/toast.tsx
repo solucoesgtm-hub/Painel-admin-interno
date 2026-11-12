@@ -27,11 +27,11 @@ export function ProvedorAvisos({ children }: { children: ReactNode }) {
             <div
               key={t.id}
               role="status"
-              className="animate-entrar-modal pointer-events-auto flex max-w-sm items-center gap-2.5 rounded-lg bg-grafite px-4 py-3 text-sm text-offwhite shadow-flutuante"
+              className="animate-entrar-modal pointer-events-auto flex max-w-sm items-center gap-2.5 rounded-full border border-areia-2 bg-superficie-2 px-4 py-3 text-sm text-tinta shadow-flutuante"
             >
               <Icone
                 aria-hidden
-                className={cn("size-4 shrink-0", t.tom === "ok" ? "text-[#5fd08a]" : t.tom === "risco" ? "text-[#ff8f7a]" : "text-azul-claro")}
+                className={cn("size-4 shrink-0", t.tom === "ok" ? "text-ok" : t.tom === "risco" ? "text-risco" : "text-azul-claro")}
               />
               {t.texto}
             </div>
