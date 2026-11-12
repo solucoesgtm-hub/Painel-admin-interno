@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.env
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+# Pacote original recebido (já incorporado em src/db e drizzle/)
+/gtm-hub-neon/
+/PROMPT-GTM-HUB.md
+
+# Cache de ferramentas locais
+.impeccable/

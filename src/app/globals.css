@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Tokens do GTM Hub — definidos uma vez, usados em tudo.
+   Identidade: grafite #141620, off-white #F2F1EC, areia #E2DED6,
+   azul #3F6FD8, azul claro #7FA2FF. Fonte Lexend.
+------------------------------------------------------------------- */
+@theme {
+  --font-sans: var(--font-lexend), ui-sans-serif, system-ui, sans-serif;
+
+  --color-grafite: #141620;
+  --color-grafite-2: #1c1f2c;
+  --color-grafite-3: #262a3a;
+  --color-grafite-4: #353a4e;
+  --color-offwhite: #f2f1ec;
+  --color-areia: #e2ded6;
+  --color-areia-2: #d3cec3;
+  --color-papel: #fbfaf7;
+  --color-azul: #3f6fd8;
+  --color-azul-escuro: #2f58b5;
+  --color-azul-claro: #7fa2ff;
+  --color-azul-suave: #e6edfb;
+
+  --color-tinta: #141620;
+  --color-tinta-2: #4a4d5a;
+  --color-tinta-3: #6b6e7a;
+
+  /* Situações (sempre com ícone + texto) */
+  --color-ok: #17803d;
+  --color-ok-suave: #e3f3e8;
+  --color-alerta: #9a6400;
+  --color-alerta-suave: #fbf0d9;
+  --color-risco: #b9381f;
+  --color-risco-suave: #fbe6e1;
+  --color-info: #2f58b5;
+  --color-info-suave: #e6edfb;
+  --color-neutro: #5b5e6a;
+  --color-neutro-suave: #ecebe6;
+
+  /* Séries de gráficos (validadas: CVD e visão normal OK) */
+  --color-serie-1: #3f6fd8;
+  --color-serie-2: #eb6834;
+  --color-serie-3: #1baf7a;
+  --color-serie-4: #eda100;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-cartao: 0 1px 0 rgb(20 22 32 / 0.04), 0 1px 2px rgb(20 22 32 / 0.04);
+  --shadow-flutuante: 0 12px 32px -8px rgb(20 22 32 / 0.22), 0 2px 6px rgb(20 22 32 / 0.08);
+
+  --animate-surgir: surgir 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-entrar-modal: entrar-modal 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes surgir {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes entrar-modal {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+  }
+  body {
+    background: var(--color-offwhite);
+    color: var(--color-tinta);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-azul);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--color-azul-claro);
+    color: var(--color-grafite);
+  }
+}
+
+@layer utilities {
+  .numeros { font-variant-numeric: tabular-nums; }
+  .escala-1 { animation-delay: 40ms; }
+  .escala-2 { animation-delay: 80ms; }
+  .escala-3 { animation-delay: 120ms; }
+  .escala-4 { animation-delay: 160ms; }
+  .escala-5 { animation-delay: 200ms; }
+  /* Textura sutil do menu lateral: linhas de grade, como papel técnico */
+  .textura-grade {
+    background-image:
+      linear-gradient(rgb(127 162 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(127 162 255 / 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .rolagem-fina { scrollbar-width: thin; scrollbar-color: var(--color-areia-2) transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
