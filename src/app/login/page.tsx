@@ -3,18 +3,20 @@ import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { Aviso } from "@/components/ui/base";
-import { authConfigurado, signIn } from "@/auth";
+import { auth, authConfigurado } from "@/auth";
+import { FormularioLogin } from "./formulario";
 
 export const metadata: Metadata = { title: "Entrar" };
 
 const ERROS: Record<string, string> = {
-  AccessDenied: "Este e-mail não está na lista de sócios. Peça para um sócio incluir você.",
-  configuracao: "O login com Google ainda não foi configurado neste ambiente. Defina AUTH_SECRET, AUTH_GOOGLE_ID e AUTH_GOOGLE_SECRET.",
+  configuracao: "O login ainda não foi configurado neste ambiente. Defina AUTH_SECRET e DATABASE_URL.",
+  removido: "Seu acesso foi removido. Fale com outro sócio.",
 };
 
 export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string; erro?: string }> }) {
   const p = await searchParams;
   const erro = ERROS[p.error ?? p.erro ?? ""] ?? (p.error ? "Não foi possível entrar. Tente de novo." : null);
+  if (authConfigurado && (await auth())?.user?.id) redirect("/");
 
   return (
     <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
@@ -41,7 +43,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
             <Logo />
           </div>
           <h2 className="text-2xl font-semibold tracking-tight">Entrar no GTM Hub</h2>
-          <p className="mt-2 text-sm text-tinta-3">Acesso restrito aos sócios, com a conta Google de cada um.</p>
+          <p className="mt-2 text-sm text-tinta-3">Acesso restrito aos sócios, cada um com o próprio e-mail e senha.</p>
 
           {erro && (
             <Aviso tom="risco" className="mt-6">
@@ -50,23 +52,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
           )}
 
           {authConfigurado ? (
-            <form
-              className="mt-8"
-              action={async () => {
-                "use server";
-                await signIn("google", { redirectTo: "/" });
-              }}
-            >
-              <button className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md border border-areia-2 bg-white px-4 text-sm font-medium text-tinta shadow-cartao transition hover:border-tinta-3">
-                <svg aria-hidden viewBox="0 0 24 24" className="size-5">
-                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.2-2.1 3.5-5.1 3.5-8.7z" />
-                  <path fill="#34A853" d="M12 24c3.2 0 6-1.1 7.9-2.9l-3.9-3c-1 .7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0 0 12 24z" />
-                  <path fill="#FBBC05" d="M5.4 14.4a7.2 7.2 0 0 1 0-4.7V6.6h-4a12 12 0 0 0 0 10.9l4-3.1z" />
-                  <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.4 6.6l4 3.1C6.3 6.9 8.9 4.8 12 4.8z" />
-                </svg>
-                Entrar com Google
-              </button>
-            </form>
+            <FormularioLogin />
           ) : (
             <form
               className="mt-8"
@@ -79,7 +65,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
                 Abrir demonstração
               </button>
               <p className="mt-3 text-xs text-tinta-3">
-                Login Google ainda não configurado. A demonstração usa apenas dados fictícios.
+                Login ainda não configurado. A demonstração usa apenas dados fictícios.
               </p>
             </form>
           )}

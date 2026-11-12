@@ -6,10 +6,12 @@ Legenda: ✅ pronto · 🟡 tela pronta com dados de demonstração · ⬜ a faz
 - ✅ Projeto Next.js + Tailwind com tokens da marca (grafite, off-white, areia, azuis, Lexend)
 - ✅ Componentes base: botão, campo, cartão, métrica, tabela, etiqueta de situação, modal, aviso, toast, estados vazio/erro/carregando, medidor
 - ✅ Estrutura: menu lateral escuro (computador) e barra inferior + menu "Mais" (celular)
-- ✅ Login Auth.js com Google restrito a `SOCIOS_EMAILS`; modo demonstração local quando não configurado
+- ✅ Login por e-mail e senha individual (hash scrypt na tabela `socios`, script `db:senha`); modo demonstração local quando não configurado
+- ✅ Sócios e histórico lidos do Neon quando `DATABASE_URL` existe
 - ✅ Camada Neon/Drizzle incorporada (`src/db`, `drizzle/`)
-- 🟡 Equipe (tela pronta; sócios ainda vêm da demonstração)
-- 🟡 Histórico com filtros (tela pronta; consulta do Neon a ligar)
+- ✅ Equipe (sócios do Neon)
+- ✅ Histórico com filtros (tabela `historico` do Neon)
+- ⬜ Tela "Minha senha" para cada sócio trocar a própria senha
 
 ## Fase 2 — Leads, diagnóstico e análise
 - ✅ Funil em 7 colunas, arrastar e soltar + seletor "Mover para" (celular/teclado)

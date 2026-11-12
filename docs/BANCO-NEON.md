@@ -44,6 +44,10 @@ Usa Neon (PostgreSQL) com Drizzle, que gera as tabelas a partir do arquivo
    npm run db:testar
    ```
    O teste deve mostrar a hora do banco e 3 sócios.
+8. **Definir a senha de cada sócio** (uma vez por sócio; Enter gera uma senha forte):
+   ```bash
+   npm run db:senha -- email@do.socio
+   ```
 
 ## Como usar no código
 

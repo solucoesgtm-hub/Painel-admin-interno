@@ -39,6 +39,9 @@ export const socios = pgTable("socios", {
   email: text("email").notNull().unique(),
   nome: text("nome").notNull(),
   area: text("area"),
+  /** Hash scrypt da senha (nunca a senha em texto). Definido com `npm run db:senha`. */
+  senhaHash: text("senha_hash"),
+  senhaDefinidaEm: timestamp("senha_definida_em", { withTimezone: true }),
   criadoEm,
 });
 

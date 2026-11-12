@@ -8,6 +8,13 @@
       "when": 1794453868275,
       "tag": "0000_numerous_robbie_robertson",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794456762319,
+      "tag": "0001_senha_socios",
+      "breakpoints": true
     }
   ]
 }

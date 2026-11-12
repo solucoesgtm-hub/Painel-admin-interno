@@ -13,7 +13,8 @@
     "db:migrar": "drizzle-kit migrate",
     "db:painel": "drizzle-kit studio",
     "db:socios": "tsx --env-file=.env.local src/db/seed.ts",
-    "db:testar": "tsx --env-file=.env.local src/db/testar-conexao.ts"
+    "db:testar": "tsx --env-file=.env.local src/db/testar-conexao.ts",
+    "db:senha": "tsx --env-file=.env.local src/db/definir-senha.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

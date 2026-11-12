@@ -2,7 +2,7 @@
 // Com DATABASE_URL definida, leads e histórico vêm do Neon (src/db).
 // Sem ela, o Hub roda em modo demonstração com dados fictícios em memória.
 import "server-only";
-import { HISTORICO_INICIAL, LEADS_INICIAIS, SOCIOS, type EventoHistorico, type Lead } from "./demo/dados";
+import { HISTORICO_INICIAL, LEADS_INICIAIS, SOCIOS, type EventoHistorico, type Lead, type Socio } from "./demo/dados";
 import { nomeEtapa, type DadosNovoLead, type EtapaId } from "./regras/funil";
 
 export const modoDemo = !process.env.DATABASE_URL;
@@ -19,8 +19,24 @@ async function neon() {
   return consultas;
 }
 
-export async function listarSocios() {
-  return SOCIOS;
+const CORES_SOCIOS = ["#3f6fd8", "#eb6834", "#1baf7a", "#eda100"];
+
+/** Sócios: tabela `socios` do Neon (ordem de cadastro) ou a lista fictícia da demonstração. */
+export async function listarSocios(): Promise<Socio[]> {
+  if (modoDemo) return SOCIOS;
+  const [{ db }, { socios }, { asc }] = await Promise.all([import("@/db"), import("@/db/schema"), import("drizzle-orm")]);
+  const linhas = await db
+    .select({ id: socios.id, nome: socios.nome, email: socios.email, area: socios.area })
+    .from(socios)
+    .orderBy(asc(socios.criadoEm), asc(socios.nome));
+  return linhas.map((s, i) => ({
+    id: s.id,
+    nome: s.nome,
+    email: s.email,
+    area: s.area ?? "Sócio",
+    foco: s.area ?? "",
+    cor: CORES_SOCIOS[i % CORES_SOCIOS.length]!,
+  }));
 }
 
 export async function listarLeads(): Promise<Lead[]> {
@@ -119,7 +135,47 @@ export async function moverLead(leadId: string, etapa: EtapaId, socio: { id: str
   );
 }
 
-export async function listarHistorico(): Promise<EventoHistorico[]> {
-  // No Neon, o histórico entra na Fase 1.3 (consulta + tela com filtros já prontos).
-  return memoria().historico;
+export async function listarHistorico(limite = 300): Promise<EventoHistorico[]> {
+  if (modoDemo) return memoria().historico;
+  const [{ db }, { historico, socios, leads }, { desc, eq }] = await Promise.all([
+    import("@/db"),
+    import("@/db/schema"),
+    import("drizzle-orm"),
+  ]);
+  const linhas = await db
+    .select({
+      id: historico.id,
+      atorTipo: historico.atorTipo,
+      atorNome: socios.nome,
+      acao: historico.acao,
+      entidade: historico.entidade,
+      detalhes: historico.detalhes,
+      leadNome: leads.nome,
+      em: historico.criadoEm,
+    })
+    .from(historico)
+    .leftJoin(socios, eq(historico.atorId, socios.id))
+    .leftJoin(leads, eq(historico.entidadeId, leads.id))
+    .orderBy(desc(historico.criadoEm))
+    .limit(limite);
+
+  const acoes = ["criou", "editou", "excluiu", "moveu_etapa", "aprovou", "recusou", "executou"] as const;
+  return linhas.map((h) => {
+    const d = (h.detalhes ?? {}) as Record<string, unknown>;
+    const alvo = h.leadNome ?? (typeof d.nome === "string" ? d.nome : h.entidade);
+    const extra =
+      h.acao === "moveu_etapa" && typeof d.etapa === "string"
+        ? ` → ${nomeEtapa(d.etapa as EtapaId)}${typeof d.motivoPerda === "string" ? ` (${d.motivoPerda})` : ""}`
+        : typeof d.pontuacao === "number"
+          ? ` — ${d.pontuacao} pontos`
+          : "";
+    return {
+      id: h.id,
+      ator: { tipo: h.atorTipo, nome: h.atorNome ?? (h.atorTipo === "sistema" ? "Sistema" : "Agente") },
+      acao: (acoes as readonly string[]).includes(h.acao) ? (h.acao as EventoHistorico["acao"]) : "editou",
+      entidade: h.entidade,
+      descricao: `${alvo}${extra}`,
+      em: h.em.toISOString(),
+    };
+  });
 }

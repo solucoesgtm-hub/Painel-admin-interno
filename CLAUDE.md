@@ -5,7 +5,7 @@ datas dd/mm/aaaa, fuso America/Sao_Paulo. Especificação completa em `docs/PROM
 
 ## Stack
 Next.js 16 App Router + TypeScript, Tailwind 4 (tokens em `src/app/globals.css`),
-Neon + Drizzle (`src/db`, migrações em `drizzle/`), Auth.js v5 com Google (`src/auth.ts`),
+Neon + Drizzle (`src/db`, migrações em `drizzle/`), Auth.js v5 com e-mail e senha (`src/auth.ts`, hash scrypt em `src/lib/senha.ts`),
 Recharts, Zod, Vitest.
 
 ## Pastas
@@ -20,7 +20,7 @@ Recharts, Zod, Vitest.
 - `src/db/` — schema, conexão e consultas (padrão: toda alteração grava no `historico` no mesmo `db.batch`).
 
 ## Comandos
-`npm run dev` · `npm run build` · `npm run tipos` · `npm test` · `npm run db:gerar|db:migrar|db:socios|db:testar`
+`npm run dev` · `npm run build` · `npm run tipos` · `npm test` · `npm run db:gerar|db:migrar|db:socios|db:testar|db:senha`
 
 ## Convenções
 - Só o servidor acessa o banco. Toda entrada validada com Zod (`src/lib/regras`).
