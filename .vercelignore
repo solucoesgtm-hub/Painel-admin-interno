@@ -1,0 +1,10 @@
+# Nunca enviar segredos locais nem pastas de trabalho no deploy pela CLI
+.env
+.env.local
+.env.*.local
+.next
+node_modules
+gtm-hub-neon
+PROMPT-GTM-HUB.md
+.claude
+.impeccable
