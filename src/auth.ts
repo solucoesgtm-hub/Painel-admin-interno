@@ -31,16 +31,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: { email: { label: "E-mail", type: "email" }, senha: { label: "Senha", type: "password" } },
       async authorize(entrada) {
         const inicio = Date.now();
-        const falhar = async () => {
+        const falhar = async (motivo: string, email?: string) => {
+          // O motivo real fica só no log do servidor (Vercel → Logs); a tela mostra mensagem genérica.
+          const mascarado = email ? `${email.slice(0, 3)}***@${email.split("@")[1] ?? ""}` : "-";
+          console.warn(`[login] recusado: ${motivo} (${mascarado})`);
           // Tempo mínimo constante: dificulta tentativa em massa e não revela se o e-mail existe.
           await esperar(Math.max(0, 800 - (Date.now() - inicio)));
           throw new LoginInvalido();
         };
 
         const r = esquemaLogin.safeParse(entrada);
-        if (!r.success) return falhar();
+        if (!r.success) return falhar("formato_invalido");
         const { email, senha } = r.data;
-        if (emailsAutorizados.length && !emailsAutorizados.includes(email)) return falhar();
+        if (emailsAutorizados.length && !emailsAutorizados.includes(email)) return falhar("fora_de_SOCIOS_EMAILS", email);
 
         const [{ db }, { socios }, { eq }, { conferirSenha }] = await Promise.all([
           import("@/db"),
@@ -48,8 +51,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           import("drizzle-orm"),
           import("@/lib/senha"),
         ]);
-        const socio = await db.query.socios.findFirst({ where: eq(socios.email, email) });
-        if (!socio || !(await conferirSenha(senha, socio.senhaHash))) return falhar();
+        let socio;
+        try {
+          socio = await db.query.socios.findFirst({ where: eq(socios.email, email) });
+        } catch (e) {
+          console.error("[login] erro ao consultar o banco:", e instanceof Error ? e.message : e);
+          throw new Error("banco_indisponivel");
+        }
+        if (!socio) return falhar("email_nao_cadastrado", email);
+        if (!socio.senhaHash) return falhar("sem_senha_definida", email);
+        if (!(await conferirSenha(senha, socio.senhaHash))) return falhar("senha_incorreta", email);
 
         return { id: socio.id, email: socio.email, name: socio.nome };
       },
