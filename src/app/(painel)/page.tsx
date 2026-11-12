@@ -12,12 +12,12 @@ import {
   Medidor,
   Metrica,
 } from "@/components/ui/base";
-import { APROVACOES, EDITAIS, FATURAMENTO_MESES, MEI, MENSALIDADES, SOCIOS } from "@/lib/demo/dados";
+import { APROVACOES, EDITAIS, FATURAMENTO_MESES, MEI, MENSALIDADES } from "@/lib/demo/dados";
 import { brl, dataCurta, diasEntre, hojeISO, pct, relativo, somarDias } from "@/lib/formato";
 import { estaParado } from "@/lib/regras/funil";
 import { limiteMei, situacaoMei } from "@/lib/regras/mei";
 import { situacaoMensalidade } from "@/lib/regras/financeiro";
-import { listarLeads } from "@/lib/repositorio";
+import { listarLeads, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 function saudacao() {
@@ -27,7 +27,7 @@ function saudacao() {
 
 export default async function Inicio() {
   const socio = await exigirSocio();
-  const leads = await listarLeads();
+  const [leads, socios] = await Promise.all([listarLeads(), listarSocios()]);
   const hoje = hojeISO();
   const fimSemana = somarDias(hoje, 7);
 
@@ -117,7 +117,7 @@ export default async function Inicio() {
         <Cartao className="animate-surgir escala-3 xl:col-span-2">
           <CabecalhoCartao titulo="Próximos passos da semana" descricao="Por sócio, até a mesma data da semana que vem" />
           <div className="grid grid-cols-1 divide-y divide-areia md:grid-cols-3 md:divide-x md:divide-y-0">
-            {SOCIOS.map((s) => {
+            {socios.map((s) => {
               const meus = passos.filter((p) => p.donoId === s.id);
               return (
                 <div key={s.id} className="p-4">

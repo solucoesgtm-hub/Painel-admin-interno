@@ -18,12 +18,14 @@ Legenda: ✅ pronto · 🟡 tela pronta com dados de demonstração · ⬜ a faz
 - ✅ Regra: dono, próximo passo e data obrigatórios (Zod no servidor); motivo obrigatório em Perdido
 - ✅ Cards parados há mais de 7 dias marcados
 - ✅ Leads e mudanças de etapa gravam no Neon quando `DATABASE_URL` existe (com histórico no mesmo lote)
-- 🟡 Ficha do cliente (contatos, diagnóstico, proposta, projetos, contratos, pagamentos)
-- 🟡 Checklist de visita em 6 seções, salvo no aparelho a cada toque e funcionando sem sinal
+- ✅ Editar lead (dados, dono, próximo passo, data e valores da proposta), com histórico
+- ✅ Ficha do cliente com contatos, diagnósticos e proposta reais (projetos, contratos e pagamentos ainda de demonstração)
+- ✅ Checklist de visita em 6 seções: rascunho no aparelho (funciona sem sinal) e botão Salvar que grava no banco, com pontuação recalculada no servidor
 - ✅ Pontuação 0–100 (5 fatores, pesos), veredito, complexidade e calculadora de economia
-- ⬜ Sincronizar diagnóstico com o servidor ao voltar o sinal; pesos em tabela editável
+- ⬜ Enviar o rascunho sozinho ao voltar o sinal (hoje o sócio toca em Salvar); pesos em tabela editável
 - ⬜ Saídas com IA (resumo, proposta, PRD) via módulo único no servidor
-- 🟡 Painel de análise (conversão, tempo por etapa, origem, segmento, perdas, calibração)
+- ✅ Painel de análise calculado dos leads reais (conversão, dias na etapa atual, origem, segmento, perdas, calibração)
+- ⬜ Guardar a data de cada mudança de etapa para medir tempo médio por etapa e em que etapa o lead foi perdido
 
 ## Fase 3 — Editais e radar
 - 🟡 Lista com situação e veredito; ficha com requisitos × Perfil GTM (página + trecho), cronograma, critérios

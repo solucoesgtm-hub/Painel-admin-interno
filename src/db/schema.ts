@@ -63,6 +63,9 @@ export const leads = pgTable(
     proximoPasso: text("proximo_passo").notNull(),
     proximoPassoData: date("proximo_passo_data").notNull(),
     motivoPerda: text("motivo_perda"),
+    /** Proposta combinada com o cliente, em centavos (evita erro de arredondamento). */
+    valorImplantacaoCentavos: integer("valor_implantacao_centavos").notNull().default(0),
+    mensalidadeCentavos: integer("mensalidade_centavos").notNull().default(0),
     etapaDesde: timestamp("etapa_desde", { withTimezone: true }).notNull().defaultNow(),
     criadoEm,
     atualizadoEm,

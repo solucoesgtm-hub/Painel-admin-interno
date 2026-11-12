@@ -11,19 +11,21 @@ import {
   EstadoVazio,
   Medidor,
 } from "@/components/ui/base";
-import { CONTRATOS, MENSALIDADES, PROJETOS, socioPorId } from "@/lib/demo/dados";
+import { CONTRATOS, MENSALIDADES, PROJETOS } from "@/lib/demo/dados";
 import { brl, data, dataCurta, relativo } from "@/lib/formato";
 import { situacaoMensalidade } from "@/lib/regras/financeiro";
 import { estaParado, nomeEtapa } from "@/lib/regras/funil";
-import { buscarLead } from "@/lib/repositorio";
+import { buscarLead, listarDiagnosticos, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
+import { EditarLead } from "./editar";
 
 export default async function FichaCliente({ params }: { params: Promise<{ id: string }> }) {
   await exigirSocio();
   const { id } = await params;
   const l = await buscarLead(id);
   if (!l) notFound();
-  const dono = socioPorId(l.donoId);
+  const [socios, diagnosticos] = await Promise.all([listarSocios(), listarDiagnosticos(l.id)]);
+  const dono = socios.find((s) => s.id === l.donoId);
   const base = l.nome;
   const projetos = PROJETOS.filter((p) => p.cliente === base);
   const contratos = CONTRATOS.filter((c) => c.cliente === base);
@@ -56,6 +58,7 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
             <span>{data(l.proximoPassoData)} · {relativo(l.proximoPassoData)}</span>
             {dono && <span className="inline-flex items-center gap-1.5"><Avatar nome={dono.nome} cor={dono.cor} tamanho="sm" />{dono.nome}</span>}
           </div>
+          <EditarLead lead={l} socios={socios} />
         </div>
       </header>
 
@@ -87,7 +90,18 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
                   <EtiquetaVeredito v={l.veredito} />
                 </div>
                 <Medidor valor={l.pontuacao / 100} rotulo="Pontuação do diagnóstico" tom={l.veredito === "quente" ? "ok" : l.veredito === "morno" ? "alerta" : "azul"} />
-                <p className="text-xs text-tinta-3">Último diagnóstico registrado pelo dono do lead.</p>
+                {diagnosticos.length > 0 ? (
+                  <ul className="divide-y divide-areia border-t border-areia pt-1 text-[13px]">
+                    {diagnosticos.map((d) => (
+                      <li key={d.id} className="flex items-center justify-between gap-3 py-2">
+                        <span className="text-tinta-2">{data(d.criadoEm)} · {d.autor}</span>
+                        <span className="numeros font-medium">{d.pontuacao} pts</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-tinta-3">Pontuação do diagnóstico mais recente.</p>
+                )}
               </div>
             )}
           </Cartao>
@@ -96,13 +110,13 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
         <div className="space-y-4 lg:col-span-2">
           <Cartao>
             <CabecalhoCartao titulo="Proposta" descricao="Valores combinados com o cliente" />
-            {l.valorImplantacao ? (
+            {l.valorImplantacao || l.mensalidade ? (
               <div className="grid grid-cols-2 divide-x divide-areia">
                 <div className="p-5"><p className="text-xs text-tinta-3">Implantação</p><p className="numeros mt-1 text-xl font-semibold">{brl(l.valorImplantacao)}</p></div>
                 <div className="p-5"><p className="text-xs text-tinta-3">Mensalidade</p><p className="numeros mt-1 text-xl font-semibold">{brl(l.mensalidade)}</p></div>
               </div>
             ) : (
-              <EstadoVazio icone={Receipt} titulo="Nenhuma proposta ainda" texto="Depois do diagnóstico, gere o texto da proposta com IA e registre os valores aqui." />
+              <EstadoVazio icone={Receipt} titulo="Nenhuma proposta ainda" texto="Quando combinar os valores com o cliente, registre a implantação e a mensalidade em Editar." />
             )}
           </Cartao>
 

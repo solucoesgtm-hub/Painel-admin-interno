@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   Building2,
   Calculator,
@@ -10,6 +12,7 @@ import {
   ListChecks,
   MessageSquareWarning,
   Plus,
+  Save,
   ShieldAlert,
   Sparkles,
   Trash2,
@@ -17,8 +20,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Aviso, Botao, CabecalhoCartao, Campo, Cartao, Entrada, EtiquetaVeredito, Selecao, cn } from "@/components/ui/base";
+import { useAviso } from "@/components/ui/toast";
 import { brl } from "@/lib/formato";
 import { FATORES, PESOS_PADRAO, calcularPontuacao, complexidade, economia, veredito, type Fator, type Notas } from "@/lib/regras/pontuacao";
+import { acaoSalvarDiagnostico } from "./acoes";
 
 type Estado = {
   leadId: string;
@@ -88,6 +93,41 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
   const [carregado, setCarregado] = useState(false);
   const [online, setOnline] = useState(true);
   const [novaTarefa, setNovaTarefa] = useState("");
+  const [erroSalvar, setErroSalvar] = useState("");
+  const [salvoEm, setSalvoEm] = useState<string | null>(null);
+  const [salvando, iniciarSalvar] = useTransition();
+  const router = useRouter();
+  const avisar = useAviso();
+
+  function salvarNoServidor() {
+    setErroSalvar("");
+    if (!navigator.onLine) {
+      setErroSalvar("Sem sinal. O rascunho está guardado no aparelho; salve quando a internet voltar.");
+      return;
+    }
+    const leadId = e.leadId;
+    iniciarSalvar(async () => {
+      const r = await acaoSalvarDiagnostico({
+        leadId,
+        notas: e.notas,
+        tarefas: e.tarefas,
+        ferramentas: e.ferramentas,
+        reclamacoes: e.reclamacoes,
+        negocio: e.negocio,
+        numeros: e.numeros,
+        observacao: e.observacao,
+      });
+      if (!r.ok) {
+        setErroSalvar(r.mensagem);
+        return;
+      }
+      try { localStorage.removeItem(CHAVE(leadId)); } catch {}
+      setSalvoEm(leadId);
+      setE({ ...VAZIO });
+      avisar({ tom: "ok", texto: `Diagnóstico salvo: ${r.pontuacao} pontos` });
+      router.refresh();
+    });
+  }
 
   // Carrega rascunho salvo no aparelho (funciona sem sinal).
   useEffect(() => {
@@ -111,7 +151,8 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
     try { localStorage.setItem(CHAVE(e.leadId), JSON.stringify(e)); } catch {}
   }, [e, carregado]);
 
-  const atualizar = (p: Partial<Estado>) => setE((x) => ({ ...x, ...p, atualizadoEm: new Date().toISOString() }));
+  const atualizar = (p: Partial<Estado> | ((x: Estado) => Partial<Estado>)) =>
+    setE((x) => ({ ...x, ...(typeof p === "function" ? p(x) : p), atualizadoEm: new Date().toISOString() }));
 
   const pontos = calcularPontuacao(e.notas, PESOS_PADRAO);
   const v = veredito(pontos);
@@ -251,7 +292,7 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
                 <div role="radiogroup" aria-label={`Nota de ${f.nome}`} className="grid flex-1 grid-cols-6 gap-1.5">
                   {[0, 1, 2, 3, 4, 5].map((n) => (
                     <button key={n} type="button" role="radio" aria-checked={e.notas[f.id] === n}
-                      onClick={() => atualizar({ notas: { ...e.notas, [f.id as Fator]: n } })}
+                      onClick={() => atualizar((x) => ({ notas: { ...x.notas, [f.id as Fator]: n } }))}
                       className={cn("numeros min-h-11 rounded-md border text-sm font-medium transition",
                         e.notas[f.id] === n ? "border-azul bg-azul text-white" : e.notas[f.id] > n ? "border-azul/20 bg-azul-suave text-azul-escuro" : "border-areia-2 bg-superficie text-tinta-3")}>
                       {n}
@@ -283,6 +324,20 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
             <div className="flex justify-between px-5 py-3"><dt className="text-tinta-3">Seções completas</dt><dd className="numeros font-medium">{preenchidas.filter(Boolean).length}/6</dd></div>
           </dl>
         </Cartao>
+
+        <div className="mt-4 space-y-2">
+          <Botao icone={Save} onClick={salvarNoServidor} disabled={salvando} className="min-h-12 w-full">
+            {salvando ? "Salvando…" : "Salvar diagnóstico"}
+          </Botao>
+          {erroSalvar && <p role="alert" className="text-sm text-risco">{erroSalvar}</p>}
+          {salvoEm && !erroSalvar && (
+            <p role="status" className="text-sm text-ok">
+              Diagnóstico salvo na ficha do cliente.{" "}
+              <Link href={`/leads/${salvoEm}`} className="font-medium underline underline-offset-2">Abrir ficha</Link>
+            </p>
+          )}
+          <p className="text-xs text-tinta-3">Grava pontuação, veredito e respostas na ficha do lead. Antes disso, tudo fica só neste aparelho.</p>
+        </div>
 
         <Cartao className="mt-4">
           <CabecalhoCartao titulo="Saídas com IA" descricao="Geradas pelo servidor a partir do checklist" />

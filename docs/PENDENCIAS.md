@@ -14,6 +14,6 @@
 - Estudo do sistema e imagens dos protótipos em `docs/` — as telas foram desenhadas a partir da especificação; comparar quando chegarem.
 
 ## Decisões em aberto
-- Campos de proposta (implantação/mensalidade) e pontuação ainda não existem na tabela `leads` — criar migração na Fase 2.
-- Telas fora do funil (financeiro, editais, projetos etc.) ainda usam dados de demonstração mesmo com o Neon ligado.
+- Fora do bloco comercial (leads, diagnóstico, análise), as telas ainda usam dados de demonstração mesmo com o Neon ligado: financeiro, editais, projetos, contratos, produtos, agenda e automação. No Início, só leads e próximos passos são reais.
+- Não há como excluir um lead pela tela (decidir se será exclusão ou arquivamento).
 - Limite de tentativas de login por IP (hoje há só um atraso fixo por tentativa errada).

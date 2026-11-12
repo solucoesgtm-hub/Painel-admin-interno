@@ -15,6 +15,13 @@
       "when": 1794456762319,
       "tag": "0001_senha_socios",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794502363081,
+      "tag": "0002_proposta_leads",
+      "breakpoints": true
     }
   ]
 }

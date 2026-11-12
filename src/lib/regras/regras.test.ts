@@ -4,6 +4,9 @@ import { calcularPontuacao, complexidade, economia, PESOS_PADRAO, veredito } fro
 import { limiteMei, situacaoMei } from "./mei";
 import { conciliaAutomatico, dividirEntreSocios, situacaoMensalidade } from "./financeiro";
 import { normalizarMarcacao, vereditoEdital, type Requisito } from "./editais";
+import { calcularAnalise, type LeadAnalise } from "./analise";
+import { esquemaEditarLead } from "./funil";
+import { esquemaDiagnostico } from "./pontuacao";
 
 describe("funil", () => {
   it("marca como parado só depois de 7 dias e fora de manutenção/perdido", () => {
@@ -94,5 +97,49 @@ describe("editais", () => {
     expect(vereditoEdital([base]).tipo).toBe("apto");
     expect(vereditoEdital([base, { ...base, id: "2", eliminatorio: false, marcacao: "verificar" }]).tipo).toBe("apto_com_ajustes");
     expect(vereditoEdital([{ ...base, marcacao: "nao_atende" }]).tipo).toBe("nao_apto");
+  });
+});
+
+describe("análise de leads", () => {
+  const base: LeadAnalise = { etapa: "lead", etapaDesde: "2026-11-02T12:00:00Z", origem: "Indicação", segmento: "Padaria", motivoPerda: null, pontuacao: null };
+  const leads: LeadAnalise[] = [
+    base,
+    { ...base, etapa: "visita", pontuacao: 50 },
+    { ...base, etapa: "fechado", origem: "Instagram", pontuacao: 80 },
+    { ...base, etapa: "manutencao", pontuacao: 75 },
+    { ...base, etapa: "perdido", motivoPerda: "Preço acima do orçamento", pontuacao: 30, origem: "" },
+  ];
+  const a = calcularAnalise(leads, new Date("2026-11-12T12:00:00Z"));
+
+  it("conta quem chegou a cada etapa (perdido conta só como lead)", () => {
+    expect(a.conversao.map((c) => c.total)).toEqual([5, 3, 2, 2]);
+  });
+  it("calcula dias na etapa atual", () => {
+    expect(a.tempoMedio[0]).toEqual({ etapa: "Lead", dias: 10 });
+    expect(a.tempoMedio[2]!.dias).toBe(0);
+  });
+  it("agrupa origem, motivos e calibração", () => {
+    expect(a.origem[0]).toEqual({ origem: "Indicação", total: 3 });
+    expect(a.origem).toContainEqual({ origem: "Não informado", total: 1 });
+    expect(a.motivosPerda).toEqual([{ motivo: "Preço acima do orçamento", total: 1 }]);
+    expect(a.calibracao.map((c) => [c.leads, c.fecharam])).toEqual([[1, 0], [1, 0], [2, 2]]);
+  });
+  it("não quebra sem leads", () => {
+    expect(calcularAnalise([]).conversao.every((c) => c.total === 0)).toBe(true);
+  });
+});
+
+describe("edição de lead e diagnóstico", () => {
+  it("valida os valores da proposta", () => {
+    const ok = { leadId: "1", nome: "Exemplo", donoId: "s", proximoPasso: "Ligar", proximoPassoData: "2026-11-20", valorImplantacao: "1900", mensalidade: "290" };
+    expect(esquemaEditarLead.safeParse(ok).success).toBe(true);
+    expect(esquemaEditarLead.safeParse({ ...ok, mensalidade: "-5" }).success).toBe(false);
+    expect(esquemaEditarLead.safeParse({ ...ok, proximoPasso: "" }).success).toBe(false);
+  });
+  it("recusa nota fora de 0 a 5 e exige o lead", () => {
+    const d = { leadId: "1", notas: { dor: 5, orcamento: 4, urgencia: 3, decisor: 2, abertura: 1 }, tarefas: [], ferramentas: [], reclamacoes: [], negocio: { porte: "", tempo: "", atendimento: [] }, numeros: { atendimentosDia: "", horasSemana: "", custoHora: "", ticketMedio: "" } };
+    expect(esquemaDiagnostico.safeParse(d).success).toBe(true);
+    expect(esquemaDiagnostico.safeParse({ ...d, notas: { ...d.notas, dor: 9 } }).success).toBe(false);
+    expect(esquemaDiagnostico.safeParse({ ...d, leadId: "" }).success).toBe(false);
   });
 });

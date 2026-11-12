@@ -7,7 +7,15 @@ import { diagnosticos, historico, leads, type Etapa, type NovoDiagnostico, type 
 /** Leads de todas as etapas, com o dono, prontos para montar as colunas do funil. */
 export async function listarFunil() {
   return db.query.leads.findMany({
-    with: { dono: { columns: { id: true, nome: true } } },
+    with: {
+      dono: { columns: { id: true, nome: true } },
+      // Só o diagnóstico mais recente, para mostrar pontuação e veredito no card.
+      diagnosticos: {
+        columns: { pontuacao: true, veredito: true },
+        orderBy: [desc(diagnosticos.criadoEm)],
+        limit: 1,
+      },
+    },
     orderBy: [asc(leads.proximoPassoData)],
   });
 }
@@ -80,7 +88,31 @@ export async function moverEtapa(
   ]);
 }
 
-export async function salvarDiagnostico(dados: Omit<NovoDiagnostico, "id">) {
+/** Edita os dados do lead. O histórico guarda quais campos mudaram. */
+export async function atualizarLead(leadId: string, dados: Partial<Omit<NovoLead, "id">>, socioId: string) {
+  await db.batch([
+    db.update(leads).set(dados).where(eq(leads.id, leadId)),
+    db.insert(historico).values({
+      atorTipo: "socio",
+      atorId: socioId,
+      acao: "editou",
+      entidade: "lead",
+      entidadeId: leadId,
+      detalhes: { nome: dados.nome ?? null, campos: Object.keys(dados) },
+    }),
+  ]);
+}
+
+/** Diagnósticos de um lead, do mais recente para o mais antigo, com o nome de quem fez. */
+export async function listarDiagnosticos(leadId: string) {
+  return db.query.diagnosticos.findMany({
+    where: eq(diagnosticos.leadId, leadId),
+    orderBy: [desc(diagnosticos.criadoEm)],
+    with: { autor: { columns: { nome: true } } },
+  });
+}
+
+export async function salvarDiagnostico(dados: Omit<NovoDiagnostico, "id">, leadNome?: string) {
   const id = crypto.randomUUID();
   await db.batch([
     db.insert(diagnosticos).values({ ...dados, id }),
@@ -90,7 +122,7 @@ export async function salvarDiagnostico(dados: Omit<NovoDiagnostico, "id">) {
       acao: "criou",
       entidade: "diagnostico",
       entidadeId: id,
-      detalhes: { leadId: dados.leadId, veredito: dados.veredito, pontuacao: dados.pontuacao },
+      detalhes: { nome: leadNome ?? null, leadId: dados.leadId, veredito: dados.veredito, pontuacao: dados.pontuacao },
     }),
   ]);
   return id;

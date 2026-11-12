@@ -1,8 +1,8 @@
 "use server";
 // Server actions do funil. Toda ação confere o login e valida a entrada com Zod.
 import { revalidatePath } from "next/cache";
-import { esquemaMoverEtapa, esquemaNovoLead } from "@/lib/regras/funil";
-import { criarLead, moverLead } from "@/lib/repositorio";
+import { esquemaEditarLead, esquemaMoverEtapa, esquemaNovoLead } from "@/lib/regras/funil";
+import { atualizarLead, criarLead, moverLead } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 export type Resultado = { ok: true; id?: string } | { ok: false; erros: Record<string, string>; mensagem: string };
@@ -38,5 +38,24 @@ export async function acaoMoverLead(dados: unknown): Promise<Resultado> {
     return { ok: true };
   } catch {
     return { ok: false, erros: {}, mensagem: "Não foi possível mover o card. Tente de novo." };
+  }
+}
+
+export async function acaoEditarLead(dados: unknown): Promise<Resultado> {
+  const socio = await exigirSocio();
+  const r = esquemaEditarLead.safeParse(dados);
+  if (!r.success) {
+    const erros: Record<string, string> = {};
+    for (const i of r.error.issues) erros[String(i.path[0])] ??= i.message;
+    return { ok: false, erros, mensagem: "Confira os campos destacados." };
+  }
+  try {
+    await atualizarLead(r.data, socio);
+    revalidatePath("/leads");
+    revalidatePath(`/leads/${r.data.leadId}`);
+    revalidatePath("/");
+    return { ok: true };
+  } catch {
+    return { ok: false, erros: {}, mensagem: "Não foi possível salvar as alterações. Tente de novo." };
   }
 }

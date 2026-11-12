@@ -41,6 +41,16 @@ export const esquemaNovoLead = z.object({
 });
 export type DadosNovoLead = z.infer<typeof esquemaNovoLead>;
 
+const reais = z.coerce.number({ message: "Informe um valor em reais." }).min(0, "O valor não pode ser negativo.").max(1_000_000);
+
+/** Edição do lead: as mesmas regras do cadastro, mais os valores da proposta. */
+export const esquemaEditarLead = esquemaNovoLead.extend({
+  leadId: z.string().min(1),
+  valorImplantacao: reais,
+  mensalidade: reais,
+});
+export type DadosEditarLead = z.infer<typeof esquemaEditarLead>;
+
 export const esquemaMoverEtapa = z
   .object({
     leadId: z.string().min(1),
