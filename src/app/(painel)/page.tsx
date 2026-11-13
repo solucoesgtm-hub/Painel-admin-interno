@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
+  ArrowUpRight,
   BadgeCheck,
   CalendarClock,
   CalendarX2,
@@ -13,7 +14,10 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { Avatar, CabecalhoCartao, Cartao, cn, type Tom } from "@/components/ui/base";
+import { PainelEntradas } from "@/components/graficos";
+import { Anel } from "@/components/ui/anel";
+import { Avatar, CabecalhoCartao, Cartao, LinkIcone, cn, type Tom } from "@/components/ui/base";
+import { Contagem } from "@/components/ui/contagem";
 import { APROVACOES, EDITAIS, FATURAMENTO_MESES, MEI, MENSALIDADES, PERFIL_GTM } from "@/lib/demo/dados";
 import { brl, dataCurta, diasEntre, hojeISO, pct, relativo, somarDias } from "@/lib/formato";
 import { situacaoMensalidade } from "@/lib/regras/financeiro";
@@ -152,9 +156,9 @@ export default async function Inicio() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {/* ---------- Hoje ---------- */}
-        <Cartao className="animate-surgir lg:col-span-2">
+        <Cartao className="animate-surgir xl:col-span-2">
           <CabecalhoCartao titulo="Hoje" descricao="Atrasos, prazos e decisões, por ordem de urgência" />
           {prioridades.length === 0 ? (
             <div className="flex items-center gap-4 px-6 py-10">
@@ -196,16 +200,15 @@ export default async function Inicio() {
         {/* ---------- Caixa do mês ---------- */}
         <section
           aria-labelledby="caixa-titulo"
-          className="animate-surgir escala-1 relative flex flex-col overflow-hidden rounded-xl bg-grafite p-6 lg:self-start text-white shadow-[0_18px_40px_-18px_rgb(18_21_31/0.55)]"
+          className="animate-surgir escala-1 relative flex flex-col overflow-hidden rounded-xl bg-grafite p-6 xl:self-start text-white shadow-[0_18px_40px_-18px_rgb(18_21_31/0.55)]"
         >
           <span aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-azul/40 blur-3xl" />
           <div className="relative flex items-center justify-between">
             <h2 id="caixa-titulo" className="text-base font-semibold">Caixa do mês</h2>
-            <Link href="/financeiro" className="inline-flex min-h-9 items-center gap-1 rounded-full px-2 text-sm text-azul-claro hover:text-white">
-              Financeiro <ArrowRight aria-hidden className="size-4" />
-            </Link>
+            <LinkIcone href="/financeiro" icone={ArrowUpRight} rotulo="Abrir financeiro"
+              className="border-white/10 bg-white/[0.06] text-white hover:border-white/25 hover:bg-white/10 hover:text-white" />
           </div>
-          <p className="numeros relative mt-6 text-[40px] font-semibold leading-none tracking-[-0.03em]">{brl(mesAtual.entradas)}</p>
+          <p className="relative mt-5 text-[36px] font-semibold sm:text-[40px] leading-none tracking-[-0.03em]"><Contagem valor={mesAtual.entradas} formato="brl" /></p>
           <p className="relative mt-2 text-sm text-nevoa">
             entradas ·{" "}
             <span className={variacao >= 0 ? "text-[#5fd39a]" : "text-[#ff8f7a]"}>
@@ -223,60 +226,21 @@ export default async function Inicio() {
               <dd className="numeros mt-0.5 text-lg font-semibold">{brl(mesAtual.saidas)}</dd>
             </div>
           </dl>
-          <div className="relative mt-auto pt-6">
-            <div className="mb-2 flex justify-between text-sm">
-              <span className="text-nevoa">Teto do MEI</span>
-              <span className="numeros font-medium">{pct(mei.uso)}</span>
+          <div className="relative mt-6 flex items-center gap-5 rounded-2xl bg-white/[0.05] p-4 ring-1 ring-white/[0.06]">
+            <Anel valor={mei.uso} marca={0.8} claro tamanho={96} espessura={10} rotulo="Uso do teto do MEI"
+              corValor={mei.nivel === "ok" ? "#7fa2ff" : "#f2b84b"}>
+              <span className="numeros text-lg font-semibold">{pct(mei.uso)}</span>
+            </Anel>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Teto do MEI</p>
+              <p className="mt-1 text-xs leading-relaxed text-nevoa">Restam {brl(mei.restante)} no ano. O ponto branco marca o alerta em 80%.</p>
             </div>
-            <div
-              role="meter"
-              aria-label="Uso do teto do MEI"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(mei.uso * 100)}
-              className="relative h-2 rounded-full bg-white/10"
-            >
-              <div className={cn("h-full rounded-full", mei.nivel === "ok" ? "bg-azul-claro" : "bg-[#f2b84b]")} style={{ width: `${Math.min(mei.uso, 1) * 100}%` }} />
-              <span aria-hidden className="absolute -top-1 h-4 w-0.5 rounded bg-white/60" style={{ left: "80%" }} />
-            </div>
-            <p className="mt-2 text-xs text-nevoa">Restam {brl(mei.restante)} no ano · alerta em 80%</p>
           </div>
         </section>
 
-        {/* ---------- Funil ---------- */}
-        <Cartao className="animate-surgir escala-2 lg:col-span-2">
-          <CabecalhoCartao
-            titulo="Funil"
-            descricao={`${totalFunil} ativos · ${brl(emNegociacao)}/mês em negociação`}
-            acao={<Link href="/leads" className="inline-flex min-h-9 items-center gap-1 rounded-full px-2 text-sm font-medium text-azul-escuro hover:underline">Abrir funil <ArrowRight aria-hidden className="size-4" /></Link>}
-          />
-          <div className="p-5 sm:p-6">
-            {totalFunil === 0 ? (
-              <p className="py-6 text-center text-sm text-tinta-3">
-                Nenhum lead ativo. <Link href="/leads?novo=1" className="font-medium text-azul-escuro underline underline-offset-2">Cadastre o primeiro</Link>.
-              </p>
-            ) : (
-              <>
-                <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" aria-hidden>
-                  {etapasFunil.filter((e) => e.total).map((e) => (
-                    <span key={e.id} style={{ flexGrow: e.total, background: COR_ETAPA[e.id] }} />
-                  ))}
-                </div>
-                <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                  {etapasFunil.map((e) => (
-                    <li key={e.id} className="flex items-start gap-2.5">
-                      <span aria-hidden className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: COR_ETAPA[e.id] }} />
-                      <span>
-                        <span className="block text-[13px] text-tinta-3">{e.nome}</span>
-                        <span className="numeros block text-xl font-semibold leading-tight">{e.total}</span>
-                        {e.valor > 0 && <span className="numeros block text-xs text-tinta-3">{brl(e.valor)}/mês</span>}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
+        {/* ---------- Entradas por período ---------- */}
+        <Cartao className="animate-surgir escala-2 xl:col-span-2">
+          <PainelEntradas dados={FATURAMENTO_MESES} titulo="Entradas e saídas" />
         </Cartao>
 
         {/* ---------- Sua semana ---------- */}
@@ -317,6 +281,43 @@ export default async function Inicio() {
             </ul>
           </div>
         </Cartao>
+
+        {/* ---------- Funil ---------- */}
+        <Cartao className="animate-surgir escala-4 xl:col-span-3">
+          <CabecalhoCartao
+            titulo="Funil"
+            descricao={`${totalFunil} ativos · ${brl(emNegociacao)}/mês em negociação`}
+            acao={<LinkIcone href="/leads" icone={ArrowUpRight} rotulo="Abrir funil" />}
+          />
+          <div className="p-5 sm:p-6">
+            {totalFunil === 0 ? (
+              <p className="py-6 text-center text-sm text-tinta-3">
+                Nenhum lead ativo. <Link href="/leads?novo=1" className="font-medium text-azul-escuro underline underline-offset-2">Cadastre o primeiro</Link>.
+              </p>
+            ) : (
+              <>
+                <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+                  {etapasFunil.filter((e) => e.total).map((e) => (
+                    <span key={e.id} style={{ flexGrow: e.total, background: COR_ETAPA[e.id] }} />
+                  ))}
+                </div>
+                <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-6">
+                  {etapasFunil.map((e) => (
+                    <li key={e.id} className="flex items-start gap-2.5">
+                      <span aria-hidden className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: COR_ETAPA[e.id] }} />
+                      <span>
+                        <span className="block text-[13px] text-tinta-3">{e.nome}</span>
+                        <span className="block text-2xl font-semibold leading-tight"><Contagem valor={e.total} /></span>
+                        {e.valor > 0 && <span className="numeros block text-xs text-tinta-3">{brl(e.valor)}/mês</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </Cartao>
+
       </div>
 
       {(atrasados.length > 0 || parados.length > 0) && (

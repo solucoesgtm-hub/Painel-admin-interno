@@ -109,7 +109,7 @@ export const AreaTexto = ({ className, ...p }: ComponentProps<"textarea">) => (
 /* ---------------- Cartão ---------------- */
 export function Cartao({ className, children, ...p }: ComponentProps<"section">) {
   return (
-    <section className={cn("relative rounded-xl border border-areia bg-papel shadow-cartao", className)} {...p}>
+    <section className={cn("relative rounded-xl border border-areia/80 bg-papel shadow-cartao", className)} {...p}>
       {children}
     </section>
   );
@@ -127,7 +127,7 @@ export function CabecalhoCartao({
   className?: string;
 }) {
   return (
-    <header className={cn("flex items-start justify-between gap-3 border-b border-areia px-5 py-4 sm:px-6", className)}>
+    <header className={cn("flex items-center justify-between gap-3 border-b border-areia/80 px-5 py-4 sm:px-6", className)}>
       <div className="min-w-0">
         <h2 className="text-base font-semibold tracking-tight text-tinta">{titulo}</h2>
         {descricao && <p className="mt-0.5 text-[13px] text-tinta-3">{descricao}</p>}
@@ -413,5 +413,49 @@ export function Medidor({
         <span aria-hidden className="absolute -top-1 h-4 w-0.5 rounded bg-tinta/50" style={{ left: `${marca * 100}%` }} />
       )}
     </div>
+  );
+}
+
+/* ---------------- Botão redondo de ícone (ferramentas de cartão) ---------------- */
+export function BotaoIcone({
+  icone: Icone,
+  rotulo,
+  className,
+  ...p
+}: ComponentProps<"button"> & { icone: LucideIcon; rotulo: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={rotulo}
+      title={rotulo}
+      className={cn(
+        "grid size-10 place-items-center rounded-full border border-areia bg-papel text-tinta-2 transition-colors hover:border-tinta-3/40 hover:bg-superficie-2 hover:text-tinta",
+        className,
+      )}
+      {...p}
+    >
+      <Icone aria-hidden className="size-4" />
+    </button>
+  );
+}
+
+export function LinkIcone({
+  icone: Icone,
+  rotulo,
+  className,
+  ...p
+}: ComponentProps<typeof Link> & { icone: LucideIcon; rotulo: string }) {
+  return (
+    <Link
+      aria-label={rotulo}
+      title={rotulo}
+      className={cn(
+        "grid size-10 place-items-center rounded-full border border-areia bg-papel text-tinta-2 transition-colors hover:border-tinta-3/40 hover:bg-superficie-2 hover:text-tinta",
+        className,
+      )}
+      {...p}
+    >
+      <Icone aria-hidden className="size-4" />
+    </Link>
   );
 }

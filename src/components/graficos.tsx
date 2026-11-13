@@ -1,7 +1,10 @@
 "use client";
 // Gráficos do Hub (Recharts). Paleta validada para daltonismo; marcas finas,
 // grade discreta, dica ao passar o mouse e rótulos diretos quando ajudam.
+import { useId, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -124,6 +127,134 @@ export function GraficoBarrasH({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** Área com gradiente para uma série principal e linha tracejada para a comparação, na mesma escala. */
+export function GraficoArea({
+  dados,
+  x,
+  principal,
+  comparacao,
+  formato = "brl",
+  altura = 240,
+}: {
+  dados: Record<string, string | number>[];
+  x: string;
+  principal: { chave: string; nome: string };
+  comparacao?: { chave: string; nome: string };
+  formato?: Formato;
+  altura?: number;
+}) {
+  const id = useId().replace(/:/g, "");
+  return (
+    <div style={{ height: altura }} className="w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={dados} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id={`area-${id}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={SERIES[0]} stopOpacity={0.32} />
+              <stop offset="100%" stopColor={SERIES[0]} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke={GRADE} />
+          <XAxis dataKey={x} tickLine={false} axisLine={false} tick={eixo} dy={6} />
+          <YAxis tickLine={false} axisLine={false} tick={eixo} width={formato === "brl" ? 64 : 36} tickFormatter={(v) => fmtEixo(formato, v)} />
+          <Tooltip
+            cursor={{ stroke: "#3f6fd8", strokeWidth: 1, strokeDasharray: "3 3" }}
+            content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />}
+          />
+          {comparacao && (
+            <Area type="monotone" dataKey={comparacao.chave} name={comparacao.nome} stroke={SERIES[1]} strokeWidth={2}
+              strokeDasharray="5 5" fill="none" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
+          )}
+          <Area type="monotone" dataKey={principal.chave} name={principal.nome} stroke={SERIES[0]} strokeWidth={2.5}
+            fill={`url(#area-${id})`} dot={false} activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** Abas em cápsula (ex.: 3, 6, 12 meses). */
+export function AbasPeriodo<T extends string>({
+  opcoes,
+  valor,
+  aoMudar,
+  rotulo,
+}: {
+  opcoes: { id: T; nome: string }[];
+  valor: T;
+  aoMudar: (v: T) => void;
+  rotulo: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label={rotulo} className="inline-flex rounded-full bg-superficie-2 p-1">
+      {opcoes.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          role="radio"
+          aria-checked={valor === o.id}
+          onClick={() => aoMudar(o.id)}
+          className={
+            "min-h-9 rounded-full px-3.5 text-[13px] font-medium transition-[background,color,box-shadow] duration-200 " +
+            (valor === o.id ? "bg-papel text-tinta shadow-[0_1px_3px_rgb(18_21_31/0.12)]" : "text-tinta-3 hover:text-tinta")
+          }
+        >
+          {o.nome}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const PERIODOS = [
+  { id: "3", nome: "3 meses" },
+  { id: "6", nome: "6 meses" },
+  { id: "12", nome: "12 meses" },
+] as const;
+type Periodo = (typeof PERIODOS)[number]["id"];
+
+/** Cartão de entradas x saídas com escolha de período, total do período e variação. */
+export function PainelEntradas({
+  dados,
+  titulo = "Entradas e saídas",
+  inicial = "6",
+}: {
+  dados: { mes: string; entradas: number; saidas: number }[];
+  titulo?: string;
+  inicial?: Periodo;
+}) {
+  const [periodo, setPeriodo] = useState<Periodo>(inicial);
+  const corte = dados.slice(-Number(periodo));
+  const total = corte.reduce((a, d) => a + d.entradas, 0);
+  const primeiro = corte[0]?.entradas ?? 0;
+  const ultimo = corte.at(-1)?.entradas ?? 0;
+  const crescimento = primeiro ? (ultimo - primeiro) / primeiro : 0;
+  return (
+    <div>
+      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5 sm:px-6">
+        <div>
+          <h2 className="text-base font-semibold tracking-tight text-tinta">{titulo}</h2>
+          <p className="mt-1 text-[13px] text-tinta-3">
+            <span className="numeros font-semibold text-tinta">{brl(total)}</span> de entradas no período ·{" "}
+            <span className={crescimento >= 0 ? "text-ok" : "text-risco"}>
+              {crescimento >= 0 ? "▲" : "▼"} {Math.abs(Math.round(crescimento * 100))}%
+            </span>{" "}
+            do primeiro ao último mês
+          </p>
+        </div>
+        <AbasPeriodo opcoes={[...PERIODOS]} valor={periodo} aoMudar={setPeriodo} rotulo="Período do gráfico" />
+      </div>
+      <div className="flex flex-wrap gap-4 px-5 pt-4 text-xs text-tinta-2 sm:px-6">
+        <span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-0.5 w-4 rounded bg-[#3f6fd8]" />Entradas</span>
+        <span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-0 w-4 border-t-2 border-dashed border-[#eb6834]" />Saídas</span>
+      </div>
+      <div className="px-2 pb-4 pt-2 sm:px-4">
+        <GraficoArea dados={corte} x="mes" principal={{ chave: "entradas", nome: "Entradas" }} comparacao={{ chave: "saidas", nome: "Saídas" }} />
+      </div>
     </div>
   );
 }

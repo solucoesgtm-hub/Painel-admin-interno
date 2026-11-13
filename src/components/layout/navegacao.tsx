@@ -118,10 +118,12 @@ function ListaNav({
   contadores,
   aoNavegar,
   compacta = false,
+  aoDica,
 }: {
   contadores: Record<string, number>;
   aoNavegar?: () => void;
   compacta?: boolean;
+  aoDica?: (d: { texto: string; y: number } | null) => void;
 }) {
   const atual = usePathname();
   return (
@@ -144,10 +146,13 @@ function ListaNav({
                     onClick={aoNavegar}
                     aria-current={sel ? "page" : undefined}
                     aria-label={compacta ? `${i.nome}${n ? `, ${n} pendentes` : ""}` : undefined}
-                    title={compacta ? i.nome : undefined}
+                    onMouseEnter={(e) => compacta && aoDica?.({ texto: i.nome, y: e.currentTarget.getBoundingClientRect().top + 22 })}
+                    onMouseLeave={() => aoDica?.(null)}
+                    onFocus={(e) => compacta && aoDica?.({ texto: i.nome, y: e.currentTarget.getBoundingClientRect().top + 22 })}
+                    onBlur={() => aoDica?.(null)}
                     className={cn(
-                      "group relative flex min-h-11 items-center rounded-lg text-[14px] transition-[background,color] duration-150 focus-visible:outline-azul-claro",
-                      compacta ? "justify-center" : "gap-3 px-3",
+                      "group relative flex min-h-11 items-center rounded-xl text-[14px] transition-[background,color] duration-150 focus-visible:outline-azul-claro",
+                      compacta ? "mx-auto size-11 justify-center" : "gap-3 px-3",
                       sel
                         ? "bg-azul text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_8px_20px_-10px_rgb(63_111_216/0.9)]"
                         : "text-[#c3c8d8] hover:bg-white/[0.06] hover:text-white",
@@ -186,49 +191,72 @@ export function MenuLateral({
   recolhida: boolean;
   aoAlternar: () => void;
 }) {
+  const [dica, setDica] = useState<{ texto: string; y: number } | null>(null);
+  const dicaDe = (texto: string) => (e: { currentTarget: HTMLElement }) =>
+    recolhida && setDica({ texto, y: e.currentTarget.getBoundingClientRect().top + e.currentTarget.offsetHeight / 2 });
+
   return (
-    <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-30 hidden flex-col overflow-hidden bg-grafite transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:flex",
-        recolhida ? "w-[76px]" : "w-[264px]",
-      )}
-    >
-      <span aria-hidden className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-azul/25 blur-3xl" />
-      <div className={cn("relative flex h-16 shrink-0 items-center", recolhida ? "justify-center" : "px-5")}>
-        <Link href="/" aria-label="GTM Hub, início" className="rounded-lg">
-          <Logo compacto={recolhida} />
-        </Link>
-      </div>
-      <div className={cn("rolagem-escura relative flex-1 overflow-y-auto overflow-x-hidden pb-6 pt-3", recolhida ? "px-3.5" : "px-3")}>
-        <ListaNav contadores={contadores} compacta={recolhida} />
-      </div>
-      <div className="relative border-t border-white/[0.07] p-3">
-        {recolhida ? (
-          <span
-            title={usuario.nome}
-            className="mx-auto grid size-10 place-items-center rounded-full text-sm font-semibold text-white ring-2 ring-white/10"
-            style={{ background: usuario.cor }}
-          >
-            {usuario.nome.slice(0, 1)}
-          </span>
-        ) : (
-          <Conta usuario={usuario} sair={sair} />
+    <>
+      <aside
+        className={cn(
+          "fixed bottom-3 left-3 top-3 z-30 hidden flex-col overflow-hidden rounded-[26px] bg-grafite shadow-[0_24px_60px_-20px_rgb(18_21_31/0.55),inset_0_1px_0_rgb(255_255_255/0.06)] ring-1 ring-white/[0.06] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:flex",
+          recolhida ? "w-[76px]" : "w-[256px]",
         )}
-        <button
-          type="button"
-          onClick={aoAlternar}
-          aria-label={recolhida ? "Expandir menu" : "Recolher menu"}
-          title={recolhida ? "Expandir menu" : "Recolher menu"}
-          className={cn(
-            "mt-2 flex min-h-10 w-full items-center gap-3 rounded-lg text-[13px] text-nevoa transition-colors hover:bg-white/[0.06] hover:text-white",
-            recolhida ? "justify-center" : "px-3",
+      >
+        <span aria-hidden className="pointer-events-none absolute -left-20 -top-24 size-64 rounded-full bg-azul/30 blur-3xl" />
+        <div className={cn("relative flex h-[72px] shrink-0 items-center", recolhida ? "justify-center" : "px-5")}>
+          <Link href="/" aria-label="GTM Hub, início" className="rounded-xl">
+            <Logo compacto={recolhida} />
+          </Link>
+        </div>
+        <div className={cn("rolagem-escura relative flex-1 overflow-y-auto overflow-x-hidden pb-4 pt-2", recolhida ? "px-0" : "px-3")}>
+          <ListaNav contadores={contadores} compacta={recolhida} aoDica={setDica} />
+        </div>
+        <div className={cn("relative border-t border-white/[0.07]", recolhida ? "flex flex-col items-center gap-2 py-3" : "p-3")}>
+          {recolhida ? (
+            <span
+              tabIndex={0}
+              aria-label={`Conta de ${usuario.nome}`}
+              onMouseEnter={dicaDe(usuario.nome)}
+              onFocus={dicaDe(usuario.nome)}
+              onMouseLeave={() => setDica(null)}
+              onBlur={() => setDica(null)}
+              className="grid size-10 place-items-center rounded-full text-sm font-semibold text-white ring-2 ring-white/10"
+              style={{ background: usuario.cor }}
+            >
+              {usuario.nome.slice(0, 1)}
+            </span>
+          ) : (
+            <Conta usuario={usuario} sair={sair} />
           )}
+          <button
+            type="button"
+            onClick={() => { setDica(null); aoAlternar(); }}
+            onMouseEnter={dicaDe("Expandir menu")}
+            onFocus={dicaDe("Expandir menu")}
+            onMouseLeave={() => setDica(null)}
+            onBlur={() => setDica(null)}
+            aria-label={recolhida ? "Expandir menu" : "Recolher menu"}
+            className={cn(
+              "flex min-h-10 items-center gap-3 rounded-xl text-[13px] text-nevoa transition-colors hover:bg-white/[0.06] hover:text-white",
+              recolhida ? "size-10 justify-center" : "mt-2 w-full px-3",
+            )}
+          >
+            {recolhida ? <PanelLeftOpen aria-hidden className="size-[18px]" /> : <PanelLeftClose aria-hidden className="size-[18px]" />}
+            {!recolhida && "Recolher menu"}
+          </button>
+        </div>
+      </aside>
+      {recolhida && dica && (
+        <span
+          role="tooltip"
+          className="animate-entrar-modal pointer-events-none fixed left-[100px] z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-grafite px-3 py-1.5 text-[13px] font-medium text-white shadow-flutuante lg:block"
+          style={{ top: dica.y }}
         >
-          {recolhida ? <PanelLeftOpen aria-hidden className="size-[18px]" /> : <PanelLeftClose aria-hidden className="size-[18px]" />}
-          {!recolhida && "Recolher menu"}
-        </button>
-      </div>
-    </aside>
+          {dica.texto}
+        </span>
+      )}
+    </>
   );
 }
 

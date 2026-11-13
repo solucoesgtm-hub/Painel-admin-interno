@@ -75,7 +75,7 @@ export function Casca({
       </a>
       <MenuLateral contadores={contadores} usuario={usuario} sair={sair} recolhida={recolhida} aoAlternar={alternar} />
 
-      <div className={cn("transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]", recolhida ? "lg:pl-[76px]" : "lg:pl-[264px]")}>
+      <div className={cn("transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]", recolhida ? "lg:pl-[92px]" : "lg:pl-[272px]")}>
         <BarraSuperior data={data} selo={selo} aoBuscar={() => setPaletaAberta(true)} />
         <main id="conteudo" className="mx-auto max-w-[1360px] px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-8">
           {children}
@@ -105,7 +105,7 @@ function BarraSuperior({ data, selo, aoBuscar }: { data: string; selo: string; a
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-areia/80 bg-offwhite/90 backdrop-blur-md">
+    <header className="sticky top-0 z-20 bg-offwhite/75 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_85%,transparent)]">
       <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-3 px-4 sm:px-6 lg:px-10">
         <span className="shrink-0 lg:hidden">
           <Logo escuro compacto />

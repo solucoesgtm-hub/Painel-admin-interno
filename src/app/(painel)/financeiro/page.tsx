@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArrowDownLeft, ArrowUpRight, Download, Landmark, Link2, PiggyBank, Receipt, Scale } from "lucide-react";
-import { GraficoColunas } from "@/components/graficos";
+import { PainelEntradas } from "@/components/graficos";
+import { Contagem } from "@/components/ui/contagem";
 import {
   Avatar,
   Aviso,
@@ -50,18 +51,15 @@ export default async function Financeiro() {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metrica destaque className="animate-surgir escala-1" rotulo="Saldo em conta" valor={brl(saldo)} icone={Landmark} tom="azul" detalhe="Atualizado agora · provedor demo" />
-        <Metrica className="animate-surgir escala-2" rotulo="Entradas do mês" valor={brl(mes.entradas)} icone={ArrowDownLeft} tom="ok" detalhe={`${EXTRATO.filter((e) => e.tipo === "entrada").length} recebimentos`} />
-        <Metrica className="animate-surgir escala-3" rotulo="Saídas do mês" valor={brl(mes.saidas)} icone={ArrowUpRight} tom="risco" detalhe={`Custos fixos: ${brl(custoFixo)}`} />
-        <Metrica className="animate-surgir escala-4" rotulo="Resultado do mês" valor={brl(resultado)} icone={PiggyBank} tom="azul" detalhe={`Margem de ${pct(resultado / mes.entradas)}`} />
+        <Metrica destaque className="animate-surgir escala-1" rotulo="Saldo em conta" valor={<Contagem valor={saldo} formato="brl" />} icone={Landmark} tom="azul" detalhe="Atualizado agora · provedor demo" />
+        <Metrica className="animate-surgir escala-2" rotulo="Entradas do mês" valor={<Contagem valor={mes.entradas} formato="brl" />} icone={ArrowDownLeft} tom="ok" detalhe={`${EXTRATO.filter((e) => e.tipo === "entrada").length} recebimentos`} />
+        <Metrica className="animate-surgir escala-3" rotulo="Saídas do mês" valor={<Contagem valor={mes.saidas} formato="brl" />} icone={ArrowUpRight} tom="risco" detalhe={`Custos fixos: ${brl(custoFixo)}`} />
+        <Metrica className="animate-surgir escala-4" rotulo="Resultado do mês" valor={<Contagem valor={resultado} formato="brl" />} icone={PiggyBank} tom="azul" detalhe={`Margem de ${pct(resultado / mes.entradas)}`} />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Cartao className="animate-surgir escala-2 xl:col-span-2">
-          <CabecalhoCartao titulo="Entradas e saídas" descricao="Últimos 6 meses, mesma escala" />
-          <div className="px-3 pb-4 pt-3 sm:px-5">
-            <GraficoColunas dados={FATURAMENTO_MESES} x="mes" series={[{ chave: "entradas", nome: "Entradas" }, { chave: "saidas", nome: "Saídas" }]} formato="brl" altura={280} />
-          </div>
+          <PainelEntradas dados={FATURAMENTO_MESES} />
         </Cartao>
         <Cartao className="animate-surgir escala-3">
           <CabecalhoCartao titulo="Divisão do resultado" descricao="Partes iguais entre os três sócios" />

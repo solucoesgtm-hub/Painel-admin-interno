@@ -99,6 +99,12 @@ export const HISTORICO_INICIAL: EventoHistorico[] = [
 
 // ---------- Financeiro ----------
 export const FATURAMENTO_MESES = [
+  { mes: "dez", entradas: 2100, saidas: 1290 },
+  { mes: "jan", entradas: 2580, saidas: 1380 },
+  { mes: "fev", entradas: 2870, saidas: 1420 },
+  { mes: "mar", entradas: 3310, saidas: 1510 },
+  { mes: "abr", entradas: 3640, saidas: 1560 },
+  { mes: "mai", entradas: 3990, saidas: 1600 },
   { mes: "jun", entradas: 4300, saidas: 1650 },
   { mes: "jul", entradas: 5120, saidas: 1720 },
   { mes: "ago", entradas: 6240, saidas: 2100 },
