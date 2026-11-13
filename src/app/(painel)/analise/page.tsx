@@ -59,7 +59,7 @@ export default async function Analise() {
                 return (
                   <li key={e.etapa} className="grid grid-cols-[88px_1fr_auto] items-center gap-3">
                     <span className="text-sm text-tinta-2">{e.etapa}</span>
-                    <div className="h-8 rounded-[4px] bg-offwhite">
+                    <div className="h-8 rounded-[4px] bg-superficie-2">
                       <div className="flex h-full items-center rounded-[4px] bg-azul px-2.5 text-xs font-medium text-white" style={{ width: `${Math.max(largura * 100, 12)}%`, opacity: 1 - i * 0.14 }}>
                         <span className="numeros">{e.total}</span>
                       </div>

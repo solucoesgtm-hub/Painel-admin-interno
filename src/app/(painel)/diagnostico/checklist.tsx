@@ -192,7 +192,7 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
           </div>
           <nav aria-label="Seções do checklist" className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
             {SECOES.map((s, i) => (
-              <a key={s.id} href={`#${s.id}`} className={cn("inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium ring-1 ring-inset", preenchidas[i] ? "bg-ok-suave text-ok ring-ok/20" : "bg-offwhite text-tinta-3 ring-areia")}>
+              <a key={s.id} href={`#${s.id}`} className={cn("inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium ring-1 ring-inset", preenchidas[i] ? "bg-ok-suave text-ok ring-ok/20" : "bg-superficie-2 text-tinta-3 ring-areia")}>
                 {preenchidas[i] ? <Check aria-hidden className="size-3" /> : <span className="numeros">{i + 1}</span>}
                 {s.nome}
               </a>

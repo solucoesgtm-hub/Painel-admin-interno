@@ -39,7 +39,7 @@ export function CaixaAprovacoes({ iniciais, socioNome }: { iniciais: Aprovacao[]
                       <AreaTexto id={`txt-${a.id}`} rows={4} value={texto} onChange={(e) => setTexto(e.target.value)} />
                     </div>
                   ) : (
-                    <p className="mt-3 rounded-md border border-areia bg-offwhite px-3 py-2.5 text-sm leading-relaxed text-tinta-2">{a.conteudo}</p>
+                    <p className="mt-3 rounded-md border border-areia bg-superficie-2 px-3 py-2.5 text-sm leading-relaxed text-tinta-2">{a.conteudo}</p>
                   )}
                 </div>
                 <div className="flex shrink-0 gap-2 lg:flex-col">

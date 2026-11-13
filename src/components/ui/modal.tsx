@@ -37,7 +37,7 @@ export function Modal({
       onClick={(e) => e.target === ref.current && aoFechar()}
       aria-labelledby="modal-titulo"
       className={cn(
-        "m-auto w-[calc(100%-24px)] rounded-xl border border-areia bg-papel p-0 text-tinta shadow-flutuante backdrop:bg-grafite/45 backdrop:backdrop-blur-[2px] open:animate-entrar-modal",
+        "vidro-forte m-auto w-[calc(100%-24px)] rounded-xl p-0 text-tinta backdrop:bg-grafite/35 backdrop:backdrop-blur-[3px] open:animate-entrar-modal max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:open:animate-subir-folha",
         { sm: "max-w-md", md: "max-w-xl", lg: "max-w-3xl" }[largura],
       )}
     >
@@ -57,9 +57,9 @@ export function Modal({
           <X aria-hidden className="size-5" />
         </button>
       </div>
-      <div className="max-h-[70dvh] overflow-y-auto px-6 py-5">{children}</div>
+      <div className="rolagem-fina max-h-[70dvh] overflow-y-auto px-6 py-5 max-sm:max-h-[62dvh]">{children}</div>
       {rodape && (
-        <div className="flex flex-col-reverse gap-2 border-t border-areia bg-superficie-2/60 px-6 py-4 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-areia px-6 py-4 pb-[calc(env(safe-area-inset-bottom)+16px)] sm:flex-row sm:justify-end sm:pb-4">
           {rodape}
         </div>
       )}
