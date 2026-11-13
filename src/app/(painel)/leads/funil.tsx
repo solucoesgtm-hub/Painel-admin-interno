@@ -239,7 +239,7 @@ function CardLead({
         {socio && <Avatar nome={socio.nome} cor={socio.cor} tamanho="sm" />}
       </div>
 
-      <div className="mt-2.5 rounded-[5px] bg-offwhite px-2.5 py-2">
+      <div className="mt-2.5 rounded-[5px] bg-superficie-2 px-2.5 py-2">
         <p className="text-xs leading-snug text-tinta-2">{l.proximoPasso}</p>
         <p className={cn("mt-1 inline-flex items-center gap-1 text-[11px] font-medium", atrasado ? "text-risco" : "text-tinta-3")}>
           <CalendarClock aria-hidden className="size-3" /> {dataCurta(l.proximoPassoData)} · {atrasado ? `atrasado (${relativo(l.proximoPassoData)})` : relativo(l.proximoPassoData)}

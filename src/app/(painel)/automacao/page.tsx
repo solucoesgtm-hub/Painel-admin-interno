@@ -46,8 +46,8 @@ export default async function Automacao() {
       <Cartao className="mt-4 p-5">
         <p className="flex items-center gap-2 text-sm font-semibold"><KeyRound aria-hidden className="size-4 text-azul" />Ponto de entrada do n8n</p>
         <p className="mt-1 text-sm text-tinta-3">
-          <code className="rounded bg-offwhite px-1.5 py-0.5 text-[13px]">POST /api/n8n/execucoes</code> e{" "}
-          <code className="rounded bg-offwhite px-1.5 py-0.5 text-[13px]">POST /api/n8n/aprovacoes</code>, autenticados por chave de API. Entram na Fase 7.
+          <code className="rounded bg-superficie-2 px-1.5 py-0.5 text-[13px]">POST /api/n8n/execucoes</code> e{" "}
+          <code className="rounded bg-superficie-2 px-1.5 py-0.5 text-[13px]">POST /api/n8n/aprovacoes</code>, autenticados por chave de API. Entram na Fase 7.
         </p>
       </Cartao>
     </>

@@ -19,7 +19,7 @@ export function ProvedorAvisos({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-3 bottom-24 z-50 flex flex-col items-center gap-2 lg:inset-x-auto lg:bottom-6 lg:right-6 lg:items-end"
+        className="pointer-events-none fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+96px)] z-50 flex flex-col items-center gap-2 lg:inset-x-auto lg:bottom-6 lg:right-6 lg:items-end"
       >
         {lista.map((t) => {
           const Icone = t.tom === "ok" ? CheckCircle2 : t.tom === "risco" ? XCircle : Info;
@@ -27,7 +27,7 @@ export function ProvedorAvisos({ children }: { children: ReactNode }) {
             <div
               key={t.id}
               role="status"
-              className="animate-entrar-modal pointer-events-auto flex max-w-sm items-center gap-2.5 rounded-full bg-grafite px-4 py-3 text-sm text-white shadow-flutuante"
+              className="animate-entrar-modal pointer-events-auto flex max-w-sm items-center gap-2.5 rounded-full bg-grafite px-4 py-3 text-sm text-white shadow-flutuante ring-1 ring-white/10"
             >
               <Icone
                 aria-hidden

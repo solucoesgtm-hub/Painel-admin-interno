@@ -1,102 +1,262 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
-   Tokens do GTM Hub — barra lateral grafite + conteúdo claro em branco frio.
-   Marca: azul #3F6FD8 / #7FA2FF e fonte Lexend.
-   Nomes: "offwhite" = fundo da página, "papel" = cartões, "areia" = bordas,
-   "tinta" = texto, "grafite" = barra lateral e superfícies escuras.
+   Tokens do GTM Hub — vidro translúcido sobre um fundo atmosférico.
+   Marca: azul #3F6FD8 / #7FA2FF e fonte Urbanist.
+   Nomes: "offwhite" = fundo da página, "papel" = vidro dos cartões,
+   "superficie" = campos, "areia" = bordas, "tinta" = texto,
+   "grafite" = painéis de destaque (escuros nos dois temas).
+
+   Os valores vivem em variáveis (:root e [data-tema="escuro"]) e o
+   Tailwind os lê via `@theme inline`, então todas as classes existentes
+   (bg-papel, text-tinta-3, border-areia…) trocam de tema sozinhas.
+   Sem data-tema, o painel segue o tema do sistema.
 ------------------------------------------------------------------- */
+
+:root {
+  --c-offwhite: #e6eaf1;
+  --c-papel: rgb(255 255 255 / 0.62);
+  --c-papel-forte: rgb(250 251 253 / 0.92);
+  --c-superficie: rgb(255 255 255 / 0.78);
+  --c-superficie-2: rgb(18 21 31 / 0.05);
+
+  --c-grafite: #12151f;
+  --c-grafite-2: #1a1e2b;
+  --c-grafite-3: #242a3b;
+  --c-grafite-4: #30374c;
+
+  --c-areia: rgb(18 21 31 / 0.09);
+  --c-areia-2: rgb(18 21 31 / 0.17);
+  --c-borda-luz: rgb(255 255 255 / 0.7);
+
+  --c-azul-escuro: #2c55b3;
+  --c-azul-suave: rgb(63 111 216 / 0.12);
+  --c-quente-suave: rgb(194 65 12 / 0.1);
+
+  --c-tinta: #12151f;
+  --c-tinta-2: #3a4053;
+  --c-tinta-3: #52586c;
+
+  --c-ok: #137140;
+  --c-ok-suave: rgb(19 113 64 / 0.11);
+  --c-alerta: #855600;
+  --c-alerta-suave: rgb(237 161 0 / 0.16);
+  --c-risco: #b3301d;
+  --c-risco-suave: rgb(179 48 29 / 0.1);
+  --c-info: #2c55b3;
+  --c-info-suave: rgb(63 111 216 / 0.12);
+  --c-neutro: #4f5568;
+  --c-neutro-suave: rgb(18 21 31 / 0.06);
+
+  --c-serie-1: #3f6fd8;
+  --c-serie-2: #eb6834;
+  --c-serie-3: #1baf7a;
+  --c-serie-4: #eda100;
+  --c-serie-suave: #b7c8f2;
+
+  --c-sombra-cartao: inset 0 1px 0 rgb(255 255 255 / 0.75), 0 24px 50px -32px rgb(18 24 40 / 0.4);
+  --c-sombra-flutuante: 0 24px 60px -18px rgb(18 24 40 / 0.35), 0 2px 6px rgb(18 24 40 / 0.08);
+  --c-veu: linear-gradient(180deg, rgb(238 241 246 / 0.3), rgb(238 241 246 / 0.18) 45%, rgb(234 238 244 / 0.4));
+
+  color-scheme: light;
+}
+
+/* Escuro: aplicado pelo cookie (data-tema="escuro") ou pelo sistema quando não há escolha. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --c-offwhite: #0c0f16;
+    --c-papel: rgb(24 28 39 / 0.58);
+    --c-papel-forte: rgb(26 30 42 / 0.96);
+    --c-superficie: rgb(255 255 255 / 0.06);
+    --c-superficie-2: rgb(255 255 255 / 0.07);
+    --c-grafite: #1a1f2d;
+    --c-grafite-2: #212738;
+    --c-grafite-3: #2a3144;
+    --c-grafite-4: #353d54;
+    --c-areia: rgb(255 255 255 / 0.09);
+    --c-areia-2: rgb(255 255 255 / 0.17);
+    --c-borda-luz: rgb(255 255 255 / 0.1);
+    --c-azul-escuro: #a9c0ff;
+    --c-azul-suave: rgb(127 162 255 / 0.15);
+    --c-quente-suave: rgb(255 138 76 / 0.14);
+    --c-tinta: #eef1f7;
+    --c-tinta-2: #c9cedb;
+    --c-tinta-3: #a0a7ba;
+    --c-ok: #5fd39a;
+    --c-ok-suave: rgb(95 211 154 / 0.13);
+    --c-alerta: #f2b84b;
+    --c-alerta-suave: rgb(242 184 75 / 0.14);
+    --c-risco: #ff8f7a;
+    --c-risco-suave: rgb(255 143 122 / 0.13);
+    --c-info: #a9c0ff;
+    --c-info-suave: rgb(127 162 255 / 0.15);
+    --c-neutro: #b4bacb;
+    --c-neutro-suave: rgb(255 255 255 / 0.08);
+    --c-serie-1: #7fa2ff;
+    --c-serie-2: #ff8a4c;
+    --c-serie-3: #34c995;
+    --c-serie-4: #f2b84b;
+    --c-serie-suave: #3b4a75;
+    --c-sombra-cartao: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 30px 60px -30px rgb(0 0 0 / 0.65);
+    --c-sombra-flutuante: 0 24px 60px -18px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.08);
+    --c-veu: linear-gradient(180deg, rgb(8 10 16 / 0.5), rgb(8 10 16 / 0.35) 45%, rgb(8 10 16 / 0.55));
+    color-scheme: dark;
+  }
+}
+:root[data-tema="escuro"] {
+  --c-offwhite: #0c0f16;
+  --c-papel: rgb(24 28 39 / 0.58);
+  --c-papel-forte: rgb(26 30 42 / 0.96);
+  --c-superficie: rgb(255 255 255 / 0.06);
+  --c-superficie-2: rgb(255 255 255 / 0.07);
+  --c-grafite: #1a1f2d;
+  --c-grafite-2: #212738;
+  --c-grafite-3: #2a3144;
+  --c-grafite-4: #353d54;
+  --c-areia: rgb(255 255 255 / 0.09);
+  --c-areia-2: rgb(255 255 255 / 0.17);
+  --c-borda-luz: rgb(255 255 255 / 0.1);
+  --c-azul-escuro: #a9c0ff;
+  --c-azul-suave: rgb(127 162 255 / 0.15);
+  --c-quente-suave: rgb(255 138 76 / 0.14);
+  --c-tinta: #eef1f7;
+  --c-tinta-2: #c9cedb;
+  --c-tinta-3: #a0a7ba;
+  --c-ok: #5fd39a;
+  --c-ok-suave: rgb(95 211 154 / 0.13);
+  --c-alerta: #f2b84b;
+  --c-alerta-suave: rgb(242 184 75 / 0.14);
+  --c-risco: #ff8f7a;
+  --c-risco-suave: rgb(255 143 122 / 0.13);
+  --c-info: #a9c0ff;
+  --c-info-suave: rgb(127 162 255 / 0.15);
+  --c-neutro: #b4bacb;
+  --c-neutro-suave: rgb(255 255 255 / 0.08);
+  --c-serie-1: #7fa2ff;
+  --c-serie-2: #ff8a4c;
+  --c-serie-3: #34c995;
+  --c-serie-4: #f2b84b;
+  --c-serie-suave: #3b4a75;
+  --c-sombra-cartao: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 30px 60px -30px rgb(0 0 0 / 0.65);
+  --c-sombra-flutuante: 0 24px 60px -18px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.08);
+  --c-veu: linear-gradient(180deg, rgb(8 10 16 / 0.5), rgb(8 10 16 / 0.35) 45%, rgb(8 10 16 / 0.55));
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: var(--font-urbanist), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+
+  --color-offwhite: var(--c-offwhite);
+  --color-papel: var(--c-papel);
+  --color-papel-forte: var(--c-papel-forte);
+  --color-superficie: var(--c-superficie);
+  --color-superficie-2: var(--c-superficie-2);
+
+  --color-grafite: var(--c-grafite);
+  --color-grafite-2: var(--c-grafite-2);
+  --color-grafite-3: var(--c-grafite-3);
+  --color-grafite-4: var(--c-grafite-4);
+
+  --color-areia: var(--c-areia);
+  --color-areia-2: var(--c-areia-2);
+
+  --color-azul-escuro: var(--c-azul-escuro);
+  --color-azul-suave: var(--c-azul-suave);
+  --color-quente-suave: var(--c-quente-suave);
+
+  --color-tinta: var(--c-tinta);
+  --color-tinta-2: var(--c-tinta-2);
+  --color-tinta-3: var(--c-tinta-3);
+
+  --color-ok: var(--c-ok);
+  --color-ok-suave: var(--c-ok-suave);
+  --color-alerta: var(--c-alerta);
+  --color-alerta-suave: var(--c-alerta-suave);
+  --color-risco: var(--c-risco);
+  --color-risco-suave: var(--c-risco-suave);
+  --color-info: var(--c-info);
+  --color-info-suave: var(--c-info-suave);
+  --color-neutro: var(--c-neutro);
+  --color-neutro-suave: var(--c-neutro-suave);
+
+  /* Séries de gráficos — validadas para daltonismo, com variante para o escuro */
+  --color-serie-1: var(--c-serie-1);
+  --color-serie-2: var(--c-serie-2);
+  --color-serie-3: var(--c-serie-3);
+  --color-serie-4: var(--c-serie-4);
+
+  --shadow-cartao: var(--c-sombra-cartao);
+  --shadow-flutuante: var(--c-sombra-flutuante);
+}
+
 @theme {
-  --font-sans: var(--font-lexend), ui-sans-serif, system-ui, sans-serif;
-
-  /* Fundos claros */
-  --color-offwhite: #f3f5f9;
-  --color-papel: #ffffff;
-  --color-superficie: #ffffff;
-  --color-superficie-2: #eef1f6;
-
-  /* Escuros: barra lateral, painéis de destaque, avisos flutuantes */
-  --color-grafite: #12151f;
-  --color-grafite-2: #1a1e2b;
-  --color-grafite-3: #242a3b;
-  --color-grafite-4: #30374c;
+  /* Iguais nos dois temas */
   --color-nevoa: #9aa1b9; /* texto secundário sobre grafite */
-
-  /* Bordas */
-  --color-areia: #e2e6ee;
-  --color-areia-2: #cdd3df;
-
-  /* Marca */
   --color-azul: #3f6fd8;
-  --color-azul-escuro: #2c55b3;
   --color-azul-claro: #7fa2ff;
-  --color-azul-suave: #e9effd;
   --color-quente: #c2410c;
-  --color-quente-suave: #fdeee5;
-
-  /* Texto */
-  --color-tinta: #12151f;
-  --color-tinta-2: #3d4356;
-  --color-tinta-3: #5b6176;
-
-  /* Situações (sempre com ícone + texto) */
-  --color-ok: #137140;
-  --color-ok-suave: #e2f3e9;
-  --color-alerta: #8a5a00;
-  --color-alerta-suave: #fbf1dc;
-  --color-risco: #b3301d;
-  --color-risco-suave: #fbe8e4;
-  --color-info: #2c55b3;
-  --color-info-suave: #e9effd;
-  --color-neutro: #555b6e;
-  --color-neutro-suave: #eceff4;
-
-  /* Séries de gráficos — validadas no fundo claro (CVD, visão normal) */
-  --color-serie-1: #3f6fd8;
-  --color-serie-2: #eb6834;
-  --color-serie-3: #1baf7a;
-  --color-serie-4: #eda100;
 
   --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-2xl: 26px;
 
-  --shadow-cartao: 0 1px 2px rgb(18 21 31 / 0.04), 0 14px 34px -20px rgb(18 21 31 / 0.25);
-  --shadow-flutuante: 0 2px 6px rgb(18 21 31 / 0.06), 0 28px 60px -20px rgb(18 21 31 / 0.35);
+  --ease-suave: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  --animate-surgir: surgir 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-entrar-modal: entrar-modal 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-surgir: surgir 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-entrar-modal: entrar-modal 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-subir-folha: subir-folha 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
   @keyframes surgir {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: none; }
   }
   @keyframes entrar-modal {
     from { opacity: 0; transform: translateY(10px) scale(0.985); }
     to { opacity: 1; transform: none; }
   }
+  @keyframes subir-folha {
+    from { transform: translateY(100%); }
+    to { transform: none; }
+  }
+  @keyframes derivar {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(-3%, 2%, 0) scale(1.06); }
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+  }
+}
+
+/* Vidro: só nas camadas grandes (cartões, menus, dock). Dentro deles, nada de vidro sobre vidro. */
+@utility vidro {
+  background-color: var(--c-papel);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid var(--c-borda-luz);
+  box-shadow: var(--c-sombra-cartao);
+}
+@utility vidro-forte {
+  background-color: var(--c-papel-forte);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid var(--c-borda-luz);
+  box-shadow: var(--c-sombra-flutuante);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vidro { background-color: var(--c-papel-forte); }
 }
 
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
-    color-scheme: light;
-    background: var(--color-offwhite);
+    background: var(--c-offwhite);
   }
   body {
     min-height: 100dvh;
-    color: var(--color-tinta);
+    color: var(--c-tinta);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
-    background-color: var(--color-offwhite);
-    /* Atmosfera: luz azul no alto, um calor discreto no canto oposto e um véu frio no centro */
-    background-image:
-      radial-gradient(900px 520px at 18% -8%, rgb(63 111 216 / 0.16), transparent 65%),
-      radial-gradient(760px 520px at 100% 6%, rgb(255 138 76 / 0.09), transparent 62%),
-      radial-gradient(1200px 700px at 60% 110%, rgb(127 162 255 / 0.12), transparent 65%);
-    background-attachment: fixed;
-    background-repeat: no-repeat;
+    /* Sem fundo no body: ele cobriria o .fundo (z-index -1). A cor fica no html. */
   }
   :focus-visible {
     outline: 2px solid var(--color-azul);
@@ -105,22 +265,53 @@
   }
   ::selection {
     background: var(--color-azul-claro);
-    color: var(--color-grafite);
+    color: #12151f;
   }
-  ::placeholder { color: var(--color-tinta-3); opacity: 0.8; }
+  ::placeholder { color: var(--c-tinta-3); opacity: 0.8; }
+}
+
+/* Fundo atmosférico fixo: manchas de luz desfocadas + véu de contraste (sem imagem de terceiros). */
+.fundo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--c-offwhite);
+}
+.fundo::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  background:
+    radial-gradient(40% 46% at 12% 10%, rgb(63 111 216 / 0.75), transparent 70%),
+    radial-gradient(32% 40% at 90% 6%, rgb(255 138 76 / 0.55), transparent 70%),
+    radial-gradient(44% 42% at 74% 80%, rgb(27 175 122 / 0.42), transparent 70%),
+    radial-gradient(38% 46% at 20% 94%, rgb(127 162 255 / 0.65), transparent 70%),
+    radial-gradient(28% 30% at 52% 46%, rgb(237 161 0 / 0.18), transparent 70%);
+  filter: blur(40px) saturate(120%);
+  animation: derivar 38s ease-in-out infinite;
+}
+.fundo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--c-veu);
 }
 
 @layer utilities {
   .numeros { font-variant-numeric: tabular-nums; }
-  .escala-1 { animation-delay: 30ms; }
-  .escala-2 { animation-delay: 70ms; }
-  .escala-3 { animation-delay: 110ms; }
-  .escala-4 { animation-delay: 150ms; }
-  .escala-5 { animation-delay: 190ms; }
-  .rolagem-fina { scrollbar-width: thin; scrollbar-color: var(--color-areia-2) transparent; }
+  .escala-1 { animation-delay: 40ms; }
+  .escala-2 { animation-delay: 90ms; }
+  .escala-3 { animation-delay: 140ms; }
+  .escala-4 { animation-delay: 190ms; }
+  .escala-5 { animation-delay: 240ms; }
+  .rolagem-fina { scrollbar-width: thin; scrollbar-color: var(--c-areia-2) transparent; }
   .rolagem-escura { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.14) transparent; }
+  .sem-rolagem { scrollbar-width: none; }
+  .sem-rolagem::-webkit-scrollbar { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }

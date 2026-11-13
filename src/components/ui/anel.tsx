@@ -37,7 +37,7 @@ export function Anel({
     >
       <svg aria-hidden width={tamanho} height={tamanho} className="-rotate-90">
         <circle cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none" strokeWidth={espessura}
-          stroke={claro ? "rgb(255 255 255 / 0.1)" : "#e2e6ee"} />
+          stroke={claro ? "rgb(255 255 255 / 0.1)" : "var(--c-areia-2)"} />
         <circle
           cx={tamanho / 2}
           cy={tamanho / 2}
@@ -45,7 +45,7 @@ export function Anel({
           fill="none"
           strokeWidth={espessura}
           strokeLinecap="round"
-          stroke={corValor ?? (claro ? "#7fa2ff" : "#3f6fd8")}
+          stroke={corValor ?? (claro ? "#7fa2ff" : "var(--c-serie-1)")}
           strokeDasharray={c}
           strokeDashoffset={c * (1 - v)}
           className="transition-[stroke-dashoffset] duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -54,7 +54,7 @@ export function Anel({
       {marca !== undefined && (
         <span
           aria-hidden
-          className={cn("absolute size-2 rounded-full ring-2", claro ? "bg-white ring-grafite" : "bg-tinta ring-papel")}
+          className={cn("absolute size-2 rounded-full ring-2", claro ? "bg-white ring-grafite" : "bg-tinta ring-papel-forte")}
           style={{
             left: tamanho / 2 + r * Math.cos(ang) - 4,
             top: tamanho / 2 + r * Math.sin(ang) - 4,

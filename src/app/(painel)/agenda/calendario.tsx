@@ -115,7 +115,7 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
         </ol>
       ) : (
         <div>
-          <div className="grid grid-cols-7 border-b border-areia bg-offwhite/60 text-center text-[11px] uppercase tracking-wide text-tinta-3">
+          <div className="grid grid-cols-7 border-b border-areia bg-superficie-2 text-center text-[11px] uppercase tracking-wide text-tinta-3">
             {["seg", "ter", "qua", "qui", "sex", "sáb", "dom"].map((d) => <div key={d} className="py-2">{d}</div>)}
           </div>
           <div className="grid grid-cols-7">
@@ -125,7 +125,7 @@ export function Calendario({ eventos, socios }: { eventos: Evento[]; socios: Soc
               return (
                 <button key={d} type="button" onClick={() => { setRef(d); setVisao("semana"); }}
                   aria-label={`${fmtDia(d, { day: "numeric", month: "long" })}: ${doDia.length} evento(s)`}
-                  className={cn("min-h-16 border-b border-r border-areia/70 p-1.5 text-left align-top hover:bg-offwhite sm:min-h-24", foraDoMes && "bg-offwhite/50 text-tinta-3/60")}>
+                  className={cn("min-h-16 border-b border-r border-areia/70 p-1.5 text-left align-top hover:bg-superficie-2 sm:min-h-24", foraDoMes && "bg-superficie-2 text-tinta-3/60")}>
                   <span className={cn("numeros text-xs", d === hoje && "inline-grid size-6 place-items-center rounded-full bg-azul font-semibold text-white")}>{fmtDia(d, { day: "numeric" })}</span>
                   <span className="mt-1 hidden flex-col gap-0.5 sm:flex">
                     {doDia.slice(0, 3).map((e) => (

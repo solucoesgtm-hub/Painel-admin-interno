@@ -1,16 +1,14 @@
 "use client";
-// Casca do painel: barra lateral recolhível, barra superior (busca + "Novo") e paleta de comandos (Ctrl+K).
+// Casca do painel: topo com abas em cápsula, dock de atalhos, "Novo", conta e paleta de comandos (Ctrl+K).
 import { ClipboardCheck, CornerDownLeft, FlaskConical, Inbox, Plus, Search, UserPlus, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/components/ui/base";
 import { Logo } from "./logo";
-import { BarraInferior, GRUPOS, MenuLateral, type Usuario } from "./navegacao";
+import { AbasFaixa, AbasTopo, BarraInferior, Dock, GRUPOS, MenuConta, type Usuario } from "./navegacao";
 
 export type LeadBusca = { id: string; nome: string; etapa: string; cidade: string };
-
-const COOKIE_MENU = "gtm-menu";
 
 const ACOES: { nome: string; href: string; icone: LucideIcon; dica: string }[] = [
   { nome: "Novo lead", href: "/leads?novo=1", icone: UserPlus, dica: "Cadastrar um comércio no funil" },
@@ -29,7 +27,6 @@ export function Casca({
   contadores,
   usuario,
   sair,
-  recolhidaInicial,
   leads,
   data,
   selo,
@@ -38,21 +35,12 @@ export function Casca({
   contadores: Record<string, number>;
   usuario: Usuario;
   sair?: () => Promise<void>;
-  recolhidaInicial: boolean;
   leads: LeadBusca[];
   data: string;
   selo: string;
 }) {
-  const [recolhida, setRecolhida] = useState(recolhidaInicial);
   const [paletaAberta, setPaletaAberta] = useState(false);
-
-  const alternar = useCallback(() => {
-    setRecolhida((r) => {
-      const novo = !r;
-      document.cookie = `${COOKIE_MENU}=${novo ? "recolhido" : "aberto"}; path=/; max-age=31536000; samesite=lax`;
-      return novo;
-    });
-  }, []);
+  const abrirBusca = useCallback(() => setPaletaAberta(true), []);
 
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
@@ -73,22 +61,34 @@ export function Casca({
       >
         Pular para o conteúdo
       </a>
-      <MenuLateral contadores={contadores} usuario={usuario} sair={sair} recolhida={recolhida} aoAlternar={alternar} />
+      <Topo contadores={contadores} usuario={usuario} sair={sair} data={data} selo={selo} aoBuscar={abrirBusca} />
+      <Dock aoBuscar={abrirBusca} contadores={contadores} />
 
-      <div className={cn("transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]", recolhida ? "lg:pl-[92px]" : "lg:pl-[272px]")}>
-        <BarraSuperior data={data} selo={selo} aoBuscar={() => setPaletaAberta(true)} />
-        <main id="conteudo" className="mx-auto max-w-[1360px] px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-8">
-          {children}
-        </main>
-      </div>
+      <main id="conteudo" className="mx-auto max-w-[1520px] px-4 pb-32 pt-4 sm:px-6 lg:pb-16 lg:pl-[104px] lg:pr-8 lg:pt-6">
+        {children}
+      </main>
 
-      <BarraInferior contadores={contadores} usuario={usuario} sair={sair} />
+      <BarraInferior contadores={contadores} />
       <Paleta aberta={paletaAberta} aoFechar={() => setPaletaAberta(false)} leads={leads} />
     </>
   );
 }
 
-function BarraSuperior({ data, selo, aoBuscar }: { data: string; selo: string; aoBuscar: () => void }) {
+function Topo({
+  contadores,
+  usuario,
+  sair,
+  data,
+  selo,
+  aoBuscar,
+}: {
+  contadores: Record<string, number>;
+  usuario: Usuario;
+  sair?: () => Promise<void>;
+  data: string;
+  selo: string;
+  aoBuscar: () => void;
+}) {
   const [novoAberto, setNovoAberto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const atual = usePathname();
@@ -105,71 +105,73 @@ function BarraSuperior({ data, selo, aoBuscar }: { data: string; selo: string; a
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 bg-offwhite/75 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_85%,transparent)]">
-      <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-3 px-4 sm:px-6 lg:px-10">
-        <span className="shrink-0 lg:hidden">
-          <Logo escuro compacto />
-        </span>
+    <header className="sticky top-0 z-30 xl:relative">
+      <div className="pointer-events-none absolute inset-0 -bottom-4 bg-offwhite/45 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_70%,transparent)] xl:hidden" />
+      <div className="relative mx-auto flex h-[72px] max-w-[1520px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <Link href="/" aria-label="GTM Hub, início" className="shrink-0 rounded-xl">
+          <Logo escuro />
+        </Link>
 
-        <button
-          type="button"
-          onClick={aoBuscar}
-          className="group flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-full border border-areia-2 bg-papel px-4 text-left text-sm text-tinta-3 shadow-[0_1px_2px_rgb(18_21_31/0.04)] transition-colors hover:border-tinta-3/50 lg:max-w-md"
-        >
-          <Search aria-hidden className="size-4 shrink-0 text-tinta-3 group-hover:text-tinta" />
-          <span className="truncate">Buscar lead, tela ou ação</span>
-          <kbd className="ml-auto hidden shrink-0 rounded-md border border-areia bg-superficie-2 px-1.5 py-0.5 font-sans text-[11px] text-tinta-3 sm:inline">
-            Ctrl K
-          </kbd>
-        </button>
+        <div className="mx-auto hidden xl:block">
+          <AbasTopo contadores={contadores} />
+        </div>
 
-        <p className="ml-auto hidden text-sm text-tinta-3 xl:block">
-          <span className="inline-block first-letter:uppercase">{data}</span>
-        </p>
-        <span
-          title={selo === "Demonstração" ? "Tudo em dados fictícios." : "Algumas telas ainda mostram dados fictícios."}
-          className="hidden shrink-0 items-center gap-1.5 rounded-full bg-alerta-suave px-3 py-1.5 text-xs font-medium text-alerta ring-1 ring-inset ring-alerta/20 md:inline-flex"
-        >
-          <FlaskConical aria-hidden className="size-3.5" />
-          {selo}
-        </span>
-
-        <div ref={ref} className="relative shrink-0 lg:ml-0">
+        <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-0">
+          <span
+            title={selo === "Demonstração" ? "Tudo em dados fictícios." : "Algumas telas ainda mostram dados fictícios."}
+            className="hidden items-center gap-1.5 rounded-full bg-alerta-suave px-3 py-1.5 text-xs font-medium text-alerta ring-1 ring-inset ring-alerta/20 2xl:inline-flex"
+          >
+            <FlaskConical aria-hidden className="size-3.5" />
+            {selo}
+          </span>
           <button
             type="button"
-            aria-expanded={novoAberto}
-            aria-haspopup="menu"
-            onClick={() => setNovoAberto((v) => !v)}
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-azul px-4 text-sm font-medium text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_6px_16px_-6px_rgb(63_111_216/0.6)] transition-colors hover:bg-azul-escuro"
+            onClick={aoBuscar}
+            aria-label="Buscar lead, tela ou ação (Ctrl K)"
+            title="Buscar · Ctrl K"
+            className="vidro grid size-11 place-items-center rounded-full text-tinta-2 transition-colors hover:text-tinta lg:hidden"
           >
-            <Plus aria-hidden className="size-4" />
-            <span className="hidden sm:inline">Novo</span>
-            <span className="sr-only sm:hidden">Novo</span>
+            <Search aria-hidden className="size-[18px]" />
           </button>
-          {novoAberto && (
-            <div
-              role="menu"
-              className="animate-entrar-modal absolute right-0 top-13 z-40 w-72 rounded-xl border border-areia bg-papel p-1.5 shadow-flutuante"
+
+          <div ref={ref} className="relative">
+            <button
+              type="button"
+              aria-expanded={novoAberto}
+              aria-haspopup="menu"
+              onClick={() => setNovoAberto((v) => !v)}
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-azul px-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_10px_24px_-10px_rgb(63_111_216/0.8)] transition-[background,transform] hover:bg-[#3461c9] active:translate-y-px sm:px-5"
             >
-              {ACOES.slice(0, 2).map((a) => (
-                <Link
-                  key={a.href}
-                  role="menuitem"
-                  href={a.href}
-                  className="flex min-h-12 items-center gap-3 rounded-lg px-3 hover:bg-superficie-2"
-                >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-azul-suave text-azul-escuro">
-                    <a.icone aria-hidden className="size-4" />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-medium text-tinta">{a.nome}</span>
-                    <span className="block text-xs text-tinta-3">{a.dica}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
+              <Plus aria-hidden className="size-4" />
+              <span className="hidden sm:inline">Novo</span>
+              <span className="sr-only sm:hidden">Novo</span>
+            </button>
+            {novoAberto && (
+              <div role="menu" className="vidro-forte animate-entrar-modal absolute right-0 top-[calc(100%+10px)] z-40 w-72 rounded-2xl p-1.5">
+                {ACOES.slice(0, 2).map((a) => (
+                  <Link
+                    key={a.href}
+                    role="menuitem"
+                    href={a.href}
+                    className="flex min-h-12 items-center gap-3 rounded-xl px-3 hover:bg-superficie-2"
+                  >
+                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-azul-suave text-azul-escuro">
+                      <a.icone aria-hidden className="size-4" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-medium text-tinta">{a.nome}</span>
+                      <span className="block text-xs text-tinta-3">{a.dica}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+          <MenuConta usuario={usuario} sair={sair} data={data} selo={selo} />
         </div>
+      </div>
+      <div className="relative mx-auto hidden max-w-[1520px] pb-2 pl-[104px] pr-8 lg:block xl:hidden">
+        <AbasFaixa contadores={contadores} />
       </div>
     </header>
   );
@@ -235,7 +237,7 @@ function Paleta({ aberta, aoFechar, leads }: { aberta: boolean; aoFechar: () => 
       onClose={aoFechar}
       onClick={(e) => e.target === ref.current && aoFechar()}
       aria-label="Buscar no GTM Hub"
-      className="mx-auto mt-[12vh] w-[calc(100%-24px)] max-w-xl rounded-2xl border border-areia bg-papel p-0 text-tinta shadow-flutuante backdrop:bg-grafite/40 backdrop:backdrop-blur-[2px] open:animate-entrar-modal"
+      className="vidro-forte mx-auto mt-[12vh] w-[calc(100%-24px)] max-w-xl rounded-[22px] p-0 text-tinta backdrop:bg-grafite/35 backdrop:backdrop-blur-[3px] open:animate-entrar-modal"
     >
       <div className="flex items-center gap-3 border-b border-areia px-4">
         <Search aria-hidden className="size-5 shrink-0 text-tinta-3" />
@@ -276,7 +278,7 @@ function Paleta({ aberta, aoFechar, leads }: { aberta: boolean; aoFechar: () => 
                 onMouseMove={() => setMarcado(i)}
                 onClick={() => ir(o)}
                 className={cn(
-                  "flex min-h-12 cursor-pointer items-center gap-3 rounded-lg px-3",
+                  "flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-3",
                   i === marcado ? "bg-azul-suave" : "",
                 )}
               >

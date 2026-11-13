@@ -51,7 +51,7 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
             <span className="inline-flex items-center gap-1.5"><UserRound aria-hidden className="size-3.5" />Origem: {l.origem || "—"}</span>
           </p>
         </div>
-        <div className="flex flex-col gap-3 rounded-lg bg-offwhite p-4 lg:w-80">
+        <div className="flex flex-col gap-3 rounded-lg bg-superficie-2 p-4 lg:w-80">
           <p className="text-xs font-medium uppercase tracking-wide text-tinta-3">Próximo passo</p>
           <p className="text-sm font-medium">{l.proximoPasso}</p>
           <div className="flex items-center justify-between text-xs text-tinta-3">

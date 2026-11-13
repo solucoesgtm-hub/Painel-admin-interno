@@ -20,9 +20,9 @@ import {
 import { brl, brlCurto, num } from "@/lib/formato";
 
 // Validadas no fundo claro: daltonismo (CVD) e visão normal; tons claros levam rótulo direto.
-export const SERIES = ["#3f6fd8", "#eb6834", "#1baf7a", "#eda100"];
-const TINTA_3 = "#5b6176";
-const GRADE = "#e2e6ee";
+export const SERIES = ["var(--c-serie-1)", "var(--c-serie-2)", "var(--c-serie-3)", "var(--c-serie-4)"];
+const TINTA_3 = "var(--c-tinta-3)";
+const GRADE = "var(--c-areia)";
 
 type Formato = "brl" | "num" | "dias" | "pct";
 const fmt = (f: Formato, v: number) =>
@@ -32,7 +32,7 @@ const fmtEixo = (f: Formato, v: number) => (f === "brl" ? brlCurto(v) : f === "p
 function Dica({ active, payload, label, formato }: TooltipContentProps<number, string> & { formato: Formato }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-areia bg-papel px-3.5 py-2.5 text-xs shadow-flutuante">
+    <div className="vidro-forte rounded-2xl px-3.5 py-2.5 text-xs">
       <p className="mb-1 font-medium text-tinta">{label}</p>
       {payload.map((p) => (
         <p key={String(p.dataKey)} className="flex items-center gap-2 text-tinta-2">
@@ -44,7 +44,7 @@ function Dica({ active, payload, label, formato }: TooltipContentProps<number, s
   );
 }
 
-const eixo = { fontSize: 12, fill: TINTA_3, fontFamily: "var(--font-lexend)" };
+const eixo = { fontSize: 12, fill: TINTA_3, fontFamily: "var(--font-urbanist)" };
 
 /** Barras verticais de uma ou mais séries (mesma escala). */
 export function GraficoColunas({
@@ -71,7 +71,7 @@ export function GraficoColunas({
           <CartesianGrid vertical={false} stroke={GRADE} strokeDasharray="0" />
           <XAxis dataKey={x} tickLine={false} axisLine={{ stroke: GRADE }} tick={eixo} />
           <YAxis tickLine={false} axisLine={false} tick={eixo} width={formato === "brl" ? 64 : 36} tickFormatter={(v) => fmtEixo(formato, v)} />
-          <Tooltip cursor={{ fill: "rgba(63,111,216,0.06)" }} content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />} />
+          <Tooltip cursor={{ fill: "rgb(127 162 255 / 0.1)" }} content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />} />
           {series.length > 1 && (
             <Legend
               verticalAlign="top"
@@ -84,9 +84,9 @@ export function GraficoColunas({
           {series.map((s, i) => (
             <Bar key={s.chave} dataKey={s.chave} name={s.nome} fill={s.cor ?? SERIES[i]} radius={[4, 4, 0, 0]} maxBarSize={36}>
               {destaqueUltimo && series.length === 1 &&
-                dados.map((_, j) => <Cell key={j} fill={j === dados.length - 1 ? "#3f6fd8" : "#b7c8f2"} />)}
+                dados.map((_, j) => <Cell key={j} fill={j === dados.length - 1 ? "var(--c-serie-1)" : "var(--c-serie-suave)"} />)}
               {rotuloTopo && (
-                <LabelList dataKey={s.chave} position="top" formatter={(v) => fmtEixo(formato, Number(v))} style={{ ...eixo, fill: "#3d4356", fontSize: 11 }} />
+                <LabelList dataKey={s.chave} position="top" formatter={(v) => fmtEixo(formato, Number(v))} style={{ ...eixo, fill: "var(--c-tinta-2)", fontSize: 11 }} />
               )}
             </Bar>
           ))}
@@ -121,9 +121,9 @@ export function GraficoBarrasH({
         <BarChart data={dados} layout="vertical" margin={{ top: 0, right: 48, left: 0, bottom: 0 }} barCategoryGap="30%">
           <XAxis type="number" hide />
           <YAxis type="category" dataKey={rotulo} tickLine={false} axisLine={false} tick={eixo} width={larguraRotulo} />
-          <Tooltip cursor={{ fill: "rgba(63,111,216,0.06)" }} content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />} />
+          <Tooltip cursor={{ fill: "rgb(127 162 255 / 0.1)" }} content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />} />
           <Bar dataKey={valor} name={nome} fill={cor} radius={[0, 4, 4, 0]} maxBarSize={20}>
-            <LabelList dataKey={valor} position="right" formatter={(v) => fmt(formato, Number(v))} style={{ ...eixo, fill: "#12151f", fontWeight: 500 }} />
+            <LabelList dataKey={valor} position="right" formatter={(v) => fmt(formato, Number(v))} style={{ ...eixo, fill: "var(--c-tinta)", fontWeight: 500 }} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -162,15 +162,15 @@ export function GraficoArea({
           <XAxis dataKey={x} tickLine={false} axisLine={false} tick={eixo} dy={6} />
           <YAxis tickLine={false} axisLine={false} tick={eixo} width={formato === "brl" ? 64 : 36} tickFormatter={(v) => fmtEixo(formato, v)} />
           <Tooltip
-            cursor={{ stroke: "#3f6fd8", strokeWidth: 1, strokeDasharray: "3 3" }}
+            cursor={{ stroke: "var(--c-serie-1)", strokeWidth: 1, strokeDasharray: "3 3" }}
             content={(p) => <Dica {...(p as TooltipContentProps<number, string>)} formato={formato} />}
           />
           {comparacao && (
             <Area type="monotone" dataKey={comparacao.chave} name={comparacao.nome} stroke={SERIES[1]} strokeWidth={2}
-              strokeDasharray="5 5" fill="none" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
+              strokeDasharray="5 5" fill="none" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--c-offwhite)" }} />
           )}
           <Area type="monotone" dataKey={principal.chave} name={principal.nome} stroke={SERIES[0]} strokeWidth={2.5}
-            fill={`url(#area-${id})`} dot={false} activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }} />
+            fill={`url(#area-${id})`} dot={false} activeDot={{ r: 6, strokeWidth: 2, stroke: "var(--c-offwhite)" }} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -190,7 +190,7 @@ export function AbasPeriodo<T extends string>({
   rotulo: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={rotulo} className="inline-flex rounded-full bg-superficie-2 p-1">
+    <div role="radiogroup" aria-label={rotulo} className="inline-flex rounded-full bg-superficie-2 p-1 ring-1 ring-inset ring-areia">
       {opcoes.map((o) => (
         <button
           key={o.id}
@@ -200,7 +200,7 @@ export function AbasPeriodo<T extends string>({
           onClick={() => aoMudar(o.id)}
           className={
             "min-h-9 rounded-full px-3.5 text-[13px] font-medium transition-[background,color,box-shadow] duration-200 " +
-            (valor === o.id ? "bg-papel text-tinta shadow-[0_1px_3px_rgb(18_21_31/0.12)]" : "text-tinta-3 hover:text-tinta")
+            (valor === o.id ? "bg-tinta text-offwhite shadow-[0_6px_16px_-8px_rgb(18_21_31/0.6)]" : "text-tinta-3 hover:text-tinta")
           }
         >
           {o.nome}
@@ -249,8 +249,8 @@ export function PainelEntradas({
         <AbasPeriodo opcoes={[...PERIODOS]} valor={periodo} aoMudar={setPeriodo} rotulo="Período do gráfico" />
       </div>
       <div className="flex flex-wrap gap-4 px-5 pt-4 text-xs text-tinta-2 sm:px-6">
-        <span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-0.5 w-4 rounded bg-[#3f6fd8]" />Entradas</span>
-        <span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-0 w-4 border-t-2 border-dashed border-[#eb6834]" />Saídas</span>
+        <span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-0.5 w-4 rounded bg-serie-1" />Entradas</span>
+        <span className="inline-flex items-center gap-1.5"><span aria-hidden className="h-0 w-4 border-t-2 border-dashed border-serie-2" />Saídas</span>
       </div>
       <div className="px-2 pb-4 pt-2 sm:px-4">
         <GraficoArea dados={corte} x="mes" principal={{ chave: "entradas", nome: "Entradas" }} comparacao={{ chave: "saidas", nome: "Saídas" }} />

@@ -22,13 +22,13 @@ export const cn = (...v: ClassValue[]) => clsx(v);
 /* ---------------- Botão ---------------- */
 type Variante = "primario" | "secundario" | "fantasma" | "perigo";
 const estiloBotao: Record<Variante, string> = {
-  primario: "bg-azul text-white hover:bg-azul-escuro shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_6px_16px_-6px_rgb(63_111_216/0.6)]",
-  secundario: "bg-papel text-tinta border border-areia-2 shadow-[0_1px_2px_rgb(18_21_31/0.05)] hover:border-tinta-3/50 hover:bg-superficie-2",
+  primario: "bg-azul text-white hover:bg-[#3461c9] shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_10px_24px_-10px_rgb(63_111_216/0.8)]",
+  secundario: "bg-superficie text-tinta border border-areia-2 backdrop-blur-md hover:border-tinta-3/50 hover:bg-papel-forte",
   fantasma: "text-tinta-2 hover:bg-superficie-2 hover:text-tinta",
-  perigo: "bg-risco text-white hover:bg-[#962615]",
+  perigo: "bg-[#b3301d] text-white hover:bg-[#962615]",
 };
 const baseBotao =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium transition-[background,border,color,transform] active:translate-y-px disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-[background,border,color,transform] duration-200 ease-suave active:translate-y-px disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap";
 
 export function Botao({
   variante = "primario",
@@ -94,7 +94,7 @@ export function Campo({
 }
 
 const baseEntrada =
-  "min-h-11 w-full rounded-md border border-areia-2 bg-superficie px-3.5 text-sm text-tinta placeholder:text-tinta-3/70 transition-colors hover:border-tinta-3/50 focus:border-azul focus:outline-none focus:ring-3 focus:ring-azul/15 aria-[invalid=true]:border-risco";
+  "min-h-11 w-full rounded-md border border-areia-2 bg-superficie px-3.5 text-sm text-tinta placeholder:text-tinta-3/70 transition-colors hover:border-tinta-3/50 focus:border-azul focus:outline-none focus:ring-3 focus:ring-azul/20 aria-[invalid=true]:border-risco [&>option]:bg-papel-forte [&>option]:text-tinta";
 
 export const Entrada = ({ className, ...p }: ComponentProps<"input">) => (
   <input className={cn(baseEntrada, className)} {...p} />
@@ -109,7 +109,7 @@ export const AreaTexto = ({ className, ...p }: ComponentProps<"textarea">) => (
 /* ---------------- Cartão ---------------- */
 export function Cartao({ className, children, ...p }: ComponentProps<"section">) {
   return (
-    <section className={cn("relative rounded-xl border border-areia/80 bg-papel shadow-cartao", className)} {...p}>
+    <section className={cn("vidro relative rounded-xl", className)} {...p}>
       {children}
     </section>
   );
@@ -127,7 +127,7 @@ export function CabecalhoCartao({
   className?: string;
 }) {
   return (
-    <header className={cn("flex items-center justify-between gap-3 border-b border-areia/80 px-5 py-4 sm:px-6", className)}>
+    <header className={cn("flex items-center justify-between gap-3 border-b border-areia px-5 py-4 sm:px-6", className)}>
       <div className="min-w-0">
         <h2 className="text-base font-semibold tracking-tight text-tinta">{titulo}</h2>
         {descricao && <p className="mt-0.5 text-[13px] text-tinta-3">{descricao}</p>}
@@ -170,7 +170,7 @@ export function Metrica({
       className={cn(
         "flex flex-col gap-4 overflow-hidden p-5 sm:p-6",
         destaque &&
-          "border-grafite! bg-grafite! text-white shadow-[0_18px_40px_-18px_rgb(18_21_31/0.55)]!",
+          "border-white/10! bg-grafite! text-white shadow-[0_18px_40px_-18px_rgb(18_21_31/0.55)]!",
         className,
       )}
     >
@@ -255,7 +255,7 @@ export function Avatar({ nome, cor, tamanho = "md" }: { nome: string; cor?: stri
   return (
     <span
       title={nome}
-      className={cn("inline-grid shrink-0 place-items-center rounded-full font-semibold text-white ring-2 ring-papel", t)}
+      className={cn("inline-grid shrink-0 place-items-center rounded-full font-semibold text-white ring-2 ring-papel-forte", t)}
       style={{ background: cor ?? "#2a3046" }}
     >
       {iniciais(nome)}
@@ -277,7 +277,7 @@ export const Th = ({ className, ...p }: ComponentProps<"th">) => (
   <th
     scope="col"
     className={cn(
-      "border-b border-areia bg-superficie-2/60 px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] text-tinta-3 first:pl-6 last:pr-6",
+      "border-b border-areia px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-tinta-3 first:pl-6 last:pr-6",
       className,
     )}
     {...p}
@@ -429,7 +429,7 @@ export function BotaoIcone({
       aria-label={rotulo}
       title={rotulo}
       className={cn(
-        "grid size-10 place-items-center rounded-full border border-areia bg-papel text-tinta-2 transition-colors hover:border-tinta-3/40 hover:bg-superficie-2 hover:text-tinta",
+        "grid size-11 place-items-center rounded-full border border-areia bg-superficie text-tinta-2 transition-colors hover:border-tinta-3/40 hover:bg-papel-forte hover:text-tinta",
         className,
       )}
       {...p}
@@ -450,7 +450,7 @@ export function LinkIcone({
       aria-label={rotulo}
       title={rotulo}
       className={cn(
-        "grid size-10 place-items-center rounded-full border border-areia bg-papel text-tinta-2 transition-colors hover:border-tinta-3/40 hover:bg-superficie-2 hover:text-tinta",
+        "grid size-11 place-items-center rounded-full border border-areia bg-superficie text-tinta-2 transition-colors hover:border-tinta-3/40 hover:bg-papel-forte hover:text-tinta",
         className,
       )}
       {...p}
