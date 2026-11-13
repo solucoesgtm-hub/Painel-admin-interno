@@ -1,4 +1,4 @@
-// Tabelas do GTM Hub (Fase 1: sócios, leads, diagnósticos e histórico).
+// Tabelas do GTM Hub: sócios, leads, diagnósticos, histórico, empresa e contratos.
 // Para mudar o banco: edite este arquivo, rode `npm run db:gerar` e depois `npm run db:migrar`.
 import { relations } from "drizzle-orm";
 import {
@@ -111,6 +111,46 @@ export const historico = pgTable(
     index("historico_entidade_idx").on(t.entidade, t.entidadeId),
     index("historico_criado_idx").on(t.criadoEm),
   ],
+);
+
+/** Dados cadastrais da GTM ("Nossa empresa"). Uma única linha, id "gtm". */
+export const empresa = pgTable("empresa", {
+  id: text("id").primaryKey().default("gtm"),
+  razaoSocial: text("razao_social").notNull().default(""),
+  nomeFantasia: text("nome_fantasia").notNull().default(""),
+  cnpj: text("cnpj").notNull().default(""),
+  email: text("email").notNull().default(""),
+  telefone: text("telefone").notNull().default(""),
+  endereco: text("endereco").notNull().default(""),
+  municipio: text("municipio").notNull().default(""),
+  site: text("site").notNull().default(""),
+  chavePix: text("chave_pix").notNull().default(""),
+  abertura: date("abertura"),
+  atualizadoPor: uuid("atualizado_por").references(() => socios.id),
+  atualizadoEm,
+});
+
+export const situacaoContrato = pgEnum("situacao_contrato", ["aguardando", "vigente", "encerrado"]);
+
+/** Contratos com clientes: vigência, valores e situação. Renovação é calculada pela data de fim. */
+export const contratos = pgTable(
+  "contratos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+    cliente: text("cliente").notNull(),
+    produto: text("produto").notNull(),
+    inicio: date("inicio").notNull(),
+    fim: date("fim").notNull(),
+    valorMensalCentavos: integer("valor_mensal_centavos").notNull().default(0),
+    valorImplantacaoCentavos: integer("valor_implantacao_centavos").notNull().default(0),
+    situacao: situacaoContrato("situacao").notNull().default("aguardando"),
+    observacoes: text("observacoes").notNull().default(""),
+    criadoPor: uuid("criado_por").references(() => socios.id),
+    criadoEm,
+    atualizadoEm,
+  },
+  (t) => [index("contratos_fim_idx").on(t.fim), index("contratos_lead_idx").on(t.leadId)],
 );
 
 export const leadsRelacoes = relations(leads, ({ one, many }) => ({

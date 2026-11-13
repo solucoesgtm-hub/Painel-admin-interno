@@ -7,6 +7,7 @@ import { normalizarMarcacao, vereditoEdital, type Requisito } from "./editais";
 import { calcularAnalise, type LeadAnalise } from "./analise";
 import { esquemaEditarLead } from "./funil";
 import { esquemaDiagnostico } from "./pontuacao";
+import { camposFaltando, cnpjValido, EMPRESA_VAZIA, esquemaContrato, esquemaEmpresa, estadoContrato, formatarCnpj, resumoContratos } from "./empresa";
 
 describe("funil", () => {
   it("marca como parado só depois de 7 dias e fora de manutenção/perdido", () => {
@@ -141,5 +142,53 @@ describe("edição de lead e diagnóstico", () => {
     expect(esquemaDiagnostico.safeParse(d).success).toBe(true);
     expect(esquemaDiagnostico.safeParse({ ...d, notas: { ...d.notas, dor: 9 } }).success).toBe(false);
     expect(esquemaDiagnostico.safeParse({ ...d, leadId: "" }).success).toBe(false);
+  });
+});
+
+describe("nossa empresa", () => {
+  it("valida e formata CNPJ", () => {
+    expect(cnpjValido("11.222.333/0001-81")).toBe(true);
+    expect(cnpjValido("11222333000181")).toBe(true);
+    expect(cnpjValido("11.222.333/0001-82")).toBe(false);
+    expect(cnpjValido("00000000000000")).toBe(false);
+    expect(formatarCnpj("11222333000181")).toBe("11.222.333/0001-81");
+  });
+
+  it("aceita cadastro com campos opcionais vazios e normaliza telefone", () => {
+    const r = esquemaEmpresa.safeParse({ ...EMPRESA_VAZIA, razaoSocial: "GTM Soluções (exemplo)", telefone: "27999998888", cnpj: "11222333000181" });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.telefone).toBe("(27) 99999-8888");
+      expect(r.data.cnpj).toBe("11.222.333/0001-81");
+    }
+    expect(esquemaEmpresa.safeParse({ ...EMPRESA_VAZIA, razaoSocial: "GTM", email: "sem-arroba" }).success).toBe(false);
+  });
+
+  it("aponta o que falta no cadastro", () => {
+    expect(camposFaltando({ ...EMPRESA_VAZIA, razaoSocial: "GTM", email: "a@b.test" })).toEqual(["CNPJ", "telefone"]);
+  });
+
+  it("classifica contratos e soma a receita mensal só dos vigentes", () => {
+    const hoje = "2026-11-13";
+    expect(estadoContrato({ situacao: "vigente", fim: "2026-12-10" }, hoje)).toEqual({ tipo: "renovar", dias: 27 });
+    expect(estadoContrato({ situacao: "vigente", fim: "2027-06-01" }, hoje)).toEqual({ tipo: "vigente" });
+    expect(estadoContrato({ situacao: "vigente", fim: "2026-11-10" }, hoje)).toEqual({ tipo: "vencido", dias: 3 });
+    expect(estadoContrato({ situacao: "encerrado", fim: "2026-11-10" }, hoje)).toEqual({ tipo: "encerrado" });
+    const r = resumoContratos(
+      [
+        { situacao: "vigente", fim: "2026-12-10", valorMensal: 290 },
+        { situacao: "vigente", fim: "2027-06-01", valorMensal: 340.5 },
+        { situacao: "aguardando", fim: "2027-06-01", valorMensal: 450 },
+        { situacao: "encerrado", fim: "2026-01-01", valorMensal: 999 },
+      ],
+      hoje,
+    );
+    expect(r).toEqual({ vigentes: 2, renovar: 1, aguardando: 1, vencidos: 0, receitaMensal: 630.5 });
+  });
+
+  it("não aceita contrato que termina antes de começar", () => {
+    const base = { cliente: "Padaria (exemplo)", produto: "Atendente", valorMensal: 290, valorImplantacao: 0, situacao: "vigente", observacoes: "" };
+    expect(esquemaContrato.safeParse({ ...base, inicio: "2026-11-01", fim: "2027-11-01" }).success).toBe(true);
+    expect(esquemaContrato.safeParse({ ...base, inicio: "2026-11-01", fim: "2026-10-01" }).success).toBe(false);
   });
 });

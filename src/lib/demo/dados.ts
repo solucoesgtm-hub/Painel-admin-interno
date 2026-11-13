@@ -293,6 +293,20 @@ export const PROJETOS: Projeto[] = [
   { id: "p5", nome: "Respostas automáticas v2", cliente: "Auto Peças Central (exemplo)", situacao: "pausado", donoId: "s-mateus", prazo: d(-3), repositorio: "github.com/exemplo/autopecas", tarefas: { feitas: 3, total: 6 } },
 ];
 
+/** Dados cadastrais fictícios (o CNPJ é o de teste usado em documentação, não é da GTM). */
+export const EMPRESA_DEMO = {
+  razaoSocial: "GTM Soluções Digitais (exemplo)",
+  nomeFantasia: "GTM Soluções",
+  cnpj: "11.222.333/0001-81",
+  email: "contato@exemplo.test",
+  telefone: "(27) 99999-0000",
+  endereco: "Rua de Exemplo, 100 — Centro",
+  municipio: "Marilândia, ES",
+  site: "gtm.exemplo.test",
+  chavePix: "contato@exemplo.test",
+  abertura: MEI.abertura,
+};
+
 export type Contrato = { id: string; cliente: string; produto: string; inicio: string; fim: string; valorMensal: number; assinado: boolean };
 export const CONTRATOS: Contrato[] = [
   { id: "c1", cliente: "Padaria São José (exemplo)", produto: "Atendente WhatsApp", inicio: d(-340), fim: d(25), valorMensal: 290, assinado: true },
@@ -310,7 +324,7 @@ export const PRODUTOS: Produto[] = [
 ];
 
 // ---------- Agenda ----------
-export type Evento = { id: string; titulo: string; data: string; inicio: string; fim: string; socioId: string; tipo: "visita" | "proximo_passo" | "edital" | "reuniao" };
+export type Evento = { id: string; titulo: string; data: string; inicio: string; fim: string; socioId: string; tipo: "visita" | "proximo_passo" | "edital" | "reuniao"; link?: string };
 export const EVENTOS: Evento[] = [
   { id: "ev1", titulo: "Visita — Clínica Sorriso Leve", data: d(0), inicio: "14:00", fim: "15:30", socioId: "s-thalis", tipo: "visita" },
   { id: "ev2", titulo: "Reunião semanal dos sócios", data: d(0), inicio: "08:00", fim: "09:00", socioId: "s-gabriel", tipo: "reuniao" },
