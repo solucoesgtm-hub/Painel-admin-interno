@@ -11,11 +11,13 @@ import {
   EstadoVazio,
   Medidor,
 } from "@/components/ui/base";
-import { CONTRATOS, MENSALIDADES, PROJETOS } from "@/lib/demo/dados";
+import { MENSALIDADES, PROJETOS } from "@/lib/demo/dados";
+import { estadoContrato } from "@/lib/regras/empresa";
+import { EtiquetaContrato } from "../../contratos/gestao";
 import { brl, data, dataCurta, relativo } from "@/lib/formato";
 import { situacaoMensalidade } from "@/lib/regras/financeiro";
 import { estaParado, nomeEtapa } from "@/lib/regras/funil";
-import { buscarLead, listarDiagnosticos, listarSocios } from "@/lib/repositorio";
+import { buscarLead, listarContratos, listarDiagnosticos, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 import { EditarLead } from "./editar";
 
@@ -24,11 +26,11 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const l = await buscarLead(id);
   if (!l) notFound();
-  const [socios, diagnosticos] = await Promise.all([listarSocios(), listarDiagnosticos(l.id)]);
+  const [socios, diagnosticos, todosContratos] = await Promise.all([listarSocios(), listarDiagnosticos(l.id), listarContratos()]);
   const dono = socios.find((s) => s.id === l.donoId);
   const base = l.nome;
   const projetos = PROJETOS.filter((p) => p.cliente === base);
-  const contratos = CONTRATOS.filter((c) => c.cliente === base);
+  const contratos = todosContratos.filter((c) => c.leadId === l.id || c.cliente === base);
   const pagamentos = MENSALIDADES.filter((m) => m.cliente === base);
 
   return (
@@ -141,14 +143,14 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
             <Cartao>
               <CabecalhoCartao titulo="Contratos" />
               {contratos.length === 0 ? (
-                <EstadoVazio icone={FileSignature} titulo="Sem contratos" texto="Gere o contrato a partir da proposta aprovada." />
+                <EstadoVazio icone={FileSignature} titulo="Sem contratos" texto="Cadastre o contrato em Contratos e ligue-o a este cliente." />
               ) : (
                 <ul className="divide-y divide-areia">
                   {contratos.map((c) => (
                     <li key={c.id} className="px-5 py-3.5 text-sm">
                       <p className="font-medium">{c.produto}</p>
                       <p className="text-xs text-tinta-3">{data(c.inicio)} a {data(c.fim)}</p>
-                      <div className="mt-1.5">{c.assinado ? <Etiqueta tom="ok">Assinado</Etiqueta> : <Etiqueta tom="alerta">Aguardando assinatura</Etiqueta>}</div>
+                      <div className="mt-1.5"><EtiquetaContrato estado={estadoContrato(c)} /></div>
                     </li>
                   ))}
                 </ul>

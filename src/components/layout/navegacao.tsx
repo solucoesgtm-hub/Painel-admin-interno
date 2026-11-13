@@ -4,6 +4,7 @@
 import {
   BarChart3,
   Bot,
+  Building2,
   CalendarDays,
   ChevronDown,
   ClipboardCheck,
@@ -69,6 +70,7 @@ export const GRUPOS: Grupo[] = [
   {
     titulo: "Empresa",
     itens: [
+      { href: "/empresa", nome: "Nossa empresa", curto: "Empresa", icone: Building2 },
       { href: "/equipe", nome: "Equipe", icone: Users },
       { href: "/historico", nome: "Histórico", icone: History },
     ],
@@ -76,8 +78,9 @@ export const GRUPOS: Grupo[] = [
 ];
 const TODOS = GRUPOS.flatMap((g) => g.itens);
 
-/** Telas que ganham aba própria no topo; as demais ficam em "Mais". */
+/** Telas que ganham aba própria no topo; as demais ficam em "Mais". "Nossa empresa" fica depois do "Mais". */
 const ABAS = ["/", "/agenda", "/leads", "/diagnostico", "/projetos", "/financeiro"];
+const ABA_EMPRESA = "/empresa";
 
 const ativo = (atual: string, href: string) => (href === "/" ? atual === "/" : atual.startsWith(href));
 
@@ -119,7 +122,9 @@ export function AbasTopo({ contadores }: { contadores: Record<string, number> })
   const lista = useRef<HTMLUListElement>(null);
   const [pilula, setPilula] = useState<{ x: number; w: number } | null>(null);
   const mais = usePopover<HTMLLIElement>();
-  const extras = GRUPOS.map((g) => ({ ...g, itens: g.itens.filter((i) => !ABAS.includes(i.href)) })).filter((g) => g.itens.length);
+  const extras = GRUPOS.map((g) => ({ ...g, itens: g.itens.filter((i) => !ABAS.includes(i.href) && i.href !== ABA_EMPRESA) })).filter(
+    (g) => g.itens.length,
+  );
   const emMais = extras.some((g) => g.itens.some((i) => ativo(atual, i.href)));
   const pendentesMais = extras.flatMap((g) => g.itens).reduce((a, i) => a + (contadores[i.href] ?? 0), 0);
 
@@ -149,27 +154,9 @@ export function AbasTopo({ contadores }: { contadores: Record<string, number> })
           )}
           style={pilula ? { transform: `translateX(${pilula.x}px)`, width: pilula.w } : undefined}
         />
-        {ABAS.map((href) => {
-          const i = TODOS.find((t) => t.href === href)!;
-          const sel = ativo(atual, href);
-          const n = contadores[href];
-          return (
-            <li key={href} data-ativo={sel} className="relative">
-              <Link
-                href={href}
-                aria-current={sel ? "page" : undefined}
-                className={cn(
-                  "flex min-h-11 items-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors duration-300",
-                  sel ? "text-offwhite" : "text-tinta-2 hover:text-tinta",
-                  sel && !pilula && "bg-tinta",
-                )}
-              >
-                {i.curto ?? i.nome}
-                <Contador n={n} />
-              </Link>
-            </li>
-          );
-        })}
+        {ABAS.map((href) => (
+          <AbaTopo key={href} href={href} sel={ativo(atual, href)} n={contadores[href]} semPilula={!pilula} />
+        ))}
         <li data-ativo={emMais} className="relative" ref={mais.ref}>
           <button
             type="button"
@@ -199,8 +186,30 @@ export function AbasTopo({ contadores }: { contadores: Record<string, number> })
             </div>
           )}
         </li>
+        <AbaTopo href={ABA_EMPRESA} sel={ativo(atual, ABA_EMPRESA)} semPilula={!pilula} comIcone />
       </ul>
     </nav>
+  );
+}
+
+function AbaTopo({ href, sel, n, semPilula, comIcone }: { href: string; sel: boolean; n?: number; semPilula: boolean; comIcone?: boolean }) {
+  const i = TODOS.find((t) => t.href === href)!;
+  return (
+    <li data-ativo={sel} className="relative">
+      <Link
+        href={href}
+        aria-current={sel ? "page" : undefined}
+        className={cn(
+          "flex min-h-11 items-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors duration-300",
+          sel ? "text-offwhite" : "text-tinta-2 hover:text-tinta",
+          sel && semPilula && "bg-tinta",
+        )}
+      >
+        {comIcone && <i.icone aria-hidden className="size-4" />}
+        {i.curto ?? i.nome}
+        <Contador n={n} />
+      </Link>
+    </li>
   );
 }
 
@@ -268,6 +277,7 @@ export function Dock({ aoBuscar, contadores }: { aoBuscar: () => void; contadore
     { nome: "Agenda de hoje", href: "/agenda", icone: CalendarDays },
     { nome: "Caixa de aprovações", href: "/automacao", icone: Inbox, n: contadores["/automacao"] },
     { nome: "Histórico", href: "/historico", icone: History },
+    { nome: "Nossa empresa", href: "/empresa", icone: Building2 },
   ];
   return (
     <nav aria-label="Atalhos" className="fixed left-4 top-1/2 z-30 hidden -translate-y-1/2 lg:block">

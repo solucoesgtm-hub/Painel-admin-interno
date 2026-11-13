@@ -33,9 +33,9 @@ Legenda: ✅ pronto · 🟡 tela pronta com dados de demonstração · ⬜ a faz
 - ⬜ Entrada por link/PDF, armazenamento S3/R2, leitura com IA por partes, radar semanal
 
 ## Fase 4 — Agenda e projetos
-- 🟡 Agenda semana/mês com filtro por sócio
+- ✅ Agenda semana/mês com filtro por sócio, criar e excluir eventos
 - 🟡 Projetos com situação, dono, prazo, repositório e progresso
-- ⬜ Integração bidirecional com Google Agenda
+- 🟡 Google Agenda por conta de serviço: leitura ao vivo, criar e excluir (falta a credencial — docs/GOOGLE-AGENDA.md)
 
 ## Fase 5 — Financeiro
 - 🟡 Saldo, entradas/saídas, mensalidades, extrato, custos fixos, divisão entre sócios, teto do MEI
@@ -44,7 +44,9 @@ Legenda: ✅ pronto · 🟡 tela pronta com dados de demonstração · ⬜ a faz
 
 ## Fase 6 — Contratos, produtos e início
 - ✅ Início com resumo do dia
-- 🟡 Contratos com vigência e alerta de renovação; catálogo de produtos
+- ✅ Contratos no Neon: cadastrar, editar, encerrar, alerta de renovação e vencidos
+- ✅ Nossa empresa: cadastro (CNPJ, e-mail, telefone, Pix), sócios, resumo financeiro, contratos e agenda da semana
+- 🟡 Catálogo de produtos
 - ⬜ Modelo de contrato preenchido, upload do PDF assinado
 
 ## Fase 7 — Automação
