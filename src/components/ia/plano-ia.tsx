@@ -89,7 +89,12 @@ function TextoAndamento({ a }: { a: NonNullable<Andamento> }) {
 
 function Rodape({ estado }: { estado: EstadoIA }) {
   if (estado.tipo === "exemplo")
-    return <p className="flex gap-2 text-xs text-tinta-3"><ShieldAlert aria-hidden className="size-4 shrink-0" />Demonstração: gera um exemplo fictício, sem chamar a IA.</p>;
+    return (
+      <p className="flex gap-2 text-xs text-tinta-3">
+        <ShieldAlert aria-hidden className="size-4 shrink-0" />
+        IA ainda não conectada: o resultado é um exemplo montado pelo sistema a partir do diagnóstico, sem custo. Ao cadastrar a chave da API, o mesmo botão passa a gerar com a IA.
+      </p>
+    );
   if (estado.tipo === "ligada")
     return <p className="numeros text-xs text-tinta-3">Gasto com IA neste mês: {brl(estado.gastoMes)} de {brl(estado.teto)}</p>;
   return null;
@@ -172,7 +177,7 @@ export function PainelPlanoIA({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function gerarDeNovo() {
-    const msg = estado.tipo === "ligada" ? "Gerar de novo usa a IA e entra no gasto do mês. Continuar?" : "Gerar de novo?";
+    const msg = estado.tipo === "ligada" ? "Gerar de novo usa a IA e entra no gasto do mês. Continuar?" : "Gerar o exemplo de novo?";
     if (window.confirm(msg)) rodar();
   }
 
@@ -195,6 +200,11 @@ export function PainelPlanoIA({
       <div className="space-y-4 p-5 sm:p-6">
         {andamento && <TextoAndamento a={andamento} />}
         {erro && <Aviso tom="risco" titulo="A geração não terminou">{erro}</Aviso>}
+        {plano?.exemplo && !andamento && (
+          <Aviso tom="info" titulo="Exemplo de demonstração">
+            Este documento foi montado pelo sistema com os dados do diagnóstico, sem a IA. Use para conhecer o formato; com a chave da API conectada, gere de novo para ter o texto escrito pela IA.
+          </Aviso>
+        )}
 
         {!plano && !andamento && (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -241,7 +251,7 @@ export function PainelPlanoIA({
             </div>
 
             <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-tinta-3">
-              {plano.exemplo ? <Etiqueta tom="neutro">Exemplo fictício</Etiqueta> : <span>Modelo {plano.modelo}</span>}
+              {plano.exemplo ? <Etiqueta tom="neutro">Exemplo · IA não conectada</Etiqueta> : <span>Modelo {plano.modelo}</span>}
               {!plano.exemplo && <span className="numeros">{(plano.tokensEntrada + plano.tokensSaida).toLocaleString("pt-BR")} tokens · custo estimado {brl(plano.custoBRL)}</span>}
             </p>
           </>

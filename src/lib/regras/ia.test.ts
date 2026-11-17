@@ -85,6 +85,27 @@ describe("IA: relatório e plano", () => {
     expect(planoMarkdown(c, "X")).toContain("| A / B | x |");
   });
 
+  it("monta o exemplo com as respostas do diagnóstico (sem chave da API)", () => {
+    const c = exemploRelatorioPlano({
+      nome: "Oficina Exemplo",
+      segmento: "Oficina",
+      pontuacao: 40,
+      veredito: "frio",
+      respostas: {
+        tarefas: [{ nome: "Enviar orçamentos", peso: 3 }, { nome: "Agendar clientes", peso: 1 }],
+        reclamacoes: ["Perde mensagens"],
+        numeros: { horasSemana: "10", custoHora: "20" },
+        notas: { dor: 5, orcamento: 1, urgencia: 3, decisor: 2, abertura: 4 },
+      },
+    });
+    expect(esquemaPlanoIA.safeParse(c).success).toBe(true);
+    expect(c.relatorio.diagnosticoAtual.processosAtuais[0]).toContain("Enviar orçamentos");
+    expect(c.relatorio.oportunidade.economiaEstimada).toContain("866");
+    expect(c.relatorio.riscos[0]!.probabilidade).toBe("alta");
+    expect(c.relatorio.recomendacao).toContain("Não seguir agora");
+    expect(c.relatorio.premissas.join(" ")).not.toContain("não informad");
+  });
+
   it("gera nome de arquivo sem acento nem espaço", () => {
     expect(nomeArquivo("plano", "Ótica Vista Clara (exemplo)")).toBe("plano-otica-vista-clara-exemplo.md");
   });

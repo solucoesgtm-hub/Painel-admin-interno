@@ -1,41 +1,67 @@
-// Exemplo fictício usado no modo demonstração (sem ANTHROPIC_API_KEY e sem banco).
-// Não chama a API e não tem dado real: só mostra o formato do relatório e do plano.
+// Exemplo montado pelo próprio sistema quando a ANTHROPIC_API_KEY ainda não foi cadastrada.
+// Não chama a API e não tem custo: usa as respostas do diagnóstico do lead (quando existem)
+// para mostrar o formato completo do relatório e do plano. Com a chave, a IA escreve o texto de verdade.
+import { brl } from "../formato";
+import { economia, FATORES, type Fator } from "../regras/pontuacao";
 import type { ConteudoPlanoIA } from "../regras/ia";
 
-type Base = { nome: string; segmento: string; pontuacao: number; veredito: string };
+type Base = { nome: string; segmento: string; pontuacao: number; veredito: string; respostas?: Record<string, unknown> };
+type Respostas = {
+  negocio?: { porte?: string; tempo?: string; atendimento?: string[] };
+  ferramentas?: string[];
+  reclamacoes?: string[];
+  tarefas?: { nome: string; peso: number }[];
+  numeros?: { atendimentosDia?: string; horasSemana?: string; custoHora?: string };
+  notas?: Partial<Record<Fator, number>>;
+};
+
+const juntar = (v: string[] | undefined, padrao: string) => (v?.length ? v.join(", ") : padrao);
 
 export function exemploRelatorioPlano(l: Base): ConteudoPlanoIA {
   const seg = (l.segmento || "comércio local").toLowerCase();
+  const r = (l.respostas ?? {}) as Respostas;
+  const horas = Number(r.numeros?.horasSemana) || 5;
+  const custoHora = Number(r.numeros?.custoHora) || 25;
+  const eco = economia(horas, custoHora);
+  const tarefas = [...(r.tarefas ?? [])].sort((a, b) => b.peso - a.peso);
+  const reclamacoes = r.reclamacoes?.length ? r.reclamacoes : ["Demora para responder", "Esquece retornos"];
+  const notas = FATORES.filter((f) => r.notas?.[f.id] !== undefined).map((f) => `${f.nome} ${r.notas![f.id]}/5`);
+  const fortes = FATORES.filter((f) => (r.notas?.[f.id] ?? 0) >= 4).map((f) => `${f.nome}: nota alta no diagnóstico`);
+  const fracos = FATORES.filter((f) => r.notas?.[f.id] !== undefined && r.notas[f.id]! <= 2);
+
   return {
     relatorio: {
-      resumoExecutivo: `${l.nome} é um ${seg} de pequeno porte que concentra o atendimento no WhatsApp e controla agenda e pedidos em caderno. A principal dor é responder clientes fora do horário e esquecer retornos, o que gera perda de vendas.\n\nA proposta é um atendente automático no WhatsApp integrado a uma agenda simples, com painel para o balcão. (Exemplo fictício da demonstração.)`,
-      vereditoExplicado: `Pontuação ${l.pontuacao}/100, veredito ${l.veredito}. Dor e urgência têm notas altas; orçamento ainda não foi confirmado e o decisor participou só de parte da conversa.`,
+      resumoExecutivo: `${l.nome} atua no segmento ${seg}${r.negocio?.porte ? ` (equipe: ${r.negocio.porte.toLowerCase()})` : ""}, atende por ${juntar(r.negocio?.atendimento, "balcão e WhatsApp")} e usa ${juntar(r.ferramentas, "WhatsApp e caderno")} no dia a dia. As principais reclamações são: ${reclamacoes.join(", ").toLowerCase()}.\n\nA proposta é automatizar o atendimento e as tarefas manuais de maior peso, com um painel simples para a equipe. (Exemplo montado pelo sistema: a IA ainda não está conectada.)`,
+      vereditoExplicado: `Pontuação ${l.pontuacao}/100, veredito ${l.veredito}.${notas.length ? ` Notas do diagnóstico: ${notas.join(", ")}.` : ""}${fracos.length ? ` Pontos de atenção: ${fracos.map((f) => f.nome.toLowerCase()).join(", ")}.` : ""}`,
       diagnosticoAtual: {
-        contexto: "Negócio com 2 a 5 pessoas, atendimento por balcão e WhatsApp comum, agenda em caderno.",
-        processosAtuais: ["Cliente manda mensagem no WhatsApp", "Atendente responde quando tem tempo", "Horário é anotado no caderno", "Confirmação é feita por ligação no dia"],
-        gargalos: [
-          { problema: "Mensagens sem resposta fora do horário", impacto: "Clientes procuram o concorrente" },
-          { problema: "Retornos esquecidos", impacto: "Horários vagos e retrabalho" },
-        ],
+        contexto: `${r.negocio?.tempo ? `Tempo de mercado: ${r.negocio.tempo.toLowerCase()}. ` : ""}Atendimento por ${juntar(r.negocio?.atendimento, "balcão e WhatsApp")} e ferramentas atuais: ${juntar(r.ferramentas, "WhatsApp e caderno")}.`,
+        processosAtuais: tarefas.length
+          ? tarefas.map((t) => `${t.nome} (feito à mão, peso ${t.peso} de 3)`)
+          : ["Cliente manda mensagem no WhatsApp", "Atendente responde quando tem tempo", "Pedidos e horários anotados no caderno"],
+        gargalos: reclamacoes.map((x) => ({ problema: x, impacto: "Tempo perdido da equipe e risco de perder clientes." })),
       },
       oportunidade: {
-        solucaoProposta: "Atendimento automático no WhatsApp com marcação de horário e painel da agenda do dia.",
-        beneficios: ["Resposta em menos de 1 minuto", "Agenda organizada em um só lugar", "Menos faltas com lembrete automático"],
-        economiaEstimada: "5 horas por semana × R$ 25 por hora ≈ R$ 540 por mês.",
+        solucaoProposta: `Atendimento automático no WhatsApp e automação de ${tarefas.length ? tarefas.slice(0, 2).map((t) => t.nome.toLowerCase()).join(" e ") : "agendamentos e retornos"}, com painel para a equipe.`,
+        beneficios: ["Resposta ao cliente em menos de 1 minuto", "Tarefas manuais reduzidas", "Informação organizada em um só lugar"],
+        economiaEstimada: `${horas.toLocaleString("pt-BR")} horas por semana × ${brl(custoHora)} por hora ≈ ${brl(eco.mensal)} por mês (${brl(eco.anual)} por ano).`,
       },
-      pontosFortes: ["Dor clara e citada várias vezes", "Dono aberto a testar", "Volume de mensagens justifica a automação"],
+      pontosFortes: fortes.length ? fortes : ["Dor clara e citada várias vezes", "Dono aberto a testar"],
       riscos: [
-        { risco: "Orçamento não confirmado", probabilidade: "media", impacto: "alta", mitigacao: "Mostrar o protótipo com a economia calculada antes de falar de preço." },
-        { risco: "Agenda atual em papel", probabilidade: "alta", impacto: "media", mitigacao: "Cadastrar os horários manualmente na primeira semana." },
+        { risco: "Orçamento não confirmado", probabilidade: (r.notas?.orcamento ?? 3) <= 2 ? "alta" : "media", impacto: "alta", mitigacao: "Mostrar o protótipo com a economia calculada antes de falar de preço." },
+        { risco: "Informação atual em papel ou planilha", probabilidade: "alta", impacto: "media", mitigacao: "Cadastrar os dados manualmente na primeira semana." },
         { risco: "Dependência da API do WhatsApp", probabilidade: "baixa", impacto: "alta", mitigacao: "Usar a API oficial (Cloud API) e um número dedicado." },
       ],
-      premissas: ["Cerca de 40 mensagens por dia", "Um único atendente no balcão"],
-      recomendacao: "Seguir com ressalvas: confirmar o orçamento na demonstração do protótipo.",
-      proximosPassos: ["Marcar 30 minutos com o dono para mostrar o protótipo", "Pedir a lista de serviços e horários", "Enviar proposta com implantação e mensalidade"],
+      premissas: [
+        ...(r.numeros?.horasSemana ? [] : ["Horas em tarefas manuais não informadas: considerado 5 por semana"]),
+        ...(r.numeros?.custoHora ? [] : ["Custo da hora não informado: considerado R$ 25"]),
+        "Um único atendente no balcão",
+      ],
+      recomendacao: l.veredito === "frio" ? "Não seguir agora: manter contato e rever em 60 dias." : "Seguir com ressalvas: confirmar o orçamento na demonstração do protótipo.",
+      proximosPassos: ["Marcar 30 minutos com o dono para mostrar o protótipo", "Pedir a lista de serviços, preços e horários", "Enviar proposta com implantação e mensalidade"],
     },
     plano: {
       prd: {
-        problema: "Mensagens sem resposta fora do horário e retornos esquecidos.",
+        problema: reclamacoes.join("; ") + ".",
         objetivo: "Responder dúvidas comuns e marcar horários sozinho pelo WhatsApp.",
         publico: "Dono e atendente do balcão; clientes do comércio pelo WhatsApp.",
         escopo: ["Respostas automáticas para dúvidas frequentes", "Marcação de horário com confirmação", "Painel com a agenda do dia"],

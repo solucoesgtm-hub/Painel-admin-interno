@@ -742,7 +742,7 @@ export async function registrarGeracaoIa(g: RegistroGeracao, socio: { id: string
     custoBRL: g.custoBRL,
     autor: socio.nome,
     criadoEm,
-    exemplo: false,
+    exemplo: !!g.exemplo,
   };
 }
 
@@ -764,7 +764,8 @@ async function paraPlanoSalvo(r: LinhaPlano): Promise<PlanoIASalvo | null> {
     custoBRL: r.plano.custoCentavos / 100,
     autor: r.autor,
     criadoEm: r.plano.criadoEm.toISOString(),
-    exemplo: false,
+    // Gerado sem a chave da API (exemplo montado pelo sistema, sem custo).
+    exemplo: r.plano.modelo === "exemplo",
   };
 }
 

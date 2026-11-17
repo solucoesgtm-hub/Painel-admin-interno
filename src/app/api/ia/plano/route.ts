@@ -7,7 +7,7 @@ import { exemploRelatorioPlano } from "@/lib/ia/exemplo";
 import { mensagemDoLead, PEDIDO_PLANO, PEDIDO_RELATORIO, SISTEMA } from "@/lib/ia/prompts/relatorio-plano";
 import { esquemaPedidoPlano, esquemaPlano, esquemaRelatorio, tetoAtingido, type EventoGeracao } from "@/lib/regras/ia";
 import { brl } from "@/lib/formato";
-import { buscarDiagnosticoParaIa, buscarLead, gastoIaDoMes, modoDemo, registrarGeracaoIa } from "@/lib/repositorio";
+import { buscarDiagnosticoParaIa, buscarLead, gastoIaDoMes, registrarGeracaoIa } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 // Limite de tempo da rota na Vercel (Fluid Compute).
@@ -25,7 +25,6 @@ export async function POST(req: Request) {
   if (!lead) return erro("Lead não encontrado.", 404);
 
   const comIa = iaConfigurada();
-  if (!comIa && !modoDemo) return erro("IA ainda não configurada. Cadastre a ANTHROPIC_API_KEY na Vercel.", 503);
   if (comIa) {
     const gasto = await gastoIaDoMes();
     const teto = tetoMensalBRL();
@@ -64,6 +63,7 @@ export async function POST(req: Request) {
                   segmento: lead.segmento,
                   pontuacao: diag?.pontuacao ?? lead.pontuacao ?? 0,
                   veredito: diag?.veredito ?? lead.veredito ?? "sem veredito",
+                  respostas: diag?.respostas,
                 }),
                 modelo: "exemplo",
                 tokens: semTokens,
