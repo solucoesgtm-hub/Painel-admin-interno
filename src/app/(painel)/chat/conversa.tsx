@@ -206,7 +206,7 @@ export function Conversa({ iniciais, socios, socioAtualId }: { iniciais: Mensage
                           )}
                           {!m.estado && podeApagar(m, socioAtualId) && (
                             <button type="button" onClick={() => void apagar(m)} aria-label="Apagar mensagem" title="Apagar (até 15 min depois de enviar)"
-                              className="grid size-9 place-items-center rounded-full text-tinta-3 hover:bg-risco-suave hover:text-risco">
+                              className="grid size-9 place-items-center rounded-full text-tinta-3 hover:bg-risco-suave hover:text-risco pointer-coarse:size-11">
                               <Trash2 aria-hidden className="size-3.5" />
                             </button>
                           )}

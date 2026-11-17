@@ -79,8 +79,8 @@ export function Calendario({
     <Cartao className="animate-surgir overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-areia p-4 lg:flex-row lg:items-center">
         <div className="flex items-center gap-1">
-          <button type="button" aria-label="Anterior" onClick={() => navegar(-1)} className="grid size-11 place-items-center rounded-md hover:bg-superficie-2"><ChevronLeft aria-hidden className="size-5" /></button>
-          <button type="button" aria-label="Próximo" onClick={() => navegar(1)} className="grid size-11 place-items-center rounded-md hover:bg-superficie-2"><ChevronRight aria-hidden className="size-5" /></button>
+          <button type="button" aria-label="Anterior" onClick={() => navegar(-1)} className="grid size-11 shrink-0 place-items-center rounded-md hover:bg-superficie-2"><ChevronLeft aria-hidden className="size-5" /></button>
+          <button type="button" aria-label="Próximo" onClick={() => navegar(1)} className="grid size-11 shrink-0 place-items-center rounded-md hover:bg-superficie-2"><ChevronRight aria-hidden className="size-5" /></button>
           <button type="button" onClick={() => setRef(hoje)} className="min-h-11 rounded-md border border-areia-2 bg-superficie px-3 text-sm hover:border-tinta-3">Hoje</button>
           <h2 className="ml-3 text-lg font-semibold tracking-tight first-letter:uppercase" aria-live="polite">{titulo}</h2>
         </div>
@@ -137,12 +137,12 @@ export function Calendario({
                         <span className="mt-1 flex justify-end gap-0.5">
                           {e.link && (
                             <a href={e.link} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${e.titulo} no Google Agenda`} title="Abrir no Google Agenda"
-                              className="grid size-9 place-items-center rounded-full text-tinta-3 hover:bg-superficie-2 hover:text-tinta">
+                              className="grid size-9 place-items-center rounded-full text-tinta-3 hover:bg-superficie-2 hover:text-tinta pointer-coarse:size-11">
                               <ExternalLink aria-hidden className="size-3.5" />
                             </a>
                           )}
                           <button type="button" onClick={() => excluir(e)} aria-label={`Excluir ${e.titulo}`} title="Excluir evento"
-                            className="grid size-9 place-items-center rounded-full text-tinta-3 hover:bg-risco-suave hover:text-risco">
+                            className="grid size-9 place-items-center rounded-full text-tinta-3 hover:bg-risco-suave hover:text-risco pointer-coarse:size-11">
                             <Trash2 aria-hidden className="size-3.5" />
                           </button>
                         </span>

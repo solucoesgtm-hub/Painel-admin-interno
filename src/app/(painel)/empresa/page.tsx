@@ -287,7 +287,7 @@ function Linha({
             <Link
               href={href}
               {...(externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="block truncate text-sm font-medium text-tinta hover:text-azul-escuro hover:underline"
+              className="-my-3 block truncate py-3 text-sm font-medium text-tinta hover:text-azul-escuro hover:underline"
             >
               {valor}
             </Link>

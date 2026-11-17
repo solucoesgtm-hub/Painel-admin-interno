@@ -95,21 +95,21 @@ export function Funil({
           <label htmlFor="busca-lead" className="sr-only">Buscar lead</label>
           <Entrada id="busca-lead" placeholder="Buscar por nome, segmento ou cidade" value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <label htmlFor="filtro-dono" className="sr-only">Filtrar por dono</label>
-          <Selecao id="filtro-dono" value={dono} onChange={(e) => setDono(e.target.value)} className="w-auto min-w-40">
+          <Selecao id="filtro-dono" value={dono} onChange={(e) => setDono(e.target.value)} className="min-w-0 flex-1 lg:w-auto lg:min-w-40 lg:flex-none">
             <option value="todos">Todos os sócios</option>
             {socios.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
           </Selecao>
           <div role="group" aria-label="Visualização" className="flex rounded-md border border-areia-2 bg-superficie p-0.5">
             {([["quadro", LayoutGrid, "Quadro"], ["lista", List, "Lista"]] as const).map(([v, I, n]) => (
               <button key={v} type="button" aria-pressed={visao === v} onClick={() => setVisao(v)}
-                className={cn("grid size-10 place-items-center rounded-[5px] text-tinta-3", visao === v && "bg-azul text-white")}>
+                className={cn("grid size-10 place-items-center rounded-[5px] text-tinta-3 max-lg:size-11", visao === v && "bg-azul text-white")}>
                 <I aria-hidden className="size-4" /><span className="sr-only">{n}</span>
               </button>
             ))}
           </div>
-          <Botao icone={Plus} onClick={() => setNovoAberto(true)}>Novo lead</Botao>
+          <Botao icone={Plus} onClick={() => setNovoAberto(true)} className="max-sm:w-full">Novo lead</Botao>
         </div>
       </div>
 
@@ -262,7 +262,7 @@ function CardLead({
         id={`mover-${l.id}`}
         value={l.etapa}
         onChange={(e) => aoMover(e.target.value as EtapaId)}
-        className="mt-2.5 min-h-9 w-full rounded-[5px] border border-areia bg-superficie px-2 text-xs text-tinta-2 hover:border-tinta-3"
+        className="mt-2.5 min-h-9 w-full rounded-[5px] border border-areia bg-superficie px-2 text-xs text-tinta-2 hover:border-tinta-3 pointer-coarse:min-h-11 pointer-coarse:text-base"
       >
         {ETAPAS.map((e) => <option key={e.id} value={e.id}>Mover para: {e.nome}</option>)}
       </select>

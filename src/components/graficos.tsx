@@ -199,7 +199,7 @@ export function AbasPeriodo<T extends string>({
           aria-checked={valor === o.id}
           onClick={() => aoMudar(o.id)}
           className={
-            "min-h-9 rounded-full px-3.5 text-[13px] font-medium transition-[background,color,box-shadow] duration-200 " +
+            "min-h-9 rounded-full px-3.5 text-[13px] font-medium pointer-coarse:min-h-11 transition-[background,color,box-shadow] duration-200 " +
             (valor === o.id ? "bg-tinta text-offwhite shadow-[0_6px_16px_-8px_rgb(18_21_31/0.6)]" : "text-tinta-3 hover:text-tinta")
           }
         >

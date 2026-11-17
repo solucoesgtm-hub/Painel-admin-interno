@@ -118,7 +118,7 @@ export default async function Financeiro() {
                 <div className="flex flex-col items-end gap-1">
                   <span className={`numeros text-sm font-semibold ${e.tipo === "entrada" ? "text-ok" : "text-tinta"}`}>{e.tipo === "entrada" ? "+" : "−"}{brl(e.valor)}</span>
                   {e.tipo === "entrada" && !e.conciliadoCom && (
-                    <button type="button" disabled title="Disponível na Fase 5" className="inline-flex min-h-8 items-center gap-1 rounded px-1.5 text-xs text-azul-escuro disabled:opacity-60">
+                    <button type="button" disabled title="Disponível na Fase 5" className="inline-flex min-h-8 items-center gap-1 rounded px-1.5 text-xs text-azul-escuro disabled:opacity-60 pointer-coarse:min-h-11">
                       <Link2 aria-hidden className="size-3" />Conciliar
                     </button>
                   )}

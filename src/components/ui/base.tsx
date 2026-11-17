@@ -281,7 +281,7 @@ export function Avatar({ nome, cor, tamanho = "md" }: { nome: string; cor?: stri
 /* ---------------- Tabela ---------------- */
 export function Tabela({ children, className, rotulo }: { children: ReactNode; className?: string; rotulo: string }) {
   return (
-    <div className={cn("rolagem-fina overflow-x-auto", className)}>
+    <div className={cn("rolagem-fina relative overflow-x-auto", className)}>
       <table aria-label={rotulo} className="w-full min-w-[640px] border-collapse text-left text-sm">
         {children}
       </table>
