@@ -55,3 +55,8 @@ Legenda: ✅ pronto · 🟡 tela pronta com dados de demonstração · ⬜ a faz
 
 ## Como testar
 `npm test` (regras), `npm run tipos`, `npm run build`, e conferir as telas em 390 px e 1440 px.
+
+## Extras (fora das fases)
+- ✅ Chat interno dos sócios: mensagens com envio otimista, links clicáveis, apagar em até 15 min, contador de não lidas no topo
+- ✅ Segurança: cabeçalhos (CSP, HSTS, X-Frame-Options, Permissions-Policy), bloqueio de login após 5 tentativas em 15 min por e-mail (20 por IP)
+- ✅ Plataformas: app instalável (manifest), margens seguras de celular com recorte, campos sem zoom no iOS, impressão, alto contraste e menos transparência

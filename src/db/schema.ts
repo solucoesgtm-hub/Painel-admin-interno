@@ -153,6 +153,41 @@ export const contratos = pgTable(
   (t) => [index("contratos_fim_idx").on(t.fim), index("contratos_lead_idx").on(t.leadId)],
 );
 
+/** Chat interno dos sócios. Mensagem apagada mantém a linha (apagadaEm) e perde o texto. */
+export const mensagens = pgTable(
+  "mensagens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    autorId: uuid("autor_id")
+      .notNull()
+      .references(() => socios.id),
+    texto: text("texto").notNull(),
+    apagadaEm: timestamp("apagada_em", { withTimezone: true }),
+    criadoEm,
+  },
+  (t) => [index("mensagens_criado_idx").on(t.criadoEm)],
+);
+
+/** Até quando cada sócio leu o chat (para o contador de não lidas). */
+export const chatLeituras = pgTable("chat_leituras", {
+  socioId: uuid("socio_id")
+    .primaryKey()
+    .references(() => socios.id, { onDelete: "cascade" }),
+  lidoAte: timestamp("lido_ate", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Tentativas de login recusadas, para bloquear por um tempo depois de várias seguidas. */
+export const loginTentativas = pgTable(
+  "login_tentativas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** E-mail tentado (minúsculo) ou "ip:<endereço>". */
+    chave: text("chave").notNull(),
+    criadoEm,
+  },
+  (t) => [index("login_tentativas_chave_idx").on(t.chave, t.criadoEm)],
+);
+
 export const leadsRelacoes = relations(leads, ({ one, many }) => ({
   dono: one(socios, { fields: [leads.donoId], references: [socios.id] }),
   diagnosticos: many(diagnosticos),

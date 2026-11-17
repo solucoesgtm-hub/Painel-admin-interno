@@ -399,3 +399,11 @@ export const ANALISE = {
     { faixa: "70–100 (Quente)", leads: 16, fecharam: 5 },
   ],
 };
+
+// ---------- Chat interno ----------
+export const MENSAGENS_DEMO = [
+  { id: "msg1", autorId: "s-thalis", texto: "Bom dia! Fechei a visita na Clínica Sorriso Leve para hoje às 14h.", apagada: false, em: ts(0, "08:12") },
+  { id: "msg2", autorId: "s-gabriel", texto: "Boa! Levo o tablet com a demo do agente de agendamento.", apagada: false, em: ts(0, "08:15") },
+  { id: "msg3", autorId: "s-mateus", texto: "A certidão do FGTS vence em 9 dias. Renovo hoje à tarde antes de enviar o edital.", apagada: false, em: ts(0, "08:40") },
+  { id: "msg4", autorId: "s-thalis", texto: "Perfeito. A proposta da Academia Movimento sai amanhã cedo.", apagada: false, em: ts(0, "08:42") },
+];

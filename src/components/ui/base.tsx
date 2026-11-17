@@ -28,7 +28,7 @@ const estiloBotao: Record<Variante, string> = {
   perigo: "bg-[#b3301d] text-white hover:bg-[#962615]",
 };
 const baseBotao =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-[background,border,color,transform] duration-200 ease-suave active:translate-y-px disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-[background,border,color,transform] duration-200 ease-suave active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap";
 
 export function Botao({
   variante = "primario",
@@ -94,7 +94,7 @@ export function Campo({
 }
 
 const baseEntrada =
-  "min-h-11 w-full rounded-md border border-areia-2 bg-superficie px-3.5 text-sm text-tinta placeholder:text-tinta-3/70 transition-colors hover:border-tinta-3/50 focus:border-azul focus:outline-none focus:ring-3 focus:ring-azul/20 aria-[invalid=true]:border-risco [&>option]:bg-papel-forte [&>option]:text-tinta";
+  "min-h-11 w-full rounded-md border border-areia-2 bg-superficie px-3.5 text-base text-tinta sm:text-sm placeholder:text-tinta-3/70 transition-colors hover:border-tinta-3/50 focus:border-azul focus:outline-none focus:ring-3 focus:ring-azul/20 aria-[invalid=true]:border-risco [&>option]:bg-papel-forte [&>option]:text-tinta";
 
 export const Entrada = ({ className, ...p }: ComponentProps<"input">) => (
   <input className={cn(baseEntrada, className)} {...p} />
@@ -332,7 +332,7 @@ export function EstadoErro({ titulo = "Não foi possível carregar", texto, acao
 }
 
 export function Esqueleto({ className }: { className?: string }) {
-  return <div aria-hidden className={cn("animate-pulse rounded-md bg-areia", className)} />;
+  return <div aria-hidden className={cn("esqueleto rounded-md", className)} />;
 }
 
 /* ---------------- Aviso em linha ---------------- */

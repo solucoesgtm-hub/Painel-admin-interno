@@ -29,6 +29,13 @@
       "when": 1794544515576,
       "tag": "0003_empresa_contratos",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794922082896,
+      "tag": "0004_chat_e_login",
+      "breakpoints": true
     }
   ]
 }

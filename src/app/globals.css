@@ -100,6 +100,7 @@
     --c-sombra-cartao: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 30px 60px -30px rgb(0 0 0 / 0.65);
     --c-sombra-flutuante: 0 24px 60px -18px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.08);
     --c-veu: linear-gradient(180deg, rgb(8 10 16 / 0.5), rgb(8 10 16 / 0.35) 45%, rgb(8 10 16 / 0.55));
+    --c-foco: #a9c0ff;
     color-scheme: dark;
   }
 }
@@ -140,6 +141,7 @@
   --c-sombra-cartao: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 30px 60px -30px rgb(0 0 0 / 0.65);
   --c-sombra-flutuante: 0 24px 60px -18px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.08);
   --c-veu: linear-gradient(180deg, rgb(8 10 16 / 0.5), rgb(8 10 16 / 0.35) 45%, rgb(8 10 16 / 0.55));
+  --c-foco: #a9c0ff;
   color-scheme: dark;
 }
 
@@ -207,6 +209,9 @@
   --animate-surgir: surgir 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-entrar-modal: entrar-modal 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-subir-folha: subir-folha 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-mensagem: mensagem 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pagina: pagina 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-brilho: brilho 1.6s linear infinite;
 
   @keyframes surgir {
     from { opacity: 0; transform: translateY(10px); }
@@ -219,6 +224,18 @@
   @keyframes subir-folha {
     from { transform: translateY(100%); }
     to { transform: none; }
+  }
+  @keyframes mensagem {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pagina {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes brilho {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
   }
   @keyframes derivar {
     0% { transform: translate3d(0, 0, 0) scale(1); }
@@ -249,8 +266,19 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
     background: var(--c-offwhite);
+    scrollbar-color: var(--c-areia-2) transparent;
+    scrollbar-gutter: stable;
   }
+  /* Toque: sem atraso de duplo toque em controles; áreas roláveis não arrastam a página junto. */
+  a, button, summary, label, select, input, textarea, [role="button"], [role="option"], [role="tab"] { touch-action: manipulation; }
+  button, [role="button"], summary { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  dialog { overscroll-behavior: contain; }
+  /* Teclado virtual e rolagem até âncoras não escondem o alvo atrás do topo fixo. */
+  :target, :focus-visible { scroll-margin-top: 6rem; scroll-margin-bottom: 7rem; }
   body {
     min-height: 100dvh;
     color: var(--c-tinta);
@@ -259,7 +287,7 @@
     /* Sem fundo no body: ele cobriria o .fundo (z-index -1). A cor fica no html. */
   }
   :focus-visible {
-    outline: 2px solid var(--color-azul);
+    outline: 2px solid var(--c-foco, var(--color-azul));
     outline-offset: 2px;
     border-radius: 6px;
   }
@@ -310,6 +338,48 @@
   .rolagem-escura { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.14) transparent; }
   .sem-rolagem { scrollbar-width: none; }
   .sem-rolagem::-webkit-scrollbar { display: none; }
+}
+
+/* Esqueleto de carregamento com brilho passando. */
+@utility esqueleto {
+  background-color: var(--c-areia);
+  background-image: linear-gradient(100deg, transparent 30%, var(--c-borda-luz) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: var(--animate-brilho);
+}
+
+/* Cartões clicáveis sobem um pouco no hover (só onde há mouse). */
+@utility elevar {
+  transition: transform 220ms var(--ease-suave), box-shadow 220ms var(--ease-suave);
+  @media (hover: hover) {
+    &:hover { transform: translateY(-2px); box-shadow: var(--c-sombra-flutuante); }
+  }
+  &:active { transform: translateY(0) scale(0.995); }
+}
+
+/* Quem pede menos transparência (acessibilidade do sistema) recebe superfícies sólidas. */
+@media (prefers-reduced-transparency: reduce) {
+  .vidro, .vidro-forte {
+    background-color: var(--c-papel-forte);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .fundo::before { display: none; }
+}
+
+/* Alto contraste do Windows: bordas visíveis no lugar de sombras e vidro. */
+@media (forced-colors: active) {
+  .vidro, .vidro-forte { border: 1px solid CanvasText; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .fundo { display: none; }
+}
+
+/* Impressão: só o conteúdo, em fundo branco. */
+@media print {
+  .fundo, header, nav, [role="status"] { display: none !important; }
+  html, body { background: #fff !important; color: #000 !important; }
+  main { padding: 0 !important; max-width: none !important; }
+  .vidro, .vidro-forte { background: #fff !important; box-shadow: none !important; border: 1px solid #ccc !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; break-inside: avoid; }
+  * { animation: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

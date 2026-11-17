@@ -311,7 +311,7 @@ function ModalNovoLead({
         <Botao type="button" variante="secundario" onClick={aoFechar}>Cancelar</Botao>
         <Botao type="submit" form="form-novo-lead" disabled={salvando}>{salvando ? "Salvando…" : "Salvar lead"}</Botao>
       </>}>
-      <form id="form-novo-lead" action={enviar} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
+      <form id="form-novo-lead" onSubmit={(e) => { e.preventDefault(); enviar(new FormData(e.currentTarget)); }} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         {mensagem && <p role="alert" className="text-sm text-risco sm:col-span-2">{mensagem}</p>}
         <Campo rotulo="Nome do comércio" id="nome" erro={erros.nome} className="sm:col-span-2">
           <Entrada id="nome" name="nome" autoComplete="off" placeholder="Ex.: Padaria Pão do Vale" {...err("nome")} />

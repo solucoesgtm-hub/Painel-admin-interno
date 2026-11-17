@@ -18,4 +18,3 @@
 - Fora do bloco comercial (leads, diagnóstico, análise), da empresa e dos contratos, as telas ainda usam dados de demonstração mesmo com o Neon ligado: financeiro, editais, projetos, produtos e automação. A agenda usa o Google quando a credencial existir. No Início, só leads e próximos passos são reais.
 - Não há como excluir um lead pela tela (decidir se será exclusão ou arquivamento).
 - Limite de tentativas de login por IP (hoje há só um atraso fixo por tentativa errada).
-- Formulários de lead (novo, editar, diagnóstico) usam `action` no `<form>`: no React 19 isso limpa os campos ao enviar, então quando o servidor devolve erro o sócio perde o que digitou. Os formulários de empresa, contrato e evento já usam `onSubmit`; aplicar o mesmo nos de lead.

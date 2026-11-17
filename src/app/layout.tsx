@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   title: { default: "GTM Hub", template: "%s · GTM Hub" },
   description: "Sistema interno de gestão da GTM Soluções",
   robots: { index: false, follow: false },
+  applicationName: "GTM Hub",
+  appleWebApp: { capable: true, title: "GTM Hub", statusBarStyle: "black-translucent" },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export const viewport: Viewport = {
@@ -24,6 +27,8 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  // Usa a tela inteira em celulares com recorte; as margens seguras são tratadas no CSS.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

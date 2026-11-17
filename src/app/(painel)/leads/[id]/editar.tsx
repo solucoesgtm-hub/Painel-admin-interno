@@ -57,7 +57,7 @@ export function EditarLead({ lead, socios }: { lead: Lead; socios: Socio[] }) {
           </>
         }
       >
-        <form id="form-editar-lead" key={aberto ? "aberto" : "fechado"} action={enviar} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
+        <form id="form-editar-lead" key={aberto ? "aberto" : "fechado"} onSubmit={(e) => { e.preventDefault(); enviar(new FormData(e.currentTarget)); }} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
           {mensagem && <p role="alert" className="text-sm text-risco sm:col-span-2">{mensagem}</p>}
           <Campo rotulo="Nome do comércio" id="ed-nome" erro={erros.nome} className="sm:col-span-2">
             <Entrada id="ed-nome" name="nome" defaultValue={lead.nome} autoComplete="off" {...err("nome")} />

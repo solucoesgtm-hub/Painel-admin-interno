@@ -6,7 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/components/ui/base";
 import { Logo } from "./logo";
-import { AbasFaixa, AbasTopo, BarraInferior, Dock, GRUPOS, MenuConta, type Usuario } from "./navegacao";
+import { acaoContarNaoLidas } from "@/app/(painel)/chat/acoes";
+import { AbasFaixa, AbasTopo, BarraInferior, BotaoChat, Dock, GRUPOS, MenuConta, type Usuario } from "./navegacao";
 
 export type LeadBusca = { id: string; nome: string; etapa: string; cidade: string };
 
@@ -64,7 +65,7 @@ export function Casca({
       <Topo contadores={contadores} usuario={usuario} sair={sair} data={data} selo={selo} aoBuscar={abrirBusca} />
       <Dock aoBuscar={abrirBusca} contadores={contadores} />
 
-      <main id="conteudo" className="mx-auto max-w-[1520px] px-4 pb-32 pt-4 sm:px-6 lg:pb-16 lg:pl-[104px] lg:pr-8 lg:pt-6">
+      <main id="conteudo" className="mx-auto max-w-[1520px] pb-[calc(env(safe-area-inset-bottom)+7.5rem)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-4 sm:px-6 lg:pb-16 lg:pl-[104px] lg:pr-8 lg:pt-6">
         {children}
       </main>
 
@@ -92,6 +93,20 @@ function Topo({
   const [novoAberto, setNovoAberto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const atual = usePathname();
+  // Mensagens novas do chat: vem do servidor a cada tela e é conferido a cada 30 s com a aba visível.
+  const [naoLidas, setNaoLidas] = useState(contadores["/chat"] ?? 0);
+  useEffect(() => setNaoLidas(contadores["/chat"] ?? 0), [contadores]);
+  useEffect(() => {
+    const conferir = () => {
+      if (document.visibilityState === "visible") acaoContarNaoLidas().then(setNaoLidas).catch(() => {});
+    };
+    const id = setInterval(conferir, 30_000);
+    document.addEventListener("visibilitychange", conferir);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", conferir);
+    };
+  }, []);
   useEffect(() => setNovoAberto(false), [atual]);
   useEffect(() => {
     const fora = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setNovoAberto(false);
@@ -105,7 +120,7 @@ function Topo({
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 xl:relative">
+    <header className="sticky top-0 z-30 pt-[env(safe-area-inset-top)] xl:relative">
       <div className="pointer-events-none absolute inset-0 -bottom-4 bg-offwhite/45 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_70%,transparent)] xl:hidden" />
       <div className="relative mx-auto flex h-[72px] max-w-[1520px] items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" aria-label="GTM Hub, início" className="shrink-0 rounded-xl">
@@ -133,6 +148,8 @@ function Topo({
           >
             <Search aria-hidden className="size-[18px]" />
           </button>
+
+          <BotaoChat naoLidas={naoLidas} />
 
           <div ref={ref} className="relative">
             <button
@@ -254,7 +271,7 @@ function Paleta({ aberta, aoFechar, leads }: { aberta: boolean; aoFechar: () => 
           onChange={(e) => { setBusca(e.target.value); setMarcado(0); }}
           onKeyDown={teclado}
           placeholder="Buscar lead, tela ou ação…"
-          className="h-14 min-w-0 flex-1 bg-transparent text-[15px] text-tinta placeholder:text-tinta-3 focus:outline-none"
+          className="h-14 min-w-0 flex-1 bg-transparent text-base text-tinta sm:text-[15px] placeholder:text-tinta-3 focus:outline-none"
         />
         <button type="button" onClick={aoFechar} aria-label="Fechar busca" className="grid size-10 place-items-center rounded-full text-tinta-3 hover:bg-superficie-2 hover:text-tinta">
           <X aria-hidden className="size-4" />

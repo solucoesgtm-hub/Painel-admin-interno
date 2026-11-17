@@ -2,8 +2,9 @@
 // Com DATABASE_URL definida, leads e histórico vêm do Neon (src/db).
 // Sem ela, o Hub roda em modo demonstração com dados fictícios em memória.
 import "server-only";
-import { CONTRATOS, EMPRESA_DEMO, EVENTOS, HISTORICO_INICIAL, LEADS_INICIAIS, SOCIOS, type Evento, type EventoHistorico, type Lead, type Socio } from "./demo/dados";
+import { CONTRATOS, EMPRESA_DEMO, EVENTOS, HISTORICO_INICIAL, MENSAGENS_DEMO, LEADS_INICIAIS, SOCIOS, type Evento, type EventoHistorico, type Lead, type Socio } from "./demo/dados";
 import type { DadosEvento } from "./regras/agenda";
+import { MINUTOS_PARA_APAGAR, podeApagar, type Mensagem } from "./regras/chat";
 import { EMPRESA_VAZIA, type ContratoCliente, type DadosContrato, type DadosEmpresa } from "./regras/empresa";
 import { nomeEtapa, type DadosEditarLead, type DadosNovoLead, type EtapaId } from "./regras/funil";
 import {
@@ -34,6 +35,8 @@ type Memoria = {
   empresa: DadosEmpresa;
   contratos: ContratoCliente[];
   eventos: Evento[];
+  mensagens: Mensagem[];
+  leituras: Record<string, string>;
 };
 const g = globalThis as unknown as { __gtmMemoria?: Memoria };
 function memoria(): Memoria {
@@ -58,6 +61,8 @@ function memoria(): Memoria {
     observacoes: "",
   }));
   m.eventos ??= structuredClone(EVENTOS);
+  m.mensagens ??= structuredClone(MENSAGENS_DEMO);
+  m.leituras ??= {};
   return m;
 }
 
@@ -457,4 +462,66 @@ async function registrarNoHistorico(socio: { id: string; nome: string }, acao: "
   if (modoDemo) return registrar(socio.nome, acao, entidade, nome);
   const [{ db }, { historico }] = await Promise.all([import("@/db"), import("@/db/schema")]);
   await db.insert(historico).values({ atorTipo: "socio", atorId: socio.id, acao, entidade, detalhes: { nome } });
+}
+
+/* ---------------- Chat interno ---------------- */
+async function consultasChat() {
+  return import("@/db/consultas/chat");
+}
+
+/** Últimas mensagens do chat, da mais antiga para a mais nova. */
+export async function listarMensagens(): Promise<Mensagem[]> {
+  if (modoDemo) return memoria().mensagens;
+  const { listarMensagens } = await consultasChat();
+  return (await listarMensagens()).map((m) => ({
+    id: m.id,
+    autorId: m.autorId,
+    texto: m.apagadaEm ? "" : m.texto,
+    apagada: !!m.apagadaEm,
+    em: m.criadoEm.toISOString(),
+  }));
+}
+
+export async function enviarMensagem(texto: string, socio: { id: string }): Promise<Mensagem> {
+  if (!modoDemo) {
+    const c = await consultasChat();
+    const m = await c.criarMensagem(socio.id, texto);
+    await c.marcarLido(socio.id);
+    return { id: m.id, autorId: m.autorId, texto: m.texto, apagada: false, em: m.criadoEm.toISOString() };
+  }
+  const nova: Mensagem = { id: crypto.randomUUID(), autorId: socio.id, texto, apagada: false, em: new Date().toISOString() };
+  memoria().mensagens.push(nova);
+  memoria().leituras[socio.id] = nova.em;
+  return nova;
+}
+
+/** Só o autor apaga, e só dentro do prazo (MINUTOS_PARA_APAGAR). Devolve se apagou. */
+export async function apagarMensagem(id: string, socio: { id: string }): Promise<boolean> {
+  const desde = new Date(Date.now() - MINUTOS_PARA_APAGAR * 60_000);
+  if (!modoDemo) {
+    const { apagarMensagem } = await consultasChat();
+    return apagarMensagem(id, socio.id, desde);
+  }
+  const m = memoria().mensagens.find((x) => x.id === id);
+  if (!m || !podeApagar(m, socio.id)) return false;
+  m.texto = "";
+  m.apagada = true;
+  return true;
+}
+
+export async function marcarChatLido(socio: { id: string }) {
+  if (!modoDemo) {
+    const { marcarLido } = await consultasChat();
+    return marcarLido(socio.id);
+  }
+  memoria().leituras[socio.id] = new Date().toISOString();
+}
+
+export async function contarMensagensNaoLidas(socio: { id: string }): Promise<number> {
+  if (!modoDemo) {
+    const { contarNaoLidas } = await consultasChat();
+    return contarNaoLidas(socio.id);
+  }
+  const lido = memoria().leituras[socio.id] ?? "";
+  return memoria().mensagens.filter((m) => m.autorId !== socio.id && !m.apagada && m.em > lido).length;
 }

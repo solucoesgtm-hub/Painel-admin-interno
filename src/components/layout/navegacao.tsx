@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessagesSquare,
   Package,
   Search,
   UserPlus,
@@ -41,6 +42,7 @@ export const GRUPOS: Grupo[] = [
     itens: [
       { href: "/", nome: "Início", icone: LayoutDashboard },
       { href: "/agenda", nome: "Agenda", icone: CalendarDays },
+      { href: "/chat", nome: "Chat dos sócios", curto: "Chat", icone: MessagesSquare },
     ],
   },
   {
@@ -454,5 +456,31 @@ export function BarraInferior({ contadores }: { contadores: Record<string, numbe
         </div>
       )}
     </>
+  );
+}
+
+/* ---------------- Botão do chat no topo (todas as larguras) ---------------- */
+export function BotaoChat({ naoLidas }: { naoLidas: number }) {
+  const atual = usePathname();
+  const sel = ativo(atual, "/chat");
+  const n = sel ? 0 : naoLidas;
+  return (
+    <Link
+      href="/chat"
+      aria-current={sel ? "page" : undefined}
+      aria-label={n ? `Chat dos sócios, ${n} ${n === 1 ? "mensagem nova" : "mensagens novas"}` : "Chat dos sócios"}
+      title="Chat dos sócios"
+      className={cn(
+        "relative grid size-11 shrink-0 place-items-center rounded-full transition-colors",
+        sel ? "bg-tinta text-offwhite" : "vidro text-tinta-2 hover:text-tinta",
+      )}
+    >
+      <MessagesSquare aria-hidden className="size-[18px]" />
+      {n > 0 && (
+        <span aria-hidden className="numeros absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-quente px-1.5 text-[11px] font-semibold leading-5 text-white ring-2 ring-offwhite">
+          {n > 9 ? "9+" : n}
+        </span>
+      )}
+    </Link>
   );
 }
