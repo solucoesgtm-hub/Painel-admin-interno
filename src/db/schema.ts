@@ -113,6 +113,40 @@ export const diagnosticos = pgTable(
   (t) => [index("diagnosticos_lead_idx").on(t.leadId)],
 );
 
+export const situacaoGeracao = pgEnum("situacao_geracao", ["ok", "erro"]);
+
+/**
+ * Relatório e plano de protótipo gerados pela IA a partir de um diagnóstico.
+ * Toda chamada fica registrada (inclusive as que falharam), com tokens e custo estimado,
+ * para somar o gasto do mês contra o teto IA_TETO_MENSAL_BRL.
+ */
+export const planosIa = pgTable(
+  "planos_ia",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    diagnosticoId: uuid("diagnostico_id").references(() => diagnosticos.id, { onDelete: "set null" }),
+    situacao: situacaoGeracao("situacao").notNull().default("ok"),
+    /** Resposta validada (relatório, plano e código). Vazio quando a geração falhou. */
+    conteudo: jsonb("conteudo").$type<Record<string, unknown>>(),
+    erro: text("erro"),
+    modelo: text("modelo").notNull(),
+    tokensEntrada: integer("tokens_entrada").notNull().default(0),
+    tokensSaida: integer("tokens_saida").notNull().default(0),
+    tokensCacheLeitura: integer("tokens_cache_leitura").notNull().default(0),
+    tokensCacheEscrita: integer("tokens_cache_escrita").notNull().default(0),
+    /** Custo estimado em centavos de real. */
+    custoCentavos: integer("custo_centavos").notNull().default(0),
+    criadoPor: uuid("criado_por")
+      .notNull()
+      .references(() => socios.id),
+    criadoEm,
+  },
+  (t) => [index("planos_ia_lead_idx").on(t.leadId, t.criadoEm), index("planos_ia_criado_idx").on(t.criadoEm)],
+);
+
 /** Histórico: quem fez o quê e quando. Nunca é editado nem apagado pelo sistema. */
 export const historico = pgTable(
   "historico",
@@ -222,4 +256,6 @@ export type Lead = typeof leads.$inferSelect;
 export type NovoLead = typeof leads.$inferInsert;
 export type Diagnostico = typeof diagnosticos.$inferSelect;
 export type NovoDiagnostico = typeof diagnosticos.$inferInsert;
-export type Etapa = (typeof etapaLead.enumValues)[number];
+export type PlanoIa = typeof planosIa.$inferSelect;
+export type NovoPlanoIa = typeof planosIa.$inferInsert;
+export type Etapa =(typeof etapaLead.enumValues)[number];

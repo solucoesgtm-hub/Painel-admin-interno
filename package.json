@@ -17,6 +17,7 @@
     "db:senha": "tsx --env-file=.env.local src/db/definir-senha.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.9.0",
     "@neondatabase/serverless": "^1.2.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.4",

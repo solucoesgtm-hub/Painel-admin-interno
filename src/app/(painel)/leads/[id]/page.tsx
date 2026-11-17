@@ -17,7 +17,9 @@ import { EtiquetaContrato } from "../../contratos/gestao";
 import { brl, data, dataCurta, relativo } from "@/lib/formato";
 import { situacaoMensalidade } from "@/lib/regras/financeiro";
 import { estaParado, nomeEtapa } from "@/lib/regras/funil";
-import { buscarLead, listarContratos, listarDiagnosticos, listarSocios } from "@/lib/repositorio";
+import { PainelPlanoIA } from "@/components/ia/plano-ia";
+import { estadoIa } from "@/lib/ia/estado";
+import { buscarLead, listarContratos, listarDiagnosticos, listarSocios, modoDemo, ultimoPlanoIa } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 import { EditarLead } from "./editar";
 
@@ -33,7 +35,13 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const l = await buscarLead(id);
   if (!l) notFound();
-  const [socios, diagnosticos, todosContratos] = await Promise.all([listarSocios(), listarDiagnosticos(l.id), listarContratos()]);
+  const [socios, diagnosticos, todosContratos, planoIa, ia] = await Promise.all([
+    listarSocios(),
+    listarDiagnosticos(l.id),
+    listarContratos(),
+    ultimoPlanoIa(l.id),
+    estadoIa(),
+  ]);
   const dono = socios.find((s) => s.id === l.donoId);
   const base = l.nome;
   const projetos = PROJETOS.filter((p) => p.cliente === base);
@@ -116,7 +124,17 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
           </Cartao>
         </div>
 
-        <div className="space-y-4 lg:col-span-2">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
+          <Cartao>
+            <PainelPlanoIA
+              leadId={l.id}
+              leadNome={l.nome}
+              temDiagnostico={diagnosticos.length > 0 || (modoDemo && l.pontuacao !== null)}
+              estado={ia}
+              planoInicial={planoIa}
+            />
+          </Cartao>
+
           <Cartao>
             <CabecalhoCartao titulo="Proposta" descricao="Valores combinados com o cliente" />
             {l.valorImplantacao || l.mensalidade ? (

@@ -5,7 +5,7 @@
 | --- | --- | --- |
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | Dados reais | Projeto no neon.com → Connect (ver `docs/BANCO-NEON.md`) |
 | `AUTH_SECRET` | Login dos sócios | `npx auth secret`; depois `npm run db:senha -- email` para cada sócio |
-| `ANTHROPIC_API_KEY` | Funções de IA (Fase 2+) | console.anthropic.com |
+| `ANTHROPIC_API_KEY` | Relatório e plano com IA na ficha do lead (cadastrar também na Vercel, com `IA_TETO_MENSAL_BRL`) | console.anthropic.com |
 | Bucket S3/R2 | PDFs de editais e contratos | Cloudflare R2 |
 | Certificado e chaves do Inter | Extrato (Fase 5) | Após abrir a conta PJ; ler a documentação oficial atual antes |
 | `GOOGLE_AGENDA_ID` / `GOOGLE_AGENDA_CREDENCIAIS` | Agenda real da GTM | Conta de serviço no Google Cloud + agenda compartilhada (ver `docs/GOOGLE-AGENDA.md`) |

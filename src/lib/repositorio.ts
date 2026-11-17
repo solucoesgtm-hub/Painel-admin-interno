@@ -7,6 +7,7 @@ import type { DadosEvento } from "./regras/agenda";
 import { MINUTOS_PARA_APAGAR, podeApagar, type Mensagem } from "./regras/chat";
 import { EMPRESA_VAZIA, type ContratoCliente, type DadosContrato, type DadosEmpresa } from "./regras/empresa";
 import { nomeEtapa, type DadosEditarLead, type DadosNovoLead, type EtapaId } from "./regras/funil";
+import { inicioDoMes, type CodigoIA, type ConteudoPlanoIA, type PlanoIASalvo } from "./regras/ia";
 import {
   calcularPontuacao,
   complexidade,
@@ -32,7 +33,8 @@ type InscricaoPushMemoria = { socioId: string; endpoint: string; p256dh: string;
 type Memoria = {
   leads: Lead[];
   historico: EventoHistorico[];
-  diagnosticos: DiagnosticoSalvo[];
+  diagnosticos: (DiagnosticoSalvo & { respostas?: Record<string, unknown> })[];
+  planosIa: PlanoIASalvo[];
   empresa: DadosEmpresa;
   contratos: ContratoCliente[];
   eventos: Evento[];
@@ -51,6 +53,7 @@ function memoria(): Memoria {
   // Completa campos que não existiam numa memória criada por versão anterior (servidor de desenvolvimento).
   const m = g.__gtmMemoria;
   m.diagnosticos ??= [];
+  m.planosIa ??= [];
   m.empresa ??= { ...EMPRESA_DEMO };
   m.contratos ??= CONTRATOS.map((c) => ({
     id: c.id,
@@ -261,12 +264,14 @@ export async function salvarDiagnostico(dados: DadosDiagnostico, socio: { id: st
   if (!modoDemo) {
     const { salvarDiagnostico } = await neon();
     const { leadId, ...respostas } = dados;
-    await salvarDiagnostico({ leadId, respostas, ...resultado, criadoPor: socio.id }, lead.nome);
-    return resultado;
+    const id = await salvarDiagnostico({ leadId, respostas, ...resultado, criadoPor: socio.id }, lead.nome);
+    return { ...resultado, id };
   }
+  const { leadId: _lead, ...respostas } = dados;
   memoria().diagnosticos.unshift({
     id: crypto.randomUUID(),
     leadId: dados.leadId,
+    respostas,
     ...resultado,
     autor: socio.nome,
     criadoEm: new Date().toISOString(),
@@ -274,11 +279,11 @@ export async function salvarDiagnostico(dados: DadosDiagnostico, socio: { id: st
   lead.pontuacao = resultado.pontuacao;
   lead.veredito = resultado.veredito;
   registrar(socio.nome, "criou", "diagnostico", `${lead.nome} — ${pontuacao} pontos`);
-  return resultado;
+  return { ...resultado, id: memoria().diagnosticos[0]!.id };
 }
 
 export async function listarDiagnosticos(leadId: string): Promise<DiagnosticoSalvo[]> {
-  if (modoDemo) return memoria().diagnosticos.filter((d) => d.leadId === leadId);
+  if (modoDemo) return memoria().diagnosticos.filter((d) => d.leadId === leadId).map(({ respostas: _r, ...d }) => d);
   const { listarDiagnosticos } = await neon();
   const linhas = await listarDiagnosticos(leadId);
   return linhas.map((d) => ({
@@ -630,4 +635,187 @@ export async function testarPush(socio: { id: string }): Promise<number> {
   const expirados = await enviarAvisos(lista, { titulo: "GTM Hub", texto: "Notificações ativadas neste aparelho.", url: "/chat" });
   if (expirados.length && !modoDemo) await (await consultasChat()).removerInscricoes(expirados);
   return lista.length - expirados.length;
+}
+
+/* ---------------- IA: relatório e plano do protótipo ---------------- */
+async function consultasIa() {
+  return import("@/db/consultas/ia");
+}
+
+const ehUuid = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
+export type DiagnosticoParaIa = {
+  id: string | null;
+  pontuacao: number;
+  veredito: Veredito;
+  complexidade: "baixa" | "media" | "alta" | null;
+  respostas: Record<string, unknown>;
+  criadoEm: string;
+};
+
+/** Diagnóstico com as respostas do checklist: o indicado ou o mais recente do lead. */
+export async function buscarDiagnosticoParaIa(leadId: string, diagnosticoId?: string): Promise<DiagnosticoParaIa | null> {
+  if (modoDemo) {
+    const d = memoria().diagnosticos.find((x) => x.leadId === leadId && (!diagnosticoId || x.id === diagnosticoId));
+    return d ? { id: d.id, pontuacao: d.pontuacao, veredito: d.veredito, complexidade: d.complexidade, respostas: d.respostas ?? {}, criadoEm: d.criadoEm } : null;
+  }
+  if (!ehUuid(leadId) || (diagnosticoId && !ehUuid(diagnosticoId))) return null;
+  const { diagnosticoParaIa } = await consultasIa();
+  const d = await diagnosticoParaIa(leadId, diagnosticoId);
+  return d
+    ? { id: d.id, pontuacao: d.pontuacao, veredito: d.veredito, complexidade: d.complexidade, respostas: d.respostas, criadoEm: d.criadoEm.toISOString() }
+    : null;
+}
+
+/** Gasto estimado com IA no mês corrente (fuso de São Paulo), em reais. */
+export async function gastoIaDoMes(): Promise<number> {
+  const desde = inicioDoMes();
+  if (modoDemo) return memoria().planosIa.filter((p) => new Date(p.criadoEm) >= desde).reduce((a, p) => a + p.custoBRL, 0);
+  const { gastoDesde } = await consultasIa();
+  return (await gastoDesde(desde)) / 100;
+}
+
+export type RegistroGeracao = {
+  leadId: string;
+  leadNome: string;
+  diagnosticoId: string | null;
+  conteudo: ConteudoPlanoIA | null;
+  erro?: string;
+  modelo: string;
+  tokens: { entrada: number; saida: number; cacheLeitura: number; cacheEscrita: number };
+  custoBRL: number;
+  exemplo?: boolean;
+};
+
+/** Grava a geração (que deu certo ou não) e o histórico no mesmo lote. Devolve o plano salvo, se houver. */
+export async function registrarGeracaoIa(g: RegistroGeracao, socio: { id: string; nome: string }): Promise<PlanoIASalvo | null> {
+  const criadoEm = new Date().toISOString();
+  if (modoDemo) {
+    if (!g.conteudo) {
+      registrar(socio.nome, "executou", "plano_ia", `${g.leadNome} — geração falhou`);
+      return null;
+    }
+    const plano: PlanoIASalvo = {
+      id: crypto.randomUUID(),
+      leadId: g.leadId,
+      diagnosticoId: g.diagnosticoId,
+      conteudo: g.conteudo,
+      modelo: g.modelo,
+      tokensEntrada: g.tokens.entrada,
+      tokensSaida: g.tokens.saida,
+      custoBRL: g.custoBRL,
+      autor: socio.nome,
+      criadoEm,
+      exemplo: !!g.exemplo,
+    };
+    memoria().planosIa.unshift(plano);
+    registrar(socio.nome, "criou", "plano_ia", `${g.leadNome} — relatório e plano`);
+    return plano;
+  }
+  const { salvarPlanoIa } = await consultasIa();
+  const id = await salvarPlanoIa(
+    {
+      leadId: g.leadId,
+      diagnosticoId: g.diagnosticoId,
+      situacao: g.conteudo ? "ok" : "erro",
+      conteudo: g.conteudo,
+      erro: g.erro?.slice(0, 500) ?? null,
+      modelo: g.modelo,
+      tokensEntrada: g.tokens.entrada,
+      tokensSaida: g.tokens.saida,
+      tokensCacheLeitura: g.tokens.cacheLeitura,
+      tokensCacheEscrita: g.tokens.cacheEscrita,
+      custoCentavos: Math.round(g.custoBRL * 100),
+      criadoPor: socio.id,
+    },
+    g.leadNome,
+  );
+  if (!g.conteudo) return null;
+  return {
+    id,
+    leadId: g.leadId,
+    diagnosticoId: g.diagnosticoId,
+    conteudo: g.conteudo,
+    modelo: g.modelo,
+    tokensEntrada: g.tokens.entrada,
+    tokensSaida: g.tokens.saida,
+    custoBRL: g.custoBRL,
+    autor: socio.nome,
+    criadoEm,
+    exemplo: false,
+  };
+}
+
+type LinhaPlano = Awaited<ReturnType<Awaited<ReturnType<typeof consultasIa>>["buscarPlanoIa"]>>;
+
+async function paraPlanoSalvo(r: LinhaPlano): Promise<PlanoIASalvo | null> {
+  if (!r?.plano.conteudo || r.plano.situacao !== "ok") return null;
+  const { esquemaPlanoIA } = await import("./regras/ia");
+  const conteudo = esquemaPlanoIA.safeParse(r.plano.conteudo);
+  if (!conteudo.success) return null;
+  return {
+    id: r.plano.id,
+    leadId: r.plano.leadId,
+    diagnosticoId: r.plano.diagnosticoId,
+    conteudo: conteudo.data,
+    modelo: r.plano.modelo,
+    tokensEntrada: r.plano.tokensEntrada,
+    tokensSaida: r.plano.tokensSaida,
+    custoBRL: r.plano.custoCentavos / 100,
+    autor: r.autor,
+    criadoEm: r.plano.criadoEm.toISOString(),
+    exemplo: false,
+  };
+}
+
+/** Último relatório e plano que deram certo para o lead. */
+export async function ultimoPlanoIa(leadId: string): Promise<PlanoIASalvo | null> {
+  if (modoDemo) return memoria().planosIa.find((p) => p.leadId === leadId) ?? null;
+  if (!ehUuid(leadId)) return null;
+  const { ultimoPlanoIa } = await consultasIa();
+  return paraPlanoSalvo(await ultimoPlanoIa(leadId));
+}
+
+/** Plano gravado do lead indicado (segunda etapa: código). */
+export async function buscarPlanoIa(leadId: string, planoId: string): Promise<PlanoIASalvo | null> {
+  if (modoDemo) return memoria().planosIa.find((p) => p.id === planoId && p.leadId === leadId) ?? null;
+  if (!ehUuid(planoId)) return null;
+  const { buscarPlanoIa } = await consultasIa();
+  const p = await paraPlanoSalvo(await buscarPlanoIa(planoId));
+  return p && p.leadId === leadId ? p : null;
+}
+
+/** Junta o esqueleto de código ao plano e soma o custo. Devolve o plano completo. */
+export async function anexarCodigoIa(
+  plano: PlanoIASalvo,
+  g: Pick<RegistroGeracao, "leadNome" | "tokens" | "custoBRL"> & { codigo: CodigoIA },
+  socio: { id: string; nome: string },
+): Promise<PlanoIASalvo> {
+  const completo: PlanoIASalvo = {
+    ...plano,
+    conteudo: { ...plano.conteudo, codigo: g.codigo },
+    tokensEntrada: plano.tokensEntrada + g.tokens.entrada,
+    tokensSaida: plano.tokensSaida + g.tokens.saida,
+    custoBRL: Math.round((plano.custoBRL + g.custoBRL) * 100) / 100,
+  };
+  if (modoDemo) {
+    memoria().planosIa = memoria().planosIa.map((p) => (p.id === plano.id ? completo : p));
+    registrar(socio.nome, "editou", "plano_ia", `${g.leadNome} — esqueleto de código`);
+    return completo;
+  }
+  const { anexarCodigo } = await consultasIa();
+  await anexarCodigo(
+    plano.id,
+    completo.conteudo,
+    {
+      tokensEntrada: g.tokens.entrada,
+      tokensSaida: g.tokens.saida,
+      tokensCacheLeitura: g.tokens.cacheLeitura,
+      tokensCacheEscrita: g.tokens.cacheEscrita,
+      custoCentavos: Math.round(g.custoBRL * 100),
+    },
+    socio.id,
+    g.leadNome,
+  );
+  return completo;
 }

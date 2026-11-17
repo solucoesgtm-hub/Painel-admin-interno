@@ -6,7 +6,7 @@ import { salvarDiagnostico } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 export type ResultadoDiagnostico =
-  | { ok: true; pontuacao: number; veredito: Veredito }
+  | { ok: true; id: string; pontuacao: number; veredito: Veredito }
   | { ok: false; mensagem: string };
 
 export async function acaoSalvarDiagnostico(dados: unknown): Promise<ResultadoDiagnostico> {
@@ -25,7 +25,7 @@ export async function acaoSalvarDiagnostico(dados: unknown): Promise<ResultadoDi
     revalidatePath(`/leads/${r.data.leadId}`);
     revalidatePath("/analise");
     revalidatePath("/");
-    return { ok: true, pontuacao: res.pontuacao, veredito: res.veredito };
+    return { ok: true, id: res.id, pontuacao: res.pontuacao, veredito: res.veredito };
   } catch {
     return { ok: false, mensagem: "Não foi possível salvar. O rascunho continua no aparelho; tente de novo." };
   }

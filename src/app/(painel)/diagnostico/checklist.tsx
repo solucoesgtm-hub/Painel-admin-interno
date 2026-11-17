@@ -7,13 +7,11 @@ import {
   Calculator,
   Check,
   CloudOff,
-  FileText,
   Gauge,
   ListChecks,
   MessageSquareWarning,
   Plus,
   Save,
-  ShieldAlert,
   Sparkles,
   Trash2,
   Wrench,
@@ -23,6 +21,8 @@ import { Aviso, Botao, CabecalhoCartao, Campo, Cartao, Entrada, EtiquetaVeredito
 import { useAviso } from "@/components/ui/toast";
 import { brl } from "@/lib/formato";
 import { FATORES, PESOS_PADRAO, calcularPontuacao, complexidade, economia, veredito, type Fator, type Notas } from "@/lib/regras/pontuacao";
+import type { EstadoIA } from "@/lib/regras/ia";
+import { BotaoGerarPlano } from "@/components/ia/plano-ia";
 import { acaoSalvarDiagnostico } from "./acoes";
 
 type Estado = {
@@ -88,13 +88,14 @@ function Chips({ opcoes, valor, multiplo = true, aoMudar, rotulo }: { opcoes: st
   );
 }
 
-export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: string }[]; leadInicial?: string }) {
+export function Checklist({ leads, leadInicial, estadoIa }: { leads: { id: string; nome: string }[]; leadInicial?: string; estadoIa: EstadoIA }) {
   const [e, setE] = useState<Estado>({ ...VAZIO, leadId: leadInicial ?? "" });
   const [carregado, setCarregado] = useState(false);
   const [online, setOnline] = useState(true);
   const [novaTarefa, setNovaTarefa] = useState("");
   const [erroSalvar, setErroSalvar] = useState("");
   const [salvoEm, setSalvoEm] = useState<string | null>(null);
+  const [diagnosticoSalvo, setDiagnosticoSalvo] = useState<string | null>(null);
   const [salvando, iniciarSalvar] = useTransition();
   const router = useRouter();
   const avisar = useAviso();
@@ -123,6 +124,7 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
       }
       try { localStorage.removeItem(CHAVE(leadId)); } catch {}
       setSalvoEm(leadId);
+      setDiagnosticoSalvo(r.id);
       setE({ ...VAZIO });
       avisar({ tom: "ok", texto: `Diagnóstico salvo: ${r.pontuacao} pontos` });
       router.refresh();
@@ -340,18 +342,13 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
         </div>
 
         <Cartao className="mt-4">
-          <CabecalhoCartao titulo="Saídas com IA" descricao="Geradas pelo servidor a partir do checklist" />
-          <div className="space-y-2 p-4">
-            {[["Resumo para os sócios", Sparkles], ["Texto de proposta", FileText], ["Especificação técnica (PRD)", ListChecks]].map(([n, I]) => {
-              const Icone = I as LucideIcon;
-              return (
-                <button key={n as string} type="button" disabled
-                  className="flex min-h-11 w-full items-center gap-3 rounded-md border border-areia bg-superficie px-3 text-left text-sm text-tinta-2 disabled:cursor-not-allowed disabled:opacity-60">
-                  <Icone aria-hidden className="size-4 text-azul-escuro" />{n as string}
-                </button>
-              );
-            })}
-            <p className="flex gap-2 pt-1 text-xs text-tinta-3"><ShieldAlert aria-hidden className="size-4 shrink-0" />Disponível na Fase 2, após configurar a chave da API do Claude no servidor.</p>
+          <CabecalhoCartao titulo="Relatório e plano com IA" descricao="Resumo para os sócios, plano do protótipo e código inicial" />
+          <div className="p-4">
+            {salvoEm && diagnosticoSalvo ? (
+              <BotaoGerarPlano leadId={salvoEm} diagnosticoId={diagnosticoSalvo} estado={estadoIa} />
+            ) : (
+              <p className="flex gap-2 text-sm text-tinta-3"><Sparkles aria-hidden className="size-4 shrink-0 text-azul-escuro" />Salve o diagnóstico para gerar o relatório e o plano a partir dele.</p>
+            )}
           </div>
         </Cartao>
       </aside>

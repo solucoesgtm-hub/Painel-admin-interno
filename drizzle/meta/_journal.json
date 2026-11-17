@@ -43,6 +43,13 @@
       "when": 1794928076237,
       "tag": "0005_presenca_e_push",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794928932255,
+      "tag": "0006_planos_ia",
+      "breakpoints": true
     }
   ]
 }
