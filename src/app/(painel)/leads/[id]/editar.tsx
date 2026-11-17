@@ -48,7 +48,7 @@ export function EditarLead({ lead, socios }: { lead: Lead; socios: Socio[] }) {
         aberto={aberto}
         aoFechar={() => setAberto(false)}
         titulo="Editar lead"
-        descricao="Dono, próximo passo e data continuam obrigatórios."
+        descricao="Cadastrante, próximo passo e data continuam obrigatórios."
         largura="lg"
         rodape={
           <>
@@ -77,7 +77,7 @@ export function EditarLead({ lead, socios }: { lead: Lead; socios: Socio[] }) {
               {opcoes(ORIGENS, lead.origem).map((s) => <option key={s}>{s}</option>)}
             </Selecao>
           </Campo>
-          <Campo rotulo="Dono" id="ed-donoId" erro={erros.donoId}>
+          <Campo rotulo="Cadastrante" id="ed-donoId" erro={erros.donoId}>
             <Selecao id="ed-donoId" name="donoId" defaultValue={lead.donoId} {...err("donoId")}>
               {socios.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </Selecao>

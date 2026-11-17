@@ -96,7 +96,7 @@ export function Funil({
           <Entrada id="busca-lead" placeholder="Buscar por nome, segmento ou cidade" value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <label htmlFor="filtro-dono" className="sr-only">Filtrar por dono</label>
+          <label htmlFor="filtro-dono" className="sr-only">Filtrar por cadastrante</label>
           <Selecao id="filtro-dono" value={dono} onChange={(e) => setDono(e.target.value)} className="min-w-0 flex-1 lg:w-auto lg:min-w-40 lg:flex-none">
             <option value="todos">Todos os sócios</option>
             {socios.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
@@ -162,7 +162,7 @@ export function Funil({
         <Cartao>
           <Tabela rotulo="Lista de leads">
             <thead>
-              <tr><Th>Comércio</Th><Th>Etapa</Th><Th>Dono</Th><Th>Próximo passo</Th><Th>Diagnóstico</Th><Th className="text-right">Mensalidade</Th></tr>
+              <tr><Th>Comércio</Th><Th>Etapa</Th><Th>Cadastrante</Th><Th>Próximo passo</Th><Th>Diagnóstico</Th><Th className="text-right">Mensalidade</Th></tr>
             </thead>
             <tbody>
               {filtrados.map((l) => {

@@ -13,7 +13,7 @@ export default async function PaginaLeads({ searchParams }: { searchParams: Prom
     <>
       <CabecalhoPagina
         titulo="Leads e clientes"
-        descricao="Do primeiro contato à manutenção. Todo card tem dono, próximo passo e data; cards parados há mais de 7 dias ficam marcados."
+        descricao="Do primeiro contato à manutenção. Todo card tem cadastrante, próximo passo e data; cards parados há mais de 7 dias ficam marcados."
       />
       <Funil leadsIniciais={leads} socios={socios} socioAtualId={socio.id} abrirNovo={p.novo === "1"} />
     </>

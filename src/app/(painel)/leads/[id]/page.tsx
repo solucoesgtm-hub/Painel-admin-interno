@@ -73,7 +73,7 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
           <p className="text-sm font-medium">{l.proximoPasso}</p>
           <div className="flex items-center justify-between text-xs text-tinta-3">
             <span>{data(l.proximoPassoData)} · {relativo(l.proximoPassoData)}</span>
-            {dono && <span className="inline-flex items-center gap-1.5"><Avatar nome={dono.nome} cor={dono.cor} tamanho="sm" />{dono.nome}</span>}
+            {dono && <span className="inline-flex items-center gap-1.5" title="Cadastrante"><span className="sr-only">Cadastrante: </span><Avatar nome={dono.nome} cor={dono.cor} tamanho="sm" />{dono.nome}</span>}
           </div>
           <EditarLead lead={l} socios={socios} />
         </div>
