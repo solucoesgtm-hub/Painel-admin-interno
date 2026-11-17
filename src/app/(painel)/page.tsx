@@ -18,12 +18,14 @@ import { PainelEntradas } from "@/components/graficos";
 import { Anel } from "@/components/ui/anel";
 import { Avatar, CabecalhoCartao, Cartao, LinkIcone, cn, type Tom } from "@/components/ui/base";
 import { Contagem } from "@/components/ui/contagem";
+import { ResumoDia, type CompromissoResumo, type DiaResumo } from "@/components/resumo-dia";
 import { APROVACOES, EDITAIS, FATURAMENTO_MESES, MEI, MENSALIDADES, PERFIL_GTM } from "@/lib/demo/dados";
-import { brl, dataCurta, diasEntre, hojeISO, pct, relativo, somarDias } from "@/lib/formato";
+import { FUSO, brl, dataCurta, diasEntre, hojeISO, paraData, pct, relativo, somarDias } from "@/lib/formato";
+import { AGENDA_GTM } from "@/lib/regras/agenda";
 import { situacaoMensalidade } from "@/lib/regras/financeiro";
 import { ETAPAS, estaParado, type EtapaId } from "@/lib/regras/funil";
 import { limiteMei, situacaoMei } from "@/lib/regras/mei";
-import { listarLeads, listarSocios } from "@/lib/repositorio";
+import { listarEventos, listarLeads, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 function saudacao() {
@@ -58,8 +60,11 @@ const nomes = (lista: { nome: string }[], max = 2) => {
 
 export default async function Inicio() {
   const socio = await exigirSocio();
-  const [leads, socios] = await Promise.all([listarLeads(), listarSocios()]);
   const hoje = hojeISO();
+  // Semana corrente, de segunda a domingo, para o resumo do dia.
+  const segunda = somarDias(hoje, -((paraData(hoje).getUTCDay() + 6) % 7));
+  const semana = Array.from({ length: 7 }, (_, i) => somarDias(segunda, i));
+  const [leads, socios, agenda] = await Promise.all([listarLeads(), listarSocios(), listarEventos(semana[0]!, semana[6]!)]);
   const abertos = leads.filter((l) => l.etapa !== "perdido");
 
   // ---------- Prioridades do dia, da mais urgente para a menos ----------
@@ -134,6 +139,23 @@ export default async function Inicio() {
     ...s,
     pendentes: abertos.filter((l) => l.donoId === s.id && l.proximoPassoData <= fimSemana).length,
   }));
+
+  // ---------- Resumo do dia ----------
+  const fmt = (iso: string, o: Intl.DateTimeFormatOptions) => paraData(iso).toLocaleDateString("pt-BR", { timeZone: FUSO, ...o });
+  const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+  const diasResumo: DiaResumo[] = semana.map((iso) => ({
+    iso,
+    curto: fmt(iso, { weekday: "short" }).replace(".", ""),
+    longo: maiuscula(fmt(iso, { weekday: "long" })),
+    numero: String(Number(iso.slice(8))),
+    dataLonga: fmt(iso, { day: "numeric", month: "long" }),
+  }));
+  const pessoa = (id: string) =>
+    id === AGENDA_GTM ? { nome: "Agenda da GTM", cor: "#6b7280" } : (socios.find((s) => s.id === id) ?? { nome: "Sem responsável", cor: "#6b7280" });
+  const compromissos: CompromissoResumo[] = agenda.eventos.map((e) => {
+    const p = pessoa(e.socioId);
+    return { id: e.id, titulo: e.titulo, data: e.data, inicio: e.inicio, fim: e.fim, tipo: e.tipo, cor: p.cor, pessoas: [{ nome: p.nome, cor: p.cor }] };
+  });
 
   const tons: Record<Tom, { fundo: string; icone: string }> = {
     risco: { fundo: "bg-risco-suave", icone: "text-risco" },
@@ -282,8 +304,17 @@ export default async function Inicio() {
           </div>
         </Cartao>
 
+        {/* ---------- Resumo do dia ---------- */}
+        <Cartao className="animate-surgir escala-4 p-5 sm:p-6 xl:self-start" aria-label="Resumo do dia">
+          {agenda.erro ? (
+            <p className="text-sm text-tinta-3">Não foi possível ler a agenda agora. <Link href="/agenda" className="font-medium text-azul-escuro underline underline-offset-2">Abrir agenda</Link>.</p>
+          ) : (
+            <ResumoDia dias={diasResumo} hoje={hoje} compromissos={compromissos} />
+          )}
+        </Cartao>
+
         {/* ---------- Funil ---------- */}
-        <Cartao className="animate-surgir escala-4 xl:col-span-3">
+        <Cartao className="animate-surgir escala-4 xl:col-span-2">
           <CabecalhoCartao
             titulo="Funil"
             descricao={`${totalFunil} ativos · ${brl(emNegociacao)}/mês em negociação`}
@@ -301,7 +332,7 @@ export default async function Inicio() {
                     <span key={e.id} style={{ flexGrow: e.total, background: COR_ETAPA[e.id] }} />
                   ))}
                 </div>
-                <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-6">
+                <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-6 xl:grid-cols-3 2xl:grid-cols-6">
                   {etapasFunil.map((e) => (
                     <li key={e.id} className="flex items-start gap-2.5">
                       <span aria-hidden className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: COR_ETAPA[e.id] }} />

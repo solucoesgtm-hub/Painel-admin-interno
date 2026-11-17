@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/components/ui/base";
+import { Destaque } from "@/components/ui/destaque";
 import { Logo } from "./logo";
 import { acaoContarNaoLidas } from "@/app/(painel)/chat/acoes";
 import { semUsoHaMuito } from "@/lib/regras/chat";
@@ -298,14 +299,33 @@ function Paleta({ aberta, aoFechar, leads }: { aberta: boolean; aoFechar: () => 
           placeholder="Buscar lead, tela ou ação…"
           className="h-14 min-w-0 flex-1 bg-transparent text-base text-tinta sm:text-[15px] placeholder:text-tinta-3 focus:outline-none"
         />
+        {busca && (
+          <button
+            type="button"
+            onClick={() => { setBusca(""); setMarcado(0); entrada.current?.focus(); }}
+            aria-label="Limpar busca"
+            className="animate-aparecer grid size-11 place-items-center rounded-full text-tinta-3 transition-colors duration-100 hover:bg-superficie-2 hover:text-tinta"
+          >
+            <span className="grid size-6 place-items-center rounded-full bg-superficie-2">
+              <X aria-hidden className="size-3" strokeWidth={2.4} />
+            </span>
+          </button>
+        )}
         <button type="button" onClick={aoFechar} aria-label="Fechar busca" className="grid size-10 place-items-center rounded-full text-tinta-3 hover:bg-superficie-2 hover:text-tinta">
           <X aria-hidden className="size-4" />
         </button>
       </div>
 
-      <ul id="opcoes-busca" role="listbox" aria-label="Resultados" className="rolagem-fina max-h-[min(60vh,440px)] overflow-y-auto p-2">
+      <ul id="opcoes-busca" role="listbox" aria-label="Resultados" className="rolagem-fina relative max-h-[min(60vh,440px)] overflow-y-auto p-2">
+        <Destaque alvoId={opcoes.length ? `opcao-${marcado}` : null} className="inset-x-2 rounded-xl bg-azul-suave" />
         {opcoes.length === 0 && (
-          <li className="px-3 py-10 text-center text-sm text-tinta-3">Nada encontrado para “{busca}”. Tente o nome do comércio ou da tela.</li>
+          <li className="animate-aparecer flex flex-col items-center justify-center gap-1 px-4 py-10 text-center">
+            <span className="mb-1.5 grid size-9 place-items-center rounded-xl bg-superficie-2 text-tinta-3 ring-1 ring-inset ring-areia">
+              <Search aria-hidden className="size-4" />
+            </span>
+            <span className="text-sm font-medium text-tinta">Nada encontrado para “{busca}”</span>
+            <span className="text-xs text-tinta-3">Tente o nome do comércio, da cidade ou da tela.</span>
+          </li>
         )}
         {opcoes.map((o, i) => {
           const titulo = o.grupo !== ultimoGrupo ? o.grupo : null;
@@ -319,10 +339,7 @@ function Paleta({ aberta, aoFechar, leads }: { aberta: boolean; aoFechar: () => 
                 aria-selected={i === marcado}
                 onMouseMove={() => setMarcado(i)}
                 onClick={() => ir(o)}
-                className={cn(
-                  "flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-3",
-                  i === marcado ? "bg-azul-suave" : "",
-                )}
+                className="animate-aparecer relative z-10 flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-3"
               >
                 <o.icone aria-hidden className={cn("size-4 shrink-0", i === marcado ? "text-azul-escuro" : "text-tinta-3")} />
                 <span className="min-w-0 flex-1">
