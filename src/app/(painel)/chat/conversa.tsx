@@ -5,13 +5,23 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { Avatar, Cartao, EstadoVazio, cn } from "@/components/ui/base";
 import { useAviso } from "@/components/ui/toast";
 import { hojeISO, hora, somarDias } from "@/lib/formato";
-import { continuaBloco, partesComLinks, podeApagar, TAMANHO_MAX_MENSAGEM, type Mensagem } from "@/lib/regras/chat";
+import {
+  continuaBloco,
+  INTERVALO_MIN_MS,
+  juntarMensagens,
+  partesComLinks,
+  podeApagar,
+  proximoIntervalo,
+  semUsoHaMuito,
+  TAMANHO_MAX_MENSAGEM,
+  type Mensagem,
+} from "@/lib/regras/chat";
+import { marcarPausado, ultimoUsoEm, useUsoDoPainel } from "@/lib/uso";
 import { acaoApagarMensagem, acaoAtualizarChat, acaoEnviarMensagem } from "./acoes";
 
 type SocioChat = { id: string; nome: string; cor: string };
 type Local = Mensagem & { estado?: "enviando" | "falhou" };
 
-const INTERVALO_MS = 4000;
 const diaDe = (iso: string) => hojeISO(new Date(iso));
 
 function rotuloDia(dia: string) {
@@ -21,7 +31,17 @@ function rotuloDia(dia: string) {
   return new Date(`${dia}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 }
 
-export function Conversa({ iniciais, socios, socioAtualId }: { iniciais: Mensagem[]; socios: SocioChat[]; socioAtualId: string }) {
+export function Conversa({
+  iniciais,
+  socios,
+  socioAtualId,
+  cursorInicial,
+}: {
+  iniciais: Mensagem[];
+  socios: SocioChat[];
+  socioAtualId: string;
+  cursorInicial: string;
+}) {
   const avisar = useAviso();
   const [mensagens, setMensagens] = useState<Local[]>(iniciais);
   const [texto, setTexto] = useState("");
@@ -51,33 +71,68 @@ export function Conversa({ iniciais, socios, socioAtualId }: { iniciais: Mensage
   }, [irParaFim]);
 
   // Atualiza enquanto a aba está visível; ao voltar para a aba, atualiza na hora.
+  // Atualização incremental: pede só o que mudou desde o último cursor. O intervalo começa em 4 s,
+  // espaça até 30 s sem novidade e para de vez depois de 15 min sem ninguém mexer no painel.
+  const cursor = useRef(cursorInicial);
+  const intervalo = useRef(INTERVALO_MIN_MS);
+  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const atualizarRef = useRef<() => Promise<void>>(async () => {});
+
+  const agendar = useCallback((ms: number) => {
+    if (temporizador.current) clearTimeout(temporizador.current);
+    temporizador.current = setTimeout(() => void atualizarRef.current(), ms);
+  }, []);
+
+  /** Volta ao ritmo rápido (mensagem enviada, digitação, retorno à aba ou ao painel). */
+  const acelerar = useCallback(() => {
+    intervalo.current = INTERVALO_MIN_MS;
+    agendar(0);
+  }, [agendar]);
+
   useEffect(() => {
     let ativo = true;
-    const atualizar = async () => {
-      if (document.visibilityState !== "visible") return;
+    atualizarRef.current = async () => {
+      if (!ativo) return;
+      if (document.visibilityState !== "visible") return; // volta pelo visibilitychange
+      if (semUsoHaMuito(ultimoUsoEm())) {
+        marcarPausado(); // volta no próximo movimento (useUsoDoPainel)
+        return;
+      }
+      let novidade = false;
       try {
-        const servidor = await acaoAtualizarChat();
+        const r = await acaoAtualizarChat(cursor.current);
         if (!ativo) return;
-        setMensagens((atuais) => {
-          const pendentes = atuais.filter((m) => m.estado);
-          const chegouNova = servidor.length > 0 && servidor.at(-1)!.id !== atuais.filter((m) => !m.estado).at(-1)?.id;
-          if (chegouNova && !noFim.current) setNovasAbaixo(true);
-          return [...servidor, ...pendentes];
-        });
+        cursor.current = r.cursor;
+        if (r.mensagens.length) {
+          setMensagens((atuais) => {
+            const antes = atuais.filter((m) => !m.estado);
+            const depois = juntarMensagens(antes, r.mensagens);
+            const chegouDeOutro = r.mensagens.some((m) => m.autorId !== socioAtualId && !antes.some((x) => x.id === m.id));
+            if (chegouDeOutro && !noFim.current) setNovasAbaixo(true);
+            return depois === antes ? atuais : [...depois, ...atuais.filter((m) => m.estado)];
+          });
+          novidade = true;
+        }
       } catch {
         // Sem rede: tenta de novo no próximo ciclo.
       }
+      intervalo.current = proximoIntervalo(intervalo.current, novidade);
+      agendar(intervalo.current);
     };
-    const id = setInterval(atualizar, INTERVALO_MS);
+    agendar(INTERVALO_MIN_MS);
     const relogio = setInterval(() => setRelogio((n) => n + 1), 30_000);
-    document.addEventListener("visibilitychange", atualizar);
+    const aoMudarVisibilidade = () => document.visibilityState === "visible" && acelerar();
+    document.addEventListener("visibilitychange", aoMudarVisibilidade);
     return () => {
       ativo = false;
-      clearInterval(id);
+      if (temporizador.current) clearTimeout(temporizador.current);
       clearInterval(relogio);
-      document.removeEventListener("visibilitychange", atualizar);
+      document.removeEventListener("visibilitychange", aoMudarVisibilidade);
     };
-  }, []);
+  }, [agendar, acelerar, socioAtualId]);
+
+  // Depois da pausa por falta de uso, o primeiro movimento retoma na hora.
+  useUsoDoPainel(acelerar);
 
   // Mantém no fim quando chegam mensagens e o sócio já estava no fim.
   useEffect(() => {
@@ -104,6 +159,7 @@ export function Conversa({ iniciais, socios, socioAtualId }: { iniciais: Mensage
         : m.map((x) => (x.id === idTemp ? { ...x, estado: "falhou" } : x)),
     );
     if (!r.ok) avisar({ tom: "risco", texto: r.mensagem });
+    acelerar();
   };
 
   const aoEnviar = () => {

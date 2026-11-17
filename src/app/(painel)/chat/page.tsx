@@ -13,6 +13,7 @@ export default async function Chat() {
       iniciais={mensagens}
       socios={socios.map((s) => ({ id: s.id, nome: s.nome, cor: s.cor }))}
       socioAtualId={socio.id}
+      cursorInicial={new Date().toISOString()}
     />
   );
 }

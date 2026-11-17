@@ -2,7 +2,7 @@
 // Ações do chat interno. Toda ação confere o login; o texto é validado com Zod.
 import { z } from "zod";
 import { esquemaMensagem, type Mensagem } from "@/lib/regras/chat";
-import { apagarMensagem, contarMensagensNaoLidas, enviarMensagem, listarMensagens, marcarChatLido } from "@/lib/repositorio";
+import { apagarMensagem, buscarMudancasChat, contarMensagensNaoLidas, enviarMensagem, listarMensagens, marcarChatLido } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 export type ResultadoEnvio = { ok: true; mensagem: Mensagem } | { ok: false; mensagem: string };
@@ -18,11 +18,21 @@ export async function acaoEnviarMensagem(dados: unknown): Promise<ResultadoEnvio
   }
 }
 
-/** Busca as mensagens e marca o chat como lido (a tela chama a cada poucos segundos enquanto está aberta). */
-export async function acaoAtualizarChat(): Promise<Mensagem[]> {
+/**
+ * Atualização incremental: só o que mudou desde `cursor`. Sem novidade, volta lista vazia
+ * (resposta mínima). Só grava "lido" quando chegou mensagem de outro sócio.
+ */
+export async function acaoAtualizarChat(cursor: unknown): Promise<{ mensagens: Mensagem[]; cursor: string }> {
   const socio = await exigirSocio();
-  const [mensagens] = await Promise.all([listarMensagens(), marcarChatLido(socio)]);
-  return mensagens;
+  const r = z.string().datetime().safeParse(cursor);
+  if (!r.success) {
+    // Cursor inválido: devolve a lista completa e recomeça.
+    const [mensagens] = await Promise.all([listarMensagens(), marcarChatLido(socio)]);
+    return { mensagens, cursor: new Date().toISOString() };
+  }
+  const mudancas = await buscarMudancasChat(r.data);
+  if (mudancas.mensagens.some((m) => m.autorId !== socio.id && !m.apagada)) await marcarChatLido(socio);
+  return mudancas;
 }
 
 export async function acaoApagarMensagem(id: unknown): Promise<{ ok: boolean; mensagem?: string }> {

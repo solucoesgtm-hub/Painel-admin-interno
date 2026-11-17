@@ -1,6 +1,6 @@
 // Consultas do chat interno e das tentativas de login.
 // O chat não grava no histórico: mensagem é conversa, não alteração de cadastro.
-import { and, count, desc, eq, gt, isNull, lt, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { db } from "../index";
 import { chatLeituras, loginTentativas, mensagens } from "../schema";
 
@@ -8,6 +8,16 @@ import { chatLeituras, loginTentativas, mensagens } from "../schema";
 export async function listarMensagens(limite = 200) {
   const linhas = await db.select().from(mensagens).orderBy(desc(mensagens.criadoEm)).limit(limite);
   return linhas.reverse();
+}
+
+/** Só o que mudou desde `desde`: mensagens criadas ou apagadas depois disso (no máximo 200). */
+export async function listarMudancas(desde: Date) {
+  return db
+    .select()
+    .from(mensagens)
+    .where(or(gt(mensagens.criadoEm, desde), gt(mensagens.apagadaEm, desde)))
+    .orderBy(asc(mensagens.criadoEm))
+    .limit(200);
 }
 
 export async function criarMensagem(autorId: string, texto: string) {

@@ -53,3 +53,25 @@ export const LOGIN_JANELA_MINUTOS = 15;
 
 /** Bloqueia quando há tentativas recusadas demais dentro da janela. */
 export const loginBloqueado = (recusadasNaJanela: number) => recusadasNaJanela >= LOGIN_MAX_TENTATIVAS;
+
+/* ---------------- Atualização do chat (economia de banco) ---------------- */
+export const INTERVALO_MIN_MS = 4_000;
+export const INTERVALO_MAX_MS = 30_000;
+/** Sem mexer no painel por este tempo, as consultas param até o próximo movimento. */
+export const PAUSA_SEM_USO_MS = 15 * 60_000;
+
+/** Com novidade, volta a 4 s; sem novidade, espaça 1,5× até 30 s. */
+export function proximoIntervalo(atual: number, houveNovidade: boolean): number {
+  if (houveNovidade) return INTERVALO_MIN_MS;
+  return Math.min(INTERVALO_MAX_MS, Math.round(atual * 1.5));
+}
+
+export const semUsoHaMuito = (ultimoUso: number, agora = Date.now()) => agora - ultimoUso >= PAUSA_SEM_USO_MS;
+
+/** Junta as mudanças do servidor à lista local: substitui pelo id e mantém a ordem por data. */
+export function juntarMensagens<T extends { id: string; em: string }>(atuais: T[], mudancas: T[]): T[] {
+  if (!mudancas.length) return atuais;
+  const porId = new Map(atuais.map((m) => [m.id, m]));
+  for (const m of mudancas) porId.set(m.id, m);
+  return [...porId.values()].sort((a, b) => a.em.localeCompare(b.em));
+}

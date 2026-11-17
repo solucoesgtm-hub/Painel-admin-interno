@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { continuaBloco, esquemaMensagem, loginBloqueado, partesComLinks, podeApagar, TAMANHO_MAX_MENSAGEM } from "./chat";
+import { continuaBloco, esquemaMensagem, juntarMensagens, loginBloqueado, partesComLinks, podeApagar, proximoIntervalo, semUsoHaMuito, TAMANHO_MAX_MENSAGEM } from "./chat";
 
 describe("chat interno", () => {
   it("limpa a mensagem e recusa vazia ou longa demais", () => {
@@ -39,5 +39,27 @@ describe("bloqueio de login", () => {
   it("bloqueia a partir da 5ª tentativa recusada na janela", () => {
     expect(loginBloqueado(4)).toBe(false);
     expect(loginBloqueado(5)).toBe(true);
+  });
+});
+
+describe("atualização do chat", () => {
+  it("espaça as consultas sem novidade e volta a 4 s quando chega mensagem", () => {
+    expect(proximoIntervalo(4000, false)).toBe(6000);
+    expect(proximoIntervalo(24000, false)).toBe(30000);
+    expect(proximoIntervalo(30000, false)).toBe(30000);
+    expect(proximoIntervalo(30000, true)).toBe(4000);
+  });
+
+  it("pausa depois de 15 minutos sem uso", () => {
+    const agora = 1_000_000_000;
+    expect(semUsoHaMuito(agora - 14 * 60_000, agora)).toBe(false);
+    expect(semUsoHaMuito(agora - 15 * 60_000, agora)).toBe(true);
+  });
+
+  it("junta mudanças substituindo pelo id e ordenando por data", () => {
+    const a = [{ id: "1", em: "2026-11-17T10:00:00Z", t: "oi" }, { id: "2", em: "2026-11-17T10:01:00Z", t: "x" }];
+    const r = juntarMensagens(a, [{ id: "2", em: "2026-11-17T10:01:00Z", t: "" }, { id: "3", em: "2026-11-17T10:00:30Z", t: "novo" }]);
+    expect(r.map((m) => m.id + m.t)).toEqual(["1oi", "3novo", "2"]);
+    expect(juntarMensagens(a, [])).toBe(a);
   });
 });

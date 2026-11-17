@@ -37,6 +37,7 @@ type Memoria = {
   eventos: Evento[];
   mensagens: Mensagem[];
   leituras: Record<string, string>;
+  apagadasEm: Record<string, string>;
 };
 const g = globalThis as unknown as { __gtmMemoria?: Memoria };
 function memoria(): Memoria {
@@ -63,6 +64,7 @@ function memoria(): Memoria {
   m.eventos ??= structuredClone(EVENTOS);
   m.mensagens ??= structuredClone(MENSAGENS_DEMO);
   m.leituras ??= {};
+  m.apagadasEm ??= {};
   return m;
 }
 
@@ -482,6 +484,37 @@ export async function listarMensagens(): Promise<Mensagem[]> {
   }));
 }
 
+/** Folga para não perder mensagem gravada perto do corte (o navegador ignora as repetidas pelo id). */
+const FOLGA_CURSOR_MS = 5000;
+
+/**
+ * Atualização incremental do chat: devolve só mensagens novas ou apagadas desde `cursor`
+ * e o novo cursor (hora do servidor). Sem novidade, a resposta é uma lista vazia.
+ */
+export async function buscarMudancasChat(cursor: string): Promise<{ mensagens: Mensagem[]; cursor: string }> {
+  const agora = new Date();
+  const desde = new Date(new Date(cursor).getTime() - FOLGA_CURSOR_MS);
+  if (modoDemo) {
+    const d = desde.toISOString();
+    return {
+      mensagens: memoria().mensagens.filter((m) => m.em > d || (memoria().apagadasEm[m.id] ?? "") > d),
+      cursor: agora.toISOString(),
+    };
+  }
+  const { listarMudancas } = await consultasChat();
+  const linhas = await listarMudancas(desde);
+  return {
+    mensagens: linhas.map((m) => ({
+      id: m.id,
+      autorId: m.autorId,
+      texto: m.apagadaEm ? "" : m.texto,
+      apagada: !!m.apagadaEm,
+      em: m.criadoEm.toISOString(),
+    })),
+    cursor: agora.toISOString(),
+  };
+}
+
 export async function enviarMensagem(texto: string, socio: { id: string }): Promise<Mensagem> {
   if (!modoDemo) {
     const c = await consultasChat();
@@ -506,6 +539,7 @@ export async function apagarMensagem(id: string, socio: { id: string }): Promise
   if (!m || !podeApagar(m, socio.id)) return false;
   m.texto = "";
   m.apagada = true;
+  memoria().apagadasEm[m.id] = new Date().toISOString();
   return true;
 }
 

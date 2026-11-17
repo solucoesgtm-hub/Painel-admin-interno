@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { cn } from "@/components/ui/base";
 import { Logo } from "./logo";
 import { acaoContarNaoLidas } from "@/app/(painel)/chat/acoes";
+import { semUsoHaMuito } from "@/lib/regras/chat";
+import { marcarPausado, ultimoUsoEm, useUsoDoPainel } from "@/lib/uso";
 import { AbasFaixa, AbasTopo, BarraInferior, BotaoChat, Dock, GRUPOS, MenuConta, type Usuario } from "./navegacao";
 
 export type LeadBusca = { id: string; nome: string; etapa: string; cidade: string };
@@ -93,20 +95,28 @@ function Topo({
   const [novoAberto, setNovoAberto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const atual = usePathname();
-  // Mensagens novas do chat: vem do servidor a cada tela e é conferido a cada 30 s com a aba visível.
+  // Mensagens novas do chat: vem do servidor a cada tela e é conferido a cada 60 s com a aba visível.
+  // Não consulta na própria tela do chat nem com o painel esquecido aberto (15 min sem uso).
   const [naoLidas, setNaoLidas] = useState(contadores["/chat"] ?? 0);
   useEffect(() => setNaoLidas(contadores["/chat"] ?? 0), [contadores]);
+  const noChat = atual.startsWith("/chat");
+  const conferir = useCallback(() => {
+    if (noChat || document.visibilityState !== "visible") return;
+    if (semUsoHaMuito(ultimoUsoEm())) {
+      marcarPausado();
+      return;
+    }
+    acaoContarNaoLidas().then(setNaoLidas).catch(() => {});
+  }, [noChat]);
+  useUsoDoPainel(conferir);
   useEffect(() => {
-    const conferir = () => {
-      if (document.visibilityState === "visible") acaoContarNaoLidas().then(setNaoLidas).catch(() => {});
-    };
-    const id = setInterval(conferir, 30_000);
+    const id = setInterval(conferir, 60_000);
     document.addEventListener("visibilitychange", conferir);
     return () => {
       clearInterval(id);
       document.removeEventListener("visibilitychange", conferir);
     };
-  }, []);
+  }, [conferir]);
   useEffect(() => setNovoAberto(false), [atual]);
   useEffect(() => {
     const fora = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setNovoAberto(false);
