@@ -7,7 +7,7 @@ import { normalizarMarcacao, vereditoEdital, type Requisito } from "./editais";
 import { calcularAnalise, type LeadAnalise } from "./analise";
 import { esquemaEditarLead } from "./funil";
 import { esquemaDiagnostico } from "./pontuacao";
-import { camposFaltando, cnpjValido, EMPRESA_VAZIA, esquemaContrato, esquemaEmpresa, estadoContrato, formatarCnpj, resumoContratos } from "./empresa";
+import { camposFaltando, cnpjValido, EMPRESA_VAZIA, esquemaContrato, esquemaEmpresa, estadoContrato, formatarCnpj, normalizarInstagram, resumoContratos, usuarioInstagram } from "./empresa";
 
 describe("funil", () => {
   it("marca como parado só depois de 7 dias e fora de manutenção/perdido", () => {
@@ -190,5 +190,26 @@ describe("nossa empresa", () => {
     const base = { cliente: "Padaria (exemplo)", produto: "Atendente", valorMensal: 290, valorImplantacao: 0, situacao: "vigente", observacoes: "" };
     expect(esquemaContrato.safeParse({ ...base, inicio: "2026-11-01", fim: "2027-11-01" }).success).toBe(true);
     expect(esquemaContrato.safeParse({ ...base, inicio: "2026-11-01", fim: "2026-10-01" }).success).toBe(false);
+  });
+});
+
+describe("cadastro da empresa: instagram, CEP e telefone com +55", () => {
+  it("normaliza o Instagram e tira parâmetros de rastreio", () => {
+    expect(normalizarInstagram("https://www.instagram.com/gtmsolucoes.ia?rpxt=MjA2MTk0YWJxNXdu")).toBe("https://www.instagram.com/gtmsolucoes.ia");
+    expect(normalizarInstagram("@gtmsolucoes.ia")).toBe("https://www.instagram.com/gtmsolucoes.ia");
+    expect(normalizarInstagram("instagram.com/gtm/")).toBe("https://www.instagram.com/gtm");
+    expect(normalizarInstagram("")).toBe("");
+    expect(normalizarInstagram("javascript:alert(1)")).toBeNull();
+    expect(usuarioInstagram("https://www.instagram.com/gtmsolucoes.ia")).toBe("@gtmsolucoes.ia");
+  });
+
+  it("aceita telefone com +55 e formata o CEP", () => {
+    const r = esquemaEmpresa.safeParse({ ...EMPRESA_VAZIA, razaoSocial: "GTM (exemplo)", telefone: "+55 27 99999-0000", cep: "29725000" });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.telefone).toBe("(27) 99999-0000");
+      expect(r.data.cep).toBe("29725-000");
+    }
+    expect(esquemaEmpresa.safeParse({ ...EMPRESA_VAZIA, razaoSocial: "GTM", cep: "123" }).success).toBe(false);
   });
 });

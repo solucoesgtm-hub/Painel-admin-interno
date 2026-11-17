@@ -305,6 +305,12 @@ export const EMPRESA_DEMO = {
   site: "gtm.exemplo.test",
   chavePix: "contato@exemplo.test",
   abertura: MEI.abertura,
+  instagram: "https://www.instagram.com/exemplo.test",
+  cep: "00000-000",
+  titular: "Sócio de Exemplo",
+  atividadePrincipal: "0000-0/00 — Atividade de exemplo",
+  atividadesSecundarias: "0000-0/01 — Atividade secundária de exemplo",
+  capitalSocial: "R$ 1.000,00",
 };
 
 export type Contrato = { id: string; cliente: string; produto: string; inicio: string; fim: string; valorMensal: number; assinado: boolean };

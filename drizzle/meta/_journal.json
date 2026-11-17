@@ -50,6 +50,13 @@
       "when": 1794928932255,
       "tag": "0006_planos_ia",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794950466874,
+      "tag": "0007_empresa_mei",
+      "breakpoints": true
     }
   ]
 }

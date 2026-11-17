@@ -28,8 +28,6 @@ export function FormularioLogin() {
       <Botao type="submit" icone={enviando ? undefined : LogIn} disabled={enviando} aria-busy={enviando} className="reflexo min-h-12 w-full">
         {enviando && <Loader2 aria-hidden className="size-4 animate-spin" />}
         {enviando ? "Conferindo acesso…" : "Entrar"}
-      </Botao>
-      <p className="text-xs text-tinta-3">Esqueceu a senha? Peça a outro sócio para redefinir com <code>npm run db:senha</code>.</p>
-    </form>
+      </Botao>    </form>
   );
 }

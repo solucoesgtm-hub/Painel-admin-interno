@@ -3,6 +3,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
+  AtSign,
+  Briefcase,
   Building2,
   CalendarCheck2,
   CalendarDays,
@@ -11,11 +13,13 @@ import {
   Globe,
   Info,
   KeyRound,
+  Landmark,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
   ReceiptText,
+  UserRound,
 } from "lucide-react";
 import {
   Avatar,
@@ -30,7 +34,7 @@ import {
 } from "@/components/ui/base";
 import { FATURAMENTO_MESES, MEI } from "@/lib/demo/dados";
 import { brl, data, dataCurta, diaSemana, hojeISO, pct, somarDias } from "@/lib/formato";
-import { camposFaltando, estadoContrato, resumoContratos } from "@/lib/regras/empresa";
+import { camposFaltando, estadoContrato, resumoContratos, usuarioInstagram } from "@/lib/regras/empresa";
 import { limiteMei, situacaoMei } from "@/lib/regras/mei";
 import { buscarEmpresa, listarContratos, listarEventos, listarLeads, listarSocios } from "@/lib/repositorio";
 import { emailContaServico } from "@/lib/google-agenda";
@@ -118,16 +122,52 @@ export default async function NossaEmpresa() {
               }
             />
             <Linha icone={KeyRound} rotulo="Chave Pix" valor={empresa.chavePix} copiar />
-            <Linha icone={MapPin} rotulo="Endereço" valor={[empresa.endereco, empresa.municipio].filter(Boolean).join(" · ")} />
             <Linha
-              icone={Globe}
-              rotulo="Site"
-              valor={empresa.site}
-              href={empresa.site ? (empresa.site.startsWith("http") ? empresa.site : `https://${empresa.site}`) : undefined}
+              icone={AtSign}
+              rotulo="Instagram"
+              valor={usuarioInstagram(empresa.instagram)}
+              href={empresa.instagram || undefined}
               externo
             />
+            <Linha icone={MapPin} rotulo="Endereço" valor={[empresa.endereco, empresa.municipio, empresa.cep && `CEP ${empresa.cep}`].filter(Boolean).join(" · ")} />
+            {empresa.site && (
+              <Linha
+                icone={Globe}
+                rotulo="Site"
+                valor={empresa.site}
+                href={empresa.site.startsWith("http") ? empresa.site : `https://${empresa.site}`}
+                externo
+              />
+            )}
             <Linha icone={Building2} rotulo="Abertura" valor={empresa.abertura ? data(empresa.abertura) : ""} numeros />
+            <Linha icone={UserRound} rotulo="Titular do MEI" valor={empresa.titular} />
+            <Linha icone={Landmark} rotulo="Capital social" valor={empresa.capitalSocial} numeros />
           </dl>
+          {(empresa.atividadePrincipal || empresa.atividadesSecundarias) && (
+            <div className="border-t border-areia px-5 py-4 sm:px-6">
+              <p className="flex items-center gap-2 text-xs font-medium text-tinta-3">
+                <Briefcase aria-hidden className="size-4" /> Atividades registradas (CNAE)
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm">
+                {empresa.atividadePrincipal && (
+                  <li className="flex flex-wrap items-baseline gap-2">
+                    <Etiqueta tom="info">Principal</Etiqueta>
+                    <span className="text-tinta">{empresa.atividadePrincipal}</span>
+                  </li>
+                )}
+                {empresa.atividadesSecundarias
+                  .split("\n")
+                  .map((a) => a.trim())
+                  .filter(Boolean)
+                  .map((a) => (
+                    <li key={a} className="flex flex-wrap items-baseline gap-2">
+                      <Etiqueta tom="neutro">Secundária</Etiqueta>
+                      <span className="text-tinta-2">{a}</span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
         </Cartao>
 
         {/* Sócios */}

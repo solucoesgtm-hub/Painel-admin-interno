@@ -10,14 +10,17 @@ import {
   Gauge,
   ListChecks,
   MessageSquareWarning,
+  NotebookPen,
   Plus,
   Save,
   Sparkles,
+  Tag,
   Trash2,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { Aviso, Botao, CabecalhoCartao, Campo, Cartao, Entrada, EtiquetaVeredito, Selecao, cn } from "@/components/ui/base";
+import { AreaTexto, Aviso, Botao, CabecalhoCartao, Campo, Cartao, Entrada, Etiqueta, EtiquetaVeredito, Selecao, cn } from "@/components/ui/base";
+import { filtrarObservacoes } from "@/lib/regras/observacoes";
 import { useAviso } from "@/components/ui/toast";
 import { brl } from "@/lib/formato";
 import { FATORES, PESOS_PADRAO, calcularPontuacao, complexidade, economia, veredito, type Fator, type Notas } from "@/lib/regras/pontuacao";
@@ -56,6 +59,7 @@ const SECOES: { id: string; nome: string; icone: LucideIcon }[] = [
   { id: "tarefas", nome: "Tarefas manuais", icone: ListChecks },
   { id: "numeros", nome: "Números", icone: Calculator },
   { id: "fechamento", nome: "Fechamento", icone: Gauge },
+  { id: "observacoes", nome: "Observações", icone: NotebookPen },
 ];
 
 const TAREFAS_SUGERIDAS = ["Responder WhatsApp", "Agendar clientes", "Controlar estoque", "Cobrar pagamentos", "Enviar orçamentos", "Postar no Instagram", "Conferir caixa"];
@@ -168,6 +172,7 @@ export function Checklist({ leads, leadInicial, estadoIa }: { leads: { id: strin
       e.tarefas.length > 0,
       !!(e.numeros.horasSemana && e.numeros.custoHora),
       Object.values(e.notas).every((n) => n > 0),
+      e.observacao.trim().length > 0,
     ];
     return s;
   }, [e]);
@@ -305,6 +310,20 @@ export function Checklist({ leads, leadInicial, estadoIa }: { leads: { id: strin
             ))}
           </div>
         </Secao>
+
+        <Secao n={7} {...SECOES[6]!} descricao="Escreva livremente o que observou na visita. O sistema separa os temas por palavra-chave e leva tudo para o relatório.">
+          <Campo rotulo="Observações da visita" id="observacao" ajuda="Sem dados pessoais de clientes ou pacientes do comércio.">
+            <AreaTexto
+              id="observacao"
+              rows={5}
+              maxLength={2000}
+              value={e.observacao}
+              onChange={(ev) => atualizar(() => ({ observacao: ev.target.value }))}
+              placeholder="Ex.: Responde tudo pelo WhatsApp e anota pedidos no caderno. Achou o valor caro, vai conversar com a sócia. Quer começar antes do fim do mês."
+            />
+          </Campo>
+          <TemasObservacao texto={e.observacao} />
+        </Secao>
       </div>
 
       <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -323,7 +342,7 @@ export function Checklist({ leads, leadInicial, estadoIa }: { leads: { id: strin
           <dl className="divide-y divide-areia text-sm">
             <div className="flex justify-between px-5 py-3"><dt className="text-tinta-3">Complexidade estimada</dt><dd className="font-medium capitalize">{comp === "media" ? "Média" : comp}</dd></div>
             <div className="flex justify-between px-5 py-3"><dt className="text-tinta-3">Economia por mês</dt><dd className="numeros font-medium">{brl(eco.mensal)}</dd></div>
-            <div className="flex justify-between px-5 py-3"><dt className="text-tinta-3">Seções completas</dt><dd className="numeros font-medium">{preenchidas.filter(Boolean).length}/6</dd></div>
+            <div className="flex justify-between px-5 py-3"><dt className="text-tinta-3">Seções completas</dt><dd className="numeros font-medium">{preenchidas.filter(Boolean).length}/{SECOES.length}</dd></div>
           </dl>
         </Cartao>
 
@@ -362,7 +381,7 @@ function Secao({ id, n, nome, icone: Icone, descricao, children }: { id: string;
       <header className="flex items-center gap-3 border-b border-areia px-5 py-4">
         <span className="grid size-9 place-items-center rounded-md bg-azul-suave text-azul-escuro"><Icone aria-hidden className="size-[18px]" /></span>
         <div>
-          <p className="numeros text-[11px] font-medium uppercase tracking-[0.14em] text-tinta-3">Seção {n} de 6</p>
+          <p className="numeros text-[11px] font-medium uppercase tracking-[0.14em] text-tinta-3">Seção {n} de {SECOES.length}</p>
           <h2 className="text-[15px] font-semibold">{nome}</h2>
         </div>
       </header>
@@ -371,5 +390,28 @@ function Secao({ id, n, nome, icone: Icone, descricao, children }: { id: string;
         {children}
       </div>
     </Cartao>
+  );
+}
+
+/** Temas encontrados nas observações, atualizados enquanto o sócio digita. */
+function TemasObservacao({ texto }: { texto: string }) {
+  const r = useMemo(() => filtrarObservacoes(texto), [texto]);
+  if (!r) return null;
+  return (
+    <div className="mt-3" aria-live="polite">
+      <p className="mb-1.5 text-xs font-medium text-tinta-3">
+        {r.palavrasChave.length ? "Temas encontrados (entram no relatório):" : "Nenhum tema reconhecido ainda. O texto entra no relatório mesmo assim."}
+      </p>
+      {r.palavrasChave.length > 0 && (
+        <ul className="flex flex-wrap gap-1.5">
+          {r.palavrasChave.map((t) => (
+            <li key={t}>
+              <Etiqueta tom="info" icone={Tag}>{t}</Etiqueta>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-1.5 text-right text-[11px] text-tinta-3 numeros">{texto.length}/2000</p>
+    </div>
   );
 }

@@ -364,6 +364,12 @@ export async function buscarEmpresa(): Promise<DadosEmpresa> {
     site: e.site,
     chavePix: e.chavePix,
     abertura: e.abertura ?? "",
+    instagram: e.instagram,
+    cep: e.cep,
+    titular: e.titular,
+    atividadePrincipal: e.atividadePrincipal,
+    atividadesSecundarias: e.atividadesSecundarias,
+    capitalSocial: e.capitalSocial,
   };
 }
 

@@ -1,6 +1,6 @@
 // Exibição do relatório do lead e do plano de implementação (usado pelo painel da ficha).
 import type { ReactNode } from "react";
-import { Check, ShieldAlert } from "lucide-react";
+import { Check, ShieldAlert, Tag } from "lucide-react";
 import { Etiqueta } from "@/components/ui/base";
 import { formatarHoras, NOME_NIVEL, type PlanoIASalvo } from "@/lib/regras/ia";
 
@@ -30,6 +30,23 @@ export function VerRelatorio({ p }: { p: PlanoIASalvo }) {
   return (
     <article>
       <Titulo>1. Resumo executivo</Titulo><p className={paragrafo}>{r.resumoExecutivo}</p>
+      {p.conteudo.observacoesVisita && (
+        <>
+          <Titulo>Observações da visita</Titulo>
+          {p.conteudo.observacoesVisita.palavrasChave.length > 0 && (
+            <ul className="mb-2 flex flex-wrap gap-1.5" aria-label="Temas encontrados nas observações">
+              {p.conteudo.observacoesVisita.palavrasChave.map((t) => (
+                <li key={t}><Etiqueta tom="info" icone={Tag}>{t}</Etiqueta></li>
+              ))}
+            </ul>
+          )}
+          {p.conteudo.observacoesVisita.destaques.length > 0 && <Lista itens={p.conteudo.observacoesVisita.destaques} />}
+          <details className="mt-2 text-sm">
+            <summary className="min-h-11 cursor-pointer py-2 text-tinta-3 hover:text-tinta">Ver anotação completa</summary>
+            <p className={`${caixa} ${paragrafo}`}>{p.conteudo.observacoesVisita.texto}</p>
+          </details>
+        </>
+      )}
       <Titulo>2. Pontuação e veredito</Titulo><p className={paragrafo}>{r.vereditoExplicado}</p>
       <Titulo>3. Diagnóstico da situação atual</Titulo>
       <p className={paragrafo}>{r.diagnosticoAtual.contexto}</p>

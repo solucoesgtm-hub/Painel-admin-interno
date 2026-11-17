@@ -1,6 +1,7 @@
 // Regras puras da geração por IA: formato da resposta, custo estimado, teto do mês e Markdown.
 // Nada aqui chama a API; o módulo único de chamada fica em src/lib/ia/claude.ts.
 import { z } from "zod";
+import { esquemaObservacoesVisita } from "./observacoes";
 
 /* ---------------- Formato da resposta (saída estruturada, validada por Zod) ---------------- */
 // Sem min/max nos campos: a saída estruturada da API aceita só um subconjunto de JSON Schema.
@@ -68,7 +69,10 @@ export const esquemaPlano = z.object({
 });
 
 /** O que fica gravado: relatório + plano. Campos a mais (ex.: código de versões antigas) são descartados. */
-export const esquemaPlanoIA = esquemaRelatorio.extend(esquemaPlano.shape);
+export const esquemaPlanoIA = esquemaRelatorio.extend(esquemaPlano.shape).extend({
+  /** Montada pelo sistema (não pela IA) a partir das observações do diagnóstico. */
+  observacoesVisita: esquemaObservacoesVisita.optional(),
+});
 export type ConteudoPlanoIA = z.infer<typeof esquemaPlanoIA>;
 
 /** O que o botão envia. O diagnóstico é opcional: sem ele, usa o mais recente do lead. */
@@ -169,6 +173,14 @@ export function relatorioMarkdown(c: ConteudoPlanoIA, lead: string): string {
     `# Relatório do lead — ${lead}`,
     "## 1. Resumo executivo",
     r.resumoExecutivo,
+    ...(c.observacoesVisita
+      ? [
+          "## Observações da visita",
+          c.observacoesVisita.palavrasChave.length ? `**Temas:** ${c.observacoesVisita.palavrasChave.join(" · ")}` : "",
+          c.observacoesVisita.destaques.length ? lista(c.observacoesVisita.destaques) : "",
+          `> ${c.observacoesVisita.texto.replace(/\n/g, "\n> ")}`,
+        ].filter(Boolean)
+      : []),
     "## 2. Pontuação e veredito",
     r.vereditoExplicado,
     "## 3. Diagnóstico da situação atual",

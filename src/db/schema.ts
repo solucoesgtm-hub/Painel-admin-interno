@@ -179,6 +179,12 @@ export const empresa = pgTable("empresa", {
   site: text("site").notNull().default(""),
   chavePix: text("chave_pix").notNull().default(""),
   abertura: date("abertura"),
+  instagram: text("instagram").notNull().default(""),
+  cep: text("cep").notNull().default(""),
+  titular: text("titular").notNull().default(""),
+  atividadePrincipal: text("atividade_principal").notNull().default(""),
+  atividadesSecundarias: text("atividades_secundarias").notNull().default(""),
+  capitalSocial: text("capital_social").notNull().default(""),
   atualizadoPor: uuid("atualizado_por").references(() => socios.id),
   atualizadoEm,
 });

@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { gerarEstruturado, iaConfigurada, tetoMensalBRL } from "@/lib/ia/claude";
 import { exemploRelatorioPlano } from "@/lib/ia/exemplo";
+import { filtrarObservacoes } from "@/lib/regras/observacoes";
 import { mensagemDoLead, PEDIDO_PLANO, PEDIDO_RELATORIO, SISTEMA } from "@/lib/ia/prompts/relatorio-plano";
 import { esquemaPedidoPlano, esquemaPlano, esquemaRelatorio, tetoAtingido, type EventoGeracao } from "@/lib/regras/ia";
 import { brl } from "@/lib/formato";
@@ -52,19 +53,22 @@ export async function POST(req: Request) {
       };
       try {
         const semTokens = { entrada: 0, saida: 0, cacheLeitura: 0, cacheEscrita: 0 };
+        // Observações da visita filtradas por palavra-chave (regra fixa, entra no relatório com ou sem IA).
+        const obs = filtrarObservacoes((diag?.respostas as { observacao?: string } | undefined)?.observacao);
+        const comObs = <T extends object>(c: T) => (obs ? { ...c, observacoesVisita: obs } : c);
         const salvo = !comIa
           ? await registrarGeracaoIa(
               {
                 leadId: lead.id,
                 leadNome: lead.nome,
                 diagnosticoId: diag?.id ?? null,
-                conteudo: exemploRelatorioPlano({
+                conteudo: comObs(exemploRelatorioPlano({
                   nome: lead.nome,
                   segmento: lead.segmento,
                   pontuacao: diag?.pontuacao ?? lead.pontuacao ?? 0,
                   veredito: diag?.veredito ?? lead.veredito ?? "sem veredito",
                   respostas: diag?.respostas,
-                }),
+                })),
                 modelo: "exemplo",
                 tokens: semTokens,
                 custoBRL: 0,
@@ -78,7 +82,7 @@ export async function POST(req: Request) {
                 gerarEstruturado({ sistema: SISTEMA, mensagens: [dados, PEDIDO_RELATORIO], esquema: esquemaRelatorio, aoProgresso: aoProgresso(0) }),
                 gerarEstruturado({ sistema: SISTEMA, mensagens: [dados, PEDIDO_PLANO], esquema: esquemaPlano, aoProgresso: aoProgresso(1) }),
               ]);
-              const conteudo = rel.dados && pla.dados ? { ...rel.dados, ...pla.dados } : null;
+              const conteudo = rel.dados && pla.dados ? comObs({ ...rel.dados, ...pla.dados }) : null;
               const falha = rel.erro ?? pla.erro;
               // Grava mesmo quando falha: as chamadas custam e entram no teto do mês.
               const s = await registrarGeracaoIa(

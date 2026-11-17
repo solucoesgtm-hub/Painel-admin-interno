@@ -1,6 +1,7 @@
 // Prompt da função "Relatório e plano do protótipo". Um arquivo por função de IA (versionado).
 // O texto de SISTEMA é fixo (sem data, nome ou id) para o cache de prompt funcionar entre leads.
 import { economia, FATORES } from "../../regras/pontuacao";
+import { filtrarObservacoes } from "../../regras/observacoes";
 
 export const VERSAO_PROMPT = "relatorio-plano@3";
 
@@ -58,6 +59,11 @@ export function mensagemDoLead(lead: Lead, d: Diag): string {
   const eco = economia(Number(r.numeros?.horasSemana) || 0, Number(r.numeros?.custoHora) || 0);
   const respostas = { ...d.respostas };
   delete respostas.notas;
+  const obs = filtrarObservacoes(typeof respostas.observacao === "string" ? respostas.observacao : "");
+  delete respostas.observacao;
+  const blocoObs = obs
+    ? `\n\n<observacoes_da_visita>\nTemas encontrados por palavra-chave: ${obs.palavrasChave.join(", ") || "nenhum"}\n\n${obs.texto}\n</observacoes_da_visita>\nUse as observações da visita como evidência no diagnóstico, nos riscos e nas premissas. Não repita dados pessoais que apareçam nelas.`
+    : "";
   return `<lead>
 Comércio: ${lead.nome}
 Segmento: ${lead.segmento || "não informado"}
@@ -77,7 +83,7 @@ Economia estimada pelas tarefas manuais: R$ ${eco.mensal.toFixed(2)} por mês
 
 <respostas_do_checklist>
 ${JSON.stringify(respostas, null, 2)}
-</respostas_do_checklist>`;
+</respostas_do_checklist>${blocoObs}`;
 }
 
 export const PEDIDO_RELATORIO = "Com base no diagnóstico acima, escreva agora só a PARTE 1 — RELATÓRIO DO LEAD.";

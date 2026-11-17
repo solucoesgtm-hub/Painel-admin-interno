@@ -47,6 +47,12 @@ export type DadosEmpresa = {
   site: string;
   chavePix: string;
   abertura: string; // aaaa-mm-dd ou ""
+  instagram: string; // link completo, sem parâmetros de rastreio
+  cep: string;
+  titular: string;
+  atividadePrincipal: string;
+  atividadesSecundarias: string; // uma por linha
+  capitalSocial: string;
 };
 
 export const EMPRESA_VAZIA: DadosEmpresa = {
@@ -60,7 +66,42 @@ export const EMPRESA_VAZIA: DadosEmpresa = {
   site: "",
   chavePix: "",
   abertura: "",
+  instagram: "",
+  cep: "",
+  titular: "",
+  atividadePrincipal: "",
+  atividadesSecundarias: "",
+  capitalSocial: "",
 };
+
+/** Telefone sem o código do país: "+55 27 99509-2262" vira 27995092262. */
+const digitosTelefone = (v: string) => {
+  const d = soDigitos(v);
+  return (d.length === 12 || d.length === 13) && d.startsWith("55") ? d.slice(2) : d;
+};
+
+/** "@gtm", "instagram.com/gtm?x=1" ou o link completo viram "https://www.instagram.com/gtm". */
+export function normalizarInstagram(v: string): string | null {
+  const t = v.trim();
+  if (!t) return "";
+  const usuario = t.startsWith("@")
+    ? t.slice(1)
+    : /instagram\.com\//i.test(t)
+      ? t.replace(/^.*instagram\.com\//i, "").split(/[/?#]/)[0]!
+      : /^[\w.]+$/.test(t)
+        ? t
+        : null;
+  if (!usuario || !/^[A-Za-z0-9._]{1,30}$/.test(usuario)) return null;
+  return `https://www.instagram.com/${usuario}`;
+}
+
+export const usuarioInstagram = (link: string) => (link ? `@${link.replace(/^.*instagram\.com\//i, "")}` : "");
+
+/** 29725000 → 29725-000. */
+export function formatarCep(v: string): string {
+  const d = soDigitos(v);
+  return d.length === 8 ? `${d.slice(0, 5)}-${d.slice(5)}` : v;
+}
 
 const texto = (max: number) => z.string().trim().max(max, `Use no máximo ${max} caracteres.`);
 const vazio = z.literal("");
@@ -77,13 +118,27 @@ export const esquemaEmpresa = z.object({
   telefone: z
     .string()
     .trim()
-    .refine((v) => v === "" || [10, 11].includes(soDigitos(v).length), "Telefone com DDD, 10 ou 11 números.")
-    .transform((v) => (v ? formatarTelefone(v) : "")),
+    .refine((v) => v === "" || [10, 11].includes(digitosTelefone(v).length), "Telefone com DDD, 10 ou 11 números.")
+    .transform((v) => (v ? formatarTelefone(digitosTelefone(v)) : "")),
   endereco: texto(160),
   municipio: texto(60),
   site: texto(120),
   chavePix: texto(120),
   abertura: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida.").or(vazio),
+  instagram: z
+    .string()
+    .max(200)
+    .refine((v) => normalizarInstagram(v) !== null, "Instagram inválido. Use o @usuário ou o link do perfil.")
+    .transform((v) => normalizarInstagram(v) ?? ""),
+  cep: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || soDigitos(v).length === 8, "CEP com 8 números.")
+    .transform((v) => (v ? formatarCep(v) : "")),
+  titular: texto(120),
+  atividadePrincipal: texto(300),
+  atividadesSecundarias: texto(1500),
+  capitalSocial: texto(40),
 });
 
 /** Campos que ainda faltam preencher (para o aviso da tela). */

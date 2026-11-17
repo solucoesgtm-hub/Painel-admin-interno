@@ -114,11 +114,21 @@ export function EditarEmpresa({ empresa }: { empresa: DadosEmpresa }) {
           {campo("cnpj", "CNPJ", { inputMode: "numeric", placeholder: "00.000.000/0000-00" })}
           {campo("email", "E-mail", { type: "email", autoComplete: "email" })}
           {campo("telefone", "Telefone / WhatsApp", { type: "tel", inputMode: "tel", placeholder: "(27) 9…" })}
+          {campo("instagram", "Instagram", { placeholder: "@gtmsolucoes.ia ou link do perfil" })}
+          {campo("site", "Site", { inputMode: "url", placeholder: "gtm.com.br" })}
           {campo("endereco", "Endereço", { autoComplete: "street-address" }, "sm:col-span-2")}
+          {campo("cep", "CEP", { inputMode: "numeric", autoComplete: "postal-code", placeholder: "00000-000" })}
           {campo("municipio", "Município", { placeholder: "Marilândia, ES" })}
           {campo("abertura", "Data de abertura", { type: "date" })}
-          {campo("site", "Site", { inputMode: "url", placeholder: "gtm.com.br" })}
           {campo("chavePix", "Chave Pix")}
+          {campo("titular", "Titular do MEI")}
+          {campo("capitalSocial", "Capital social", { placeholder: "R$ 3.000,00" })}
+          <Campo rotulo="Atividade principal (CNAE)" id="emp-atividadePrincipal" erro={f.erros.atividadePrincipal} className="sm:col-span-2">
+            <AreaTexto id="emp-atividadePrincipal" name="atividadePrincipal" rows={2} defaultValue={empresa.atividadePrincipal} {...f.err("emp", "atividadePrincipal")} />
+          </Campo>
+          <Campo rotulo="Atividades secundárias (uma por linha)" id="emp-atividadesSecundarias" erro={f.erros.atividadesSecundarias} className="sm:col-span-2">
+            <AreaTexto id="emp-atividadesSecundarias" name="atividadesSecundarias" rows={3} defaultValue={empresa.atividadesSecundarias} {...f.err("emp", "atividadesSecundarias")} />
+          </Campo>
         </form>
       </Modal>
     </>
