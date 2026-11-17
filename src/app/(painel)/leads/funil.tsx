@@ -306,7 +306,7 @@ function ModalNovoLead({
   const err = (c: string) => (erros[c] ? { "aria-invalid": true, "aria-describedby": `${c}-erro` } : {});
 
   return (
-    <Modal aberto={aberto} aoFechar={aoFechar} titulo="Novo lead" descricao="Dono, próximo passo e data são obrigatórios." largura="lg"
+    <Modal aberto={aberto} aoFechar={aoFechar} titulo="Novo lead" descricao="Cadastrante, próximo passo e data são obrigatórios." largura="lg"
       rodape={<>
         <Botao type="button" variante="secundario" onClick={aoFechar}>Cancelar</Botao>
         <Botao type="submit" form="form-novo-lead" disabled={salvando}>{salvando ? "Salvando…" : "Salvar lead"}</Botao>
@@ -325,7 +325,7 @@ function ModalNovoLead({
         <Campo rotulo="Origem do lead" id="origem">
           <Selecao id="origem" name="origem" defaultValue=""><option value="">Selecione</option>{ORIGENS.map((s) => <option key={s}>{s}</option>)}</Selecao>
         </Campo>
-        <Campo rotulo="Dono" id="donoId" erro={erros.donoId}>
+        <Campo rotulo="Cadastrante" id="donoId" erro={erros.donoId} ajuda="Sócio que está cadastrando este lead.">
           <Selecao id="donoId" name="donoId" defaultValue={socioAtualId} {...err("donoId")}>
             <option value="">Selecione</option>{socios.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
           </Selecao>

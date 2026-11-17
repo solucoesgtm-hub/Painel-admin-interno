@@ -35,7 +35,7 @@ export const esquemaNovoLead = z.object({
   contatoNome: opcional(80),
   contatoTelefone: opcional(20),
   origem: opcional(40),
-  donoId: z.string().min(1, "Escolha o dono do lead."),
+  donoId: z.string().min(1, "Escolha um sócio."),
   proximoPasso: z.string().trim().min(3, "Descreva o próximo passo."),
   proximoPassoData: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data do próximo passo."),
 });
