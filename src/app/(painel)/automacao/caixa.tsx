@@ -30,7 +30,7 @@ export function CaixaAprovacoes({ iniciais, socioNome }: { iniciais: Aprovacao[]
             <li key={a.id} className="p-5">
               <div className="flex flex-col gap-4 lg:flex-row">
                 <div className="min-w-0 flex-1">
-                  <p className="inline-flex items-center gap-1.5 text-xs text-tinta-3"><Bot aria-hidden className="size-3.5 text-azul" />{a.agente} · {dataHora(a.criadaEm)}</p>
+                  <p className="inline-flex items-center gap-1.5 text-xs text-tinta-3"><Bot aria-hidden className="size-3.5 text-azul-escuro" />{a.agente} · {dataHora(a.criadaEm)}</p>
                   <h3 className="mt-1 font-semibold">{a.titulo}</h3>
                   <p className="text-xs text-tinta-3">{a.contexto}</p>
                   {editando === a.id ? (

@@ -223,7 +223,7 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
           <div className="flex flex-wrap gap-2">
             {TAREFAS_SUGERIDAS.filter((t) => !e.tarefas.some((x) => x.nome === t)).map((t) => (
               <button key={t} type="button" onClick={() => atualizar({ tarefas: [...e.tarefas, { nome: t, peso: 2 }] })}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-areia-2 px-4 text-sm text-tinta-2 hover:border-azul hover:text-azul">
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-areia-2 px-4 text-sm text-tinta-2 hover:border-azul hover:text-azul-escuro">
                 <Plus aria-hidden className="size-3.5" />{t}
               </button>
             ))}
@@ -347,7 +347,7 @@ export function Checklist({ leads, leadInicial }: { leads: { id: string; nome: s
               return (
                 <button key={n as string} type="button" disabled
                   className="flex min-h-11 w-full items-center gap-3 rounded-md border border-areia bg-superficie px-3 text-left text-sm text-tinta-2 disabled:cursor-not-allowed disabled:opacity-60">
-                  <Icone aria-hidden className="size-4 text-azul" />{n as string}
+                  <Icone aria-hidden className="size-4 text-azul-escuro" />{n as string}
                 </button>
               );
             })}

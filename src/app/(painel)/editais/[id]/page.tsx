@@ -14,6 +14,13 @@ const MARCACAO = {
   verificar: { nome: "Verificar", tom: "alerta" as const, icone: HelpCircle },
 };
 
+// Título da aba: número do edital (sem consultar nada além dos dados já carregados).
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const e = EDITAIS.find((x) => x.id === id);
+  return { title: e ? `Edital ${e.numero}` : "Edital" };
+}
+
 export default async function FichaEdital({ params }: { params: Promise<{ id: string }> }) {
   await exigirSocio();
   const { id } = await params;
@@ -66,7 +73,7 @@ export default async function FichaEdital({ params }: { params: Promise<{ id: st
                     {r.pagina && r.trecho ? (
                       <blockquote className="mt-2 flex gap-2 border-l-2 border-azul/40 pl-3 text-[13px] italic text-tinta-2">
                         <span>“{r.trecho}”</span>
-                        <span className="numeros shrink-0 not-italic text-xs text-azul">p. {r.pagina}</span>
+                        <span className="numeros shrink-0 not-italic text-xs text-azul-escuro">p. {r.pagina}</span>
                       </blockquote>
                     ) : (
                       <p className="mt-2 text-xs text-alerta">Sem página citada — marcado como Verificar.</p>

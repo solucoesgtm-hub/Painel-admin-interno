@@ -35,9 +35,9 @@ export default async function Editais() {
                 return (
                   <Tr key={e.id}>
                     <Td className="max-w-sm">
-                      <Link href={`/editais/${e.id}`} className="font-medium hover:text-azul">{e.numero}</Link>
+                      <Link href={`/editais/${e.id}`} className="font-medium hover:text-azul-escuro">{e.numero}</Link>
                       <p className="line-clamp-1 text-xs text-tinta-3">{e.orgao}</p>
-                      {e.origem === "radar" && <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-azul"><Radar aria-hidden className="size-3" />Encontrado pelo radar</span>}
+                      {e.origem === "radar" && <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-azul-escuro"><Radar aria-hidden className="size-3" />Encontrado pelo radar</span>}
                     </Td>
                     <Td><Etiqueta tom={SITUACAO_EDITAL[e.situacao].tom}>{SITUACAO_EDITAL[e.situacao].nome}</Etiqueta></Td>
                     <Td><EtiquetaVereditoEdital v={vereditoEdital(e.requisitos)} /></Td>
@@ -81,7 +81,7 @@ export default async function Editais() {
             </dl>
           </Cartao>
           <Cartao className="animate-surgir escala-3 p-5">
-            <p className="flex items-center gap-2 text-sm font-semibold"><Radar aria-hidden className="size-4 text-azul" />Radar semanal</p>
+            <p className="flex items-center gap-2 text-sm font-semibold"><Radar aria-hidden className="size-4 text-azul-escuro" />Radar semanal</p>
             <p className="mt-1 text-sm text-tinta-3">Verifica a lista de páginas de editais toda segunda às 06:00 e envia os novos para a Caixa de aprovações.</p>
             <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-tinta-2"><CalendarClock aria-hidden className="size-3.5" />Última execução há 2 dias · 2 novos</p>
           </Cartao>

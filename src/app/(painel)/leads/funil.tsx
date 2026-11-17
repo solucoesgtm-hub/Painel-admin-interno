@@ -169,7 +169,7 @@ export function Funil({
                 const s = socios.find((x) => x.id === l.donoId);
                 return (
                   <Tr key={l.id}>
-                    <Td><Link className="font-medium hover:text-azul" href={`/leads/${l.id}`}>{l.nome}</Link><p className="text-xs text-tinta-3">{[l.segmento, l.cidade].filter(Boolean).join(" · ")}</p></Td>
+                    <Td><Link className="font-medium hover:text-azul-escuro" href={`/leads/${l.id}`}>{l.nome}</Link><p className="text-xs text-tinta-3">{[l.segmento, l.cidade].filter(Boolean).join(" · ")}</p></Td>
                     <Td><span className="inline-flex items-center gap-1.5 text-[13px]"><span aria-hidden className="size-2 rounded-full" style={{ background: COR_ETAPA[l.etapa] }} />{nomeEtapa(l.etapa)}</span></Td>
                     <Td>{s && <span className="inline-flex items-center gap-2"><Avatar nome={s.nome} cor={s.cor} tamanho="sm" />{s.nome}</span>}</Td>
                     <Td><p className="text-[13px]">{l.proximoPasso}</p><p className={cn("text-xs", l.proximoPassoData < hojeISO() ? "text-risco" : "text-tinta-3")}>{dataCurta(l.proximoPassoData)} · {relativo(l.proximoPassoData)}</p></Td>
@@ -231,7 +231,7 @@ function CardLead({
       <div className="flex items-start gap-2">
         <GripVertical aria-hidden className="mt-0.5 size-4 shrink-0 text-areia-2 group-hover:text-tinta-3" />
         <div className="min-w-0 flex-1">
-          <Link href={`/leads/${l.id}`} className="block text-[13.5px] font-semibold leading-snug hover:text-azul">
+          <Link href={`/leads/${l.id}`} className="block text-[13.5px] font-semibold leading-snug hover:text-azul-escuro">
             {l.nome}
           </Link>
           <p className="mt-0.5 text-xs text-tinta-3">{[l.segmento, l.cidade].filter(Boolean).join(" · ")}</p>

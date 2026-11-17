@@ -29,7 +29,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { cn } from "@/components/ui/base";
+import { cn, corDoTexto } from "@/components/ui/base";
 import { Logo } from "./logo";
 import { BotaoTema, Dica, LinhaTema } from "./tema";
 
@@ -335,8 +335,8 @@ export function MenuConta({
         aria-haspopup="menu"
         aria-label={`Conta de ${usuario.nome}`}
         onClick={() => p.setAberto((v) => !v)}
-        className="grid size-11 place-items-center rounded-full text-sm font-semibold text-white ring-2 ring-papel transition-transform hover:scale-105"
-        style={{ background: usuario.cor }}
+        className="grid size-11 place-items-center rounded-full text-sm font-semibold ring-2 ring-papel transition-transform hover:scale-105"
+        style={{ background: usuario.cor, color: corDoTexto(usuario.cor) }}
       >
         {usuario.nome.slice(0, 1)}
       </button>

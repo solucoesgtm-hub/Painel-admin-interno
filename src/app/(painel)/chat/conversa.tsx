@@ -168,7 +168,7 @@ export function Conversa({ iniciais, socios, socioAtualId }: { iniciais: Mensage
                     <div className={cn("animate-mensagem flex max-w-[88%] items-end gap-2 sm:max-w-[75%]", minha ? "flex-row-reverse self-end" : "self-start")}>
                       {!minha && <span className={cn("shrink-0", junto && "invisible")}><Avatar nome={autor?.nome ?? "?"} cor={autor?.cor} /></span>}
                       <div className={cn("min-w-0", minha && "text-right")}>
-                        {!junto && !minha && <p className="mb-1 px-1 text-xs font-semibold" style={{ color: autor?.cor }}>{autor?.nome ?? "Sócio removido"}</p>}
+                        {!junto && !minha && <p className="mb-1 flex items-center gap-1.5 px-1 text-xs font-semibold text-tinta-2"><span aria-hidden className="size-1.5 rounded-full" style={{ background: autor?.cor }} />{autor?.nome ?? "Sócio removido"}</p>}
                         <div
                           className={cn(
                             "inline-block max-w-full rounded-[18px] px-3.5 py-2 text-left text-[15px] leading-relaxed",

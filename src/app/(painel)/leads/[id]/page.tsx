@@ -21,6 +21,13 @@ import { buscarLead, listarContratos, listarDiagnosticos, listarSocios } from "@
 import { exigirSocio } from "@/lib/sessao";
 import { EditarLead } from "./editar";
 
+// Título da aba com o nome do cliente (a página continua conferindo o login antes de mostrar os dados).
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  await exigirSocio();
+  const l = await buscarLead((await params).id);
+  return { title: l?.nome ?? "Cliente" };
+}
+
 export default async function FichaCliente({ params }: { params: Promise<{ id: string }> }) {
   await exigirSocio();
   const { id } = await params;
@@ -75,14 +82,14 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
             <dl className="divide-y divide-areia text-sm">
               <div className="flex justify-between gap-3 px-5 py-3"><dt className="text-tinta-3">Responsável</dt><dd className="font-medium">{l.contatoNome || "—"}</dd></div>
               <div className="flex justify-between gap-3 px-5 py-3"><dt className="text-tinta-3">Telefone</dt>
-                <dd>{l.contatoTelefone ? <a className="inline-flex items-center gap-1.5 font-medium text-azul hover:underline" href={`tel:${l.contatoTelefone.replace(/\D/g, "")}`}><Phone aria-hidden className="size-3.5" />{l.contatoTelefone}</a> : "—"}</dd></div>
+                <dd>{l.contatoTelefone ? <a className="inline-flex items-center gap-1.5 font-medium text-azul-escuro hover:underline" href={`tel:${l.contatoTelefone.replace(/\D/g, "")}`}><Phone aria-hidden className="size-3.5" />{l.contatoTelefone}</a> : "—"}</dd></div>
               <div className="flex justify-between gap-3 px-5 py-3"><dt className="text-tinta-3">Cliente desde</dt><dd>{data(l.criadoEm)}</dd></div>
               <div className="flex justify-between gap-3 px-5 py-3"><dt className="text-tinta-3">Na etapa desde</dt><dd>{data(l.etapaDesde)}</dd></div>
             </dl>
           </Cartao>
 
           <Cartao>
-            <CabecalhoCartao titulo="Diagnósticos" acao={<BotaoLink href={`/diagnostico?lead=${l.id}`} variante="fantasma" className="min-h-9 px-2 text-azul">Novo</BotaoLink>} />
+            <CabecalhoCartao titulo="Diagnósticos" acao={<BotaoLink href={`/diagnostico?lead=${l.id}`} variante="fantasma" className="min-h-9 px-2 text-azul-escuro">Novo</BotaoLink>} />
             {l.pontuacao === null ? (
               <EstadoVazio icone={ClipboardCheck} titulo="Sem diagnóstico" texto="Faça o checklist na visita para ter a pontuação e o veredito." />
             ) : (

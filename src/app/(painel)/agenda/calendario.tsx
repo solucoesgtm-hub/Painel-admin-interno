@@ -149,7 +149,7 @@ export function Calendario({
                       </li>
                     );
                   })}
-                  {doDia.length === 0 && <li className="hidden px-1 text-xs text-tinta-3/70 md:block">—</li>}
+                  {doDia.length === 0 && <li aria-hidden className="hidden px-1 text-xs text-tinta-3 md:block">—</li>}
                 </ul>
               </li>
             );
