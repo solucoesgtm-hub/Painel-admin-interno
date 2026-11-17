@@ -1,19 +1,47 @@
 import { cn } from "@/components/ui/base";
-// Marca provisória do GTM Hub (substituir pelos arquivos de docs/marca quando chegarem).
-// Por padrão para fundo grafite; `escuro` usa texto escuro sobre o conteúdo claro.
+import { BARRIGA, FAIXA_DIR, FAIXA_ESQ, MARCA_CLARO, MARCA_ESCURO, RAIO_RECORTE, SILHUETA, VIEWBOX_CIRCULO } from "@/lib/marca";
+
+/**
+ * Símbolo da GTM: círculo claro com o pinguim. `fundo` envolve o símbolo num quadrado
+ * escuro arredondado (como o ícone do app), que lê bem nos temas claro e escuro.
+ */
+export function SimboloGTM({ className, fundo = true, titulo }: { className?: string; fundo?: boolean; titulo?: string }) {
+  const id = "gtm-recorte";
+  const simbolo = (
+    <svg viewBox={VIEWBOX_CIRCULO} className={fundo ? "size-[78%]" : className} role={titulo ? "img" : undefined} aria-label={titulo} aria-hidden={titulo ? undefined : true}>
+      <circle cx="640" cy="640" r="366" fill={MARCA_CLARO} />
+      <clipPath id={id}>
+        <circle cx="640" cy="640" r={RAIO_RECORTE} />
+      </clipPath>
+      <g clipPath={`url(#${id})`}>
+        <path d={SILHUETA} fill={MARCA_ESCURO} />
+        <path d={BARRIGA} fill={MARCA_CLARO} />
+        <path d={FAIXA_ESQ} fill={MARCA_CLARO} />
+        <path d={FAIXA_DIR} fill={MARCA_CLARO} />
+      </g>
+    </svg>
+  );
+  if (!fundo) return simbolo;
+  return (
+    <span
+      className={cn(
+        "grid shrink-0 place-items-center rounded-[28%] bg-[#141414] shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_8px_18px_-10px_rgb(0_0_0/0.6)] ring-1 ring-white/10",
+        className,
+      )}
+    >
+      {simbolo}
+    </span>
+  );
+}
+
+/** Marca completa: símbolo + "GTM Hub / Soluções". `escuro` = texto escuro (sobre o conteúdo claro). */
 export function Logo({ escuro = false, compacto = false }: { escuro?: boolean; compacto?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-2.5">
-      <svg aria-hidden viewBox="0 0 36 36" className="size-9 shrink-0">
-        <rect width="36" height="36" rx="10" fill="#3f6fd8" />
-        <rect x="0.5" y="0.5" width="35" height="35" rx="9.5" fill="none" stroke="#ffffff" strokeOpacity="0.22" />
-        <path d="M10 24.5V11.5h7" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-        <path d="M10 18h5" stroke="#cfe0ff" strokeWidth="2.8" strokeLinecap="round" />
-        <path d="M20 24.5l3-12.5 2.6 7.2 2.4-4.6" stroke="#ffffff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </svg>
+    <span className="group/logo inline-flex items-center gap-2.5">
+      <SimboloGTM className="size-10 transition-transform duration-300 ease-suave group-hover/logo:-rotate-6 group-hover/logo:scale-105" />
       <span className={cn(compacto && "sr-only", escuro ? "text-tinta" : "text-white")}>
         <span className="block text-[15px] font-semibold leading-none tracking-tight">GTM Hub</span>
-        <span className={`mt-1 block text-[11px] leading-none ${escuro ? "text-tinta-3" : "text-nevoa"}`}>Soluções</span>
+        <span className={cn("mt-1 block text-[11px] leading-none", escuro ? "text-tinta-3" : "text-nevoa")}>Soluções</span>
       </span>
     </span>
   );

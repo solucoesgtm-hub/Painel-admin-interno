@@ -1,6 +1,6 @@
 "use client";
 import { useActionState, useState } from "react";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { Aviso, Botao, Campo, Entrada } from "@/components/ui/base";
 import { entrar, type EstadoLogin } from "./acoes";
 
@@ -25,8 +25,9 @@ export function FormularioLogin() {
           </button>
         </div>
       </Campo>
-      <Botao type="submit" icone={LogIn} disabled={enviando} className="min-h-12 w-full">
-        {enviando ? "Entrando…" : "Entrar"}
+      <Botao type="submit" icone={enviando ? undefined : LogIn} disabled={enviando} aria-busy={enviando} className="reflexo min-h-12 w-full">
+        {enviando && <Loader2 aria-hidden className="size-4 animate-spin" />}
+        {enviando ? "Conferindo acesso…" : "Entrar"}
       </Botao>
       <p className="text-xs text-tinta-3">Esqueceu a senha? Peça a outro sócio para redefinir com <code>npm run db:senha</code>.</p>
     </form>

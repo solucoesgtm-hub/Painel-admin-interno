@@ -1,6 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
-  <rect width="36" height="36" rx="10" fill="#3f6fd8"/>
-  <path d="M10 24.5V11.5h7" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" fill="none"/>
-  <path d="M10 18h5" stroke="#cfe0ff" stroke-width="2.8" stroke-linecap="round"/>
-  <path d="M20 24.5l3-12.5 2.6 7.2 2.4-4.6" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="204.28571428571428 204.28571428571428 871.4285714285714 871.4285714285714">
+  <rect x="204.28571428571428" y="204.28571428571428" width="871.4285714285714" height="871.4285714285714" rx="191.71428571428572" fill="#141414"/>
+  <circle cx="640" cy="640" r="366" fill="#f1f0eb"/>
+  <clipPath id="r"><circle cx="640" cy="640" r="356"/></clipPath>
+  <g clip-path="url(#r)">
+    <path d="M352 846 C368 748 392 684 418 628 C438 588 447 572 447 552 C447 440 535 362 640 362 C745 362 833 440 833 552 C833 572 842 588 862 628 C888 684 912 748 928 846 L928 1010 L352 1010 Z" fill="#141414"/>
+    <path d="M462 1010 L468 952 C494 846 540 778 606 738 C616 780 628 814 640 838 C652 814 664 780 674 738 C740 778 786 846 812 952 L818 1010 Z" fill="#f1f0eb"/>
+    <path d="M485 503 C566 508 612 566 613 636 C614 700 624 770 640 838 C628 776 604 704 601 642 C598 574 560 520 485 503 Z" fill="#f1f0eb"/>
+    <path d="M795 503 C714 508 668 566 667 636 C666 700 656 770 640 838 C652 776 676 704 679 642 C682 574 720 520 795 503 Z" fill="#f1f0eb"/>
+  </g>
 </svg>

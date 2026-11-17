@@ -210,6 +210,11 @@
   --animate-entrar-modal: entrar-modal 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-subir-folha: subir-folha 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-mensagem: mensagem 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-revelar: revelar 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-flutuar: flutuar 6s ease-in-out infinite;
+  --animate-girar: girar 24s linear infinite;
+  --animate-pulsar: pulsar 5s ease-in-out infinite;
+  --animate-surgir-marca: surgir-marca 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-pagina: pagina 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-brilho: brilho 1.6s linear infinite;
 
@@ -224,6 +229,25 @@
   @keyframes subir-folha {
     from { transform: translateY(100%); }
     to { transform: none; }
+  }
+  @keyframes revelar {
+    from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+    to { opacity: 1; transform: none; filter: none; }
+  }
+  @keyframes flutuar {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes girar {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulsar {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.06); }
+  }
+  @keyframes surgir-marca {
+    from { opacity: 0; transform: scale(0.82) rotate(-8deg); }
+    to { opacity: 1; transform: none; }
   }
   @keyframes mensagem {
     from { opacity: 0; transform: translateY(6px) scale(0.98); }
@@ -347,6 +371,33 @@
   background-size: 200% 100%;
   animation: var(--animate-brilho);
 }
+
+/* Reflexo que atravessa o botão no hover (login). */
+@utility reflexo {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.28) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 700ms var(--ease-suave);
+  }
+  @media (hover: hover) {
+    &:hover::after { transform: translateX(120%); }
+  }
+}
+
+/* Atraso em cascata para entradas (login): use com animate-revelar. */
+.atraso-1 { animation-delay: 120ms; }
+.atraso-2 { animation-delay: 240ms; }
+.atraso-3 { animation-delay: 360ms; }
+.atraso-4 { animation-delay: 480ms; }
+.atraso-5 { animation-delay: 600ms; }
+.atraso-6 { animation-delay: 720ms; }
 
 /* Cartões clicáveis sobem um pouco no hover (só onde há mouse). */
 @utility elevar {
