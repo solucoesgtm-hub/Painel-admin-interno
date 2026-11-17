@@ -36,6 +36,13 @@
       "when": 1794922082896,
       "tag": "0004_chat_e_login",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794928076237,
+      "tag": "0005_presenca_e_push",
+      "breakpoints": true
     }
   ]
 }

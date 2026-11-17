@@ -75,3 +75,65 @@ export function juntarMensagens<T extends { id: string; em: string }>(atuais: T[
   for (const m of mudancas) porId.set(m.id, m);
   return [...porId.values()].sort((a, b) => a.em.localeCompare(b.em));
 }
+
+/* ---------------- Presença ("visto por último") ---------------- */
+/** Considerado online se usou o painel nos últimos 3 minutos (as consultas do painel renovam isso). */
+export const ONLINE_MS = 3 * 60_000;
+/** Grava "visto" no máximo uma vez por minuto por sócio, para não escrever no banco a cada clique. */
+export const GRAVAR_VISTO_MS = 60_000;
+
+export const estaOnline = (vistoEm: string | null | undefined, agora = new Date()) =>
+  !!vistoEm && agora.getTime() - new Date(vistoEm).getTime() < ONLINE_MS;
+
+export const deveGravarVisto = (vistoEm: string | null | undefined, agora = new Date()) =>
+  !vistoEm || agora.getTime() - new Date(vistoEm).getTime() >= GRAVAR_VISTO_MS;
+
+const FUSO_SP = "America/Sao_Paulo";
+const diaSP = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: FUSO_SP });
+const horaSP = (d: Date) => d.toLocaleTimeString("pt-BR", { timeZone: FUSO_SP, hour: "2-digit", minute: "2-digit" });
+
+/** "Online agora", "Visto há 12 min", "Visto hoje às 14:32", "Visto ontem às 18:05", "Visto em 03/11 às 09:10". */
+export function textoVisto(vistoEm: string | null | undefined, agora = new Date()): string {
+  if (!vistoEm) return "Ainda não acessou";
+  const v = new Date(vistoEm);
+  const ms = agora.getTime() - v.getTime();
+  if (ms < ONLINE_MS) return "Online agora";
+  if (ms < 60 * 60_000) return `Visto há ${Math.max(1, Math.floor(ms / 60_000))} min`;
+  const hoje = diaSP(agora);
+  const ontem = diaSP(new Date(agora.getTime() - 24 * 60 * 60_000));
+  const dia = diaSP(v);
+  if (dia === hoje) return `Visto hoje às ${horaSP(v)}`;
+  if (dia === ontem) return `Visto ontem às ${horaSP(v)}`;
+  const dm = v.toLocaleDateString("pt-BR", { timeZone: FUSO_SP, day: "2-digit", month: "2-digit" });
+  return `Visto em ${dm} às ${horaSP(v)}`;
+}
+
+/* ---------------- Notificações (Web Push) ---------------- */
+/** Só serviços oficiais de push: o servidor nunca envia requisições para endereços arbitrários. */
+const SERVICOS_PUSH = ["fcm.googleapis.com", "updates.push.services.mozilla.com", "push.apple.com", "notify.windows.com"];
+
+export const servicoPushPermitido = (endpoint: string) => {
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === "https:" && SERVICOS_PUSH.some((h) => u.hostname === h || u.hostname.endsWith(`.${h}`));
+  } catch {
+    return false;
+  }
+};
+
+export const esquemaInscricao = z.object({
+  endpoint: z.string().max(1000).refine(servicoPushPermitido, "Serviço de notificação não reconhecido."),
+  keys: z.object({ p256dh: z.string().min(10).max(200), auth: z.string().min(8).max(100) }),
+  aparelho: z.string().max(120).optional().default(""),
+});
+
+/** Texto da notificação: nome de quem mandou e o começo da mensagem. */
+export function avisoDeMensagem(autor: string, texto: string, naoLidas: number) {
+  const curto = texto.replace(/\s+/g, " ").trim();
+  return {
+    titulo: `${autor} · Chat GTM`,
+    texto: curto.length > 140 ? `${curto.slice(0, 137)}…` : curto,
+    url: "/chat",
+    naoLidas,
+  };
+}

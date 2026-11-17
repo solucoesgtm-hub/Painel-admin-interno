@@ -1,10 +1,17 @@
 // Confere o login antes de qualquer consulta ou gravação. Use em toda página, rota e server action.
 import "server-only";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { after, connection } from "next/server";
 import { auth, authConfigurado } from "@/auth";
 import { SOCIOS, type Socio } from "./demo/dados";
-import { listarSocios } from "./repositorio";
+import { deveGravarVisto } from "./regras/chat";
+import { listarSocios, registrarVisto } from "./repositorio";
+
+/** Atualiza o "visto por último" depois de responder (não atrasa a tela), no máximo 1x por minuto. */
+function marcarVisto(socio: Socio) {
+  if (!deveGravarVisto(socio.vistoEm)) return;
+  after(() => registrarVisto(socio.id).catch(() => {}));
+}
 
 export type SessaoSocio = Socio & { demo: boolean };
 
@@ -18,6 +25,7 @@ export async function exigirSocio(): Promise<SessaoSocio> {
     }
     // Com banco e sem AUTH_SECRET (só no computador local), age como o primeiro sócio cadastrado.
     const primeiro = (await listarSocios())[0] ?? SOCIOS[0]!;
+    marcarVisto(primeiro);
     return { ...primeiro, demo: true };
   }
   const sessao = await auth();
@@ -26,5 +34,6 @@ export async function exigirSocio(): Promise<SessaoSocio> {
   // Confere a cada requisição se o sócio ainda existe na tabela (remoção corta o acesso na hora).
   const socio = (await listarSocios()).find((s) => s.id === id);
   if (!socio) redirect("/login?erro=removido");
+  marcarVisto(socio);
   return { ...socio, demo: false };
 }

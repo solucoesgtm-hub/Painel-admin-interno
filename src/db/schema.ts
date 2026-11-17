@@ -42,8 +42,27 @@ export const socios = pgTable("socios", {
   /** Hash scrypt da senha (nunca a senha em texto). Definido com `npm run db:senha`. */
   senhaHash: text("senha_hash"),
   senhaDefinidaEm: timestamp("senha_definida_em", { withTimezone: true }),
+  /** Última vez que usou o painel (gravado no máximo uma vez por minuto). */
+  vistoEm: timestamp("visto_em", { withTimezone: true }),
   criadoEm,
 });
+
+/** Aparelhos que aceitaram notificações (Web Push). Um sócio pode ter vários (celular, computador). */
+export const pushInscricoes = pgTable(
+  "push_inscricoes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    socioId: uuid("socio_id")
+      .notNull()
+      .references(() => socios.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull().unique(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    aparelho: text("aparelho").notNull().default(""),
+    criadoEm,
+  },
+  (t) => [index("push_inscricoes_socio_idx").on(t.socioId)],
+);
 
 /** Leads e clientes. Regra do Hub: todo registro tem dono e próximo passo com data. */
 export const leads = pgTable(

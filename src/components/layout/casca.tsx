@@ -33,6 +33,7 @@ export function Casca({
   leads,
   data,
   selo,
+  chavePush,
 }: {
   children: ReactNode;
   contadores: Record<string, number>;
@@ -41,6 +42,7 @@ export function Casca({
   leads: LeadBusca[];
   data: string;
   selo: string;
+  chavePush: string | null;
 }) {
   const [paletaAberta, setPaletaAberta] = useState(false);
   const abrirBusca = useCallback(() => setPaletaAberta(true), []);
@@ -64,7 +66,7 @@ export function Casca({
       >
         Pular para o conteúdo
       </a>
-      <Topo contadores={contadores} usuario={usuario} sair={sair} data={data} selo={selo} aoBuscar={abrirBusca} />
+      <Topo contadores={contadores} usuario={usuario} sair={sair} data={data} selo={selo} chavePush={chavePush} aoBuscar={abrirBusca} />
       <Dock aoBuscar={abrirBusca} contadores={contadores} />
 
       <main id="conteudo" className="mx-auto max-w-[1520px] pb-[calc(env(safe-area-inset-bottom)+7.5rem)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-4 sm:px-6 lg:pb-16 lg:pl-[104px] lg:pr-8 lg:pt-6">
@@ -83,6 +85,7 @@ function Topo({
   sair,
   data,
   selo,
+  chavePush,
   aoBuscar,
 }: {
   contadores: Record<string, number>;
@@ -90,6 +93,7 @@ function Topo({
   sair?: () => Promise<void>;
   data: string;
   selo: string;
+  chavePush: string | null;
   aoBuscar: () => void;
 }) {
   const [novoAberto, setNovoAberto] = useState(false);
@@ -109,6 +113,17 @@ function Topo({
     acaoContarNaoLidas().then(setNaoLidas).catch(() => {});
   }, [noChat]);
   useUsoDoPainel(conferir);
+  useEffect(() => {
+    // "(2) Chat · GTM Hub" na aba e número no ícone do app instalado.
+    const t = setTimeout(() => {
+      const base = document.title.replace(/^\(\d+\+?\) /, "");
+      document.title = naoLidas > 0 && !noChat ? `(${naoLidas > 9 ? "9+" : naoLidas}) ${base}` : base;
+    }, 50);
+    const nav = navigator as Navigator & { setAppBadge?: (n?: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
+    if (naoLidas > 0 && !noChat) nav.setAppBadge?.(naoLidas).catch(() => {});
+    else nav.clearAppBadge?.().catch(() => {});
+    return () => clearTimeout(t);
+  }, [naoLidas, noChat, atual]);
   useEffect(() => {
     const id = setInterval(conferir, 60_000);
     document.addEventListener("visibilitychange", conferir);
@@ -194,7 +209,7 @@ function Topo({
               </div>
             )}
           </div>
-          <MenuConta usuario={usuario} sair={sair} data={data} selo={selo} />
+          <MenuConta usuario={usuario} sair={sair} data={data} selo={selo} chavePush={chavePush} />
         </div>
       </div>
       <div className="relative mx-auto hidden max-w-[1520px] pb-2 pl-[104px] pr-8 lg:block xl:hidden">

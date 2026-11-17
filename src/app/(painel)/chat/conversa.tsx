@@ -4,6 +4,8 @@ import { ArrowDown, MessagesSquare, RotateCcw, SendHorizontal, Trash2 } from "lu
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Avatar, Cartao, EstadoVazio, cn } from "@/components/ui/base";
 import { useAviso } from "@/components/ui/toast";
+import { PontoPresenca, TextoPresenca } from "@/components/presenca";
+import { ConviteNotificacoes } from "@/components/notificacoes";
 import { hojeISO, hora, somarDias } from "@/lib/formato";
 import {
   continuaBloco,
@@ -36,11 +38,13 @@ export function Conversa({
   socios,
   socioAtualId,
   cursorInicial,
+  chavePush,
 }: {
   iniciais: Mensagem[];
   socios: SocioChat[];
   socioAtualId: string;
   cursorInicial: string;
+  chavePush: string | null;
 }) {
   const avisar = useAviso();
   const [mensagens, setMensagens] = useState<Local[]>(iniciais);
@@ -187,12 +191,25 @@ export function Conversa({
         </span>
         <div className="min-w-0 flex-1">
           <h1 className="text-base font-semibold tracking-tight text-tinta">Chat dos sócios</h1>
-          <p className="truncate text-xs text-tinta-3">Só {socios.map((s) => s.nome).join(", ").replace(/, ([^,]*)$/, " e $1")} veem esta conversa</p>
+          <ul className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs" aria-label="Quem está online">
+            {socios.filter((s) => s.id !== socioAtualId).map((s) => (
+              <li key={s.id} className="inline-flex items-center gap-1">
+                <span className="font-medium text-tinta-2">{s.nome}</span>
+                <TextoPresenca socioId={s.id} />
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="flex -space-x-2" aria-hidden>
-          {socios.map((s) => <Avatar key={s.id} nome={s.nome} cor={s.cor} />)}
+        <div className="hidden -space-x-2 sm:flex" aria-hidden>
+          {socios.map((s) => (
+            <span key={s.id} className="relative">
+              <Avatar nome={s.nome} cor={s.cor} />
+              <PontoPresenca socioId={s.id} className="size-2.5" />
+            </span>
+          ))}
         </div>
       </header>
+      <ConviteNotificacoes chavePublica={chavePush} />
 
       <div className="relative min-h-0 flex-1">
         <div

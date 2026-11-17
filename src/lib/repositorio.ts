@@ -28,6 +28,7 @@ export type DiagnosticoSalvo = {
   criadoEm: string;
 };
 
+type InscricaoPushMemoria = { socioId: string; endpoint: string; p256dh: string; auth: string };
 type Memoria = {
   leads: Lead[];
   historico: EventoHistorico[];
@@ -38,6 +39,8 @@ type Memoria = {
   mensagens: Mensagem[];
   leituras: Record<string, string>;
   apagadasEm: Record<string, string>;
+  vistos: Record<string, string>;
+  inscricoes?: (InscricaoPushMemoria)[];
 };
 const g = globalThis as unknown as { __gtmMemoria?: Memoria };
 function memoria(): Memoria {
@@ -65,6 +68,11 @@ function memoria(): Memoria {
   m.mensagens ??= structuredClone(MENSAGENS_DEMO);
   m.leituras ??= {};
   m.apagadasEm ??= {};
+  // Demonstração: Thalis aparece online e Mateus visto há algumas horas.
+  m.vistos ??= {
+    "s-thalis": new Date(Date.now() - 60_000).toISOString(),
+    "s-mateus": new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
+  };
   return m;
 }
 
@@ -77,10 +85,10 @@ const CORES_SOCIOS = ["#3f6fd8", "#eb6834", "#1baf7a", "#eda100"];
 
 /** Sócios: tabela `socios` do Neon (ordem de cadastro) ou a lista fictícia da demonstração. */
 export async function listarSocios(): Promise<Socio[]> {
-  if (modoDemo) return SOCIOS;
+  if (modoDemo) return SOCIOS.map((s) => ({ ...s, vistoEm: memoria().vistos[s.id] ?? null }));
   const [{ db }, { socios }, { asc }] = await Promise.all([import("@/db"), import("@/db/schema"), import("drizzle-orm")]);
   const linhas = await db
-    .select({ id: socios.id, nome: socios.nome, email: socios.email, area: socios.area })
+    .select({ id: socios.id, nome: socios.nome, email: socios.email, area: socios.area, vistoEm: socios.vistoEm })
     .from(socios)
     .orderBy(asc(socios.criadoEm), asc(socios.nome));
   return linhas.map((s, i) => ({
@@ -90,7 +98,18 @@ export async function listarSocios(): Promise<Socio[]> {
     area: s.area ?? "Sócio",
     foco: s.area ?? "",
     cor: CORES_SOCIOS[i % CORES_SOCIOS.length]!,
+    vistoEm: s.vistoEm?.toISOString() ?? null,
   }));
+}
+
+/** Marca que o sócio usou o painel agora ("visto por último"). Quem chama limita a uma vez por minuto. */
+export async function registrarVisto(socioId: string) {
+  if (modoDemo) {
+    memoria().vistos[socioId] = new Date().toISOString();
+    return;
+  }
+  const [{ db }, { socios }, { eq }] = await Promise.all([import("@/db"), import("@/db/schema"), import("drizzle-orm")]);
+  await db.update(socios).set({ vistoEm: new Date() }).where(eq(socios.id, socioId));
 }
 
 export async function listarLeads(): Promise<Lead[]> {
@@ -558,4 +577,57 @@ export async function contarMensagensNaoLidas(socio: { id: string }): Promise<nu
   }
   const lido = memoria().leituras[socio.id] ?? "";
   return memoria().mensagens.filter((m) => m.autorId !== socio.id && !m.apagada && m.em > lido).length;
+}
+
+/* ---------------- Notificações (Web Push) ---------------- */
+type InscricaoPush = { endpoint: string; p256dh: string; auth: string };
+
+export async function salvarInscricaoPush(socio: { id: string }, i: InscricaoPush, aparelho: string) {
+  if (modoDemo) {
+    memoria().inscricoes = [...(memoria().inscricoes ?? []).filter((x) => x.endpoint !== i.endpoint), { ...i, socioId: socio.id }];
+    return;
+  }
+  const { salvarInscricao } = await consultasChat();
+  await salvarInscricao(socio.id, i, aparelho);
+}
+
+export async function removerInscricaoPush(endpoint: string) {
+  if (modoDemo) {
+    memoria().inscricoes = (memoria().inscricoes ?? []).filter((x) => x.endpoint !== endpoint);
+    return;
+  }
+  const { removerInscricoes } = await consultasChat();
+  await removerInscricoes([endpoint]);
+}
+
+/** Avisa os outros sócios de uma mensagem nova (em todos os aparelhos que ativaram). */
+export async function notificarMensagem(autor: { id: string; nome: string }, texto: string) {
+  const [{ enviarAvisos, pushConfigurado }, { avisoDeMensagem }] = await Promise.all([import("./push"), import("./regras/chat")]);
+  if (!pushConfigurado()) return;
+  const lista = modoDemo
+    ? (memoria().inscricoes ?? []).filter((x) => x.socioId !== autor.id)
+    : await (await consultasChat()).inscricoesDosOutros(autor.id);
+  const porSocio = new Map<string, InscricaoPush[]>();
+  for (const i of lista) porSocio.set(i.socioId, [...(porSocio.get(i.socioId) ?? []), i]);
+  const expirados = (
+    await Promise.all(
+      [...porSocio].map(async ([socioId, inscricoes]) => {
+        const naoLidas = await contarMensagensNaoLidas({ id: socioId });
+        return enviarAvisos(inscricoes, avisoDeMensagem(autor.nome, texto, naoLidas));
+      }),
+    )
+  ).flat();
+  if (expirados.length && !modoDemo) await (await consultasChat()).removerInscricoes(expirados);
+}
+
+/** Notificação de teste só para os aparelhos do próprio sócio. Devolve quantos aparelhos receberam. */
+export async function testarPush(socio: { id: string }): Promise<number> {
+  const { enviarAvisos, pushConfigurado } = await import("./push");
+  if (!pushConfigurado()) return 0;
+  const lista = modoDemo
+    ? (memoria().inscricoes ?? []).filter((x) => x.socioId === socio.id)
+    : await (await consultasChat()).inscricoesDe(socio.id);
+  const expirados = await enviarAvisos(lista, { titulo: "GTM Hub", texto: "Notificações ativadas neste aparelho.", url: "/chat" });
+  if (expirados.length && !modoDemo) await (await consultasChat()).removerInscricoes(expirados);
+  return lista.length - expirados.length;
 }

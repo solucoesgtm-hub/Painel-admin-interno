@@ -31,6 +31,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn, corDoTexto } from "@/components/ui/base";
 import { Logo } from "./logo";
+import { LinhaNotificacoes } from "@/components/notificacoes";
 import { BotaoTema, Dica, LinhaTema } from "./tema";
 
 type Item = { href: string; nome: string; curto?: string; icone: LucideIcon };
@@ -320,11 +321,13 @@ export function MenuConta({
   sair,
   data,
   selo,
+  chavePush,
 }: {
   usuario: Usuario;
   sair?: () => Promise<void>;
   data: string;
   selo: string;
+  chavePush: string | null;
 }) {
   const p = usePopover();
   return (
@@ -352,6 +355,7 @@ export function MenuConta({
             </p>
           </div>
           <div className="border-t border-areia pt-1">
+            <LinhaNotificacoes chavePublica={chavePush} />
             <LinhaTema className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-tinta-2 hover:bg-superficie-2 hover:text-tinta" />
             {sair && (
               <form action={sair}>

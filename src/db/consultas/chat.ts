@@ -1,8 +1,8 @@
 // Consultas do chat interno e das tentativas de login.
 // O chat não grava no histórico: mensagem é conversa, não alteração de cadastro.
-import { and, asc, count, desc, eq, gt, isNull, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { db } from "../index";
-import { chatLeituras, loginTentativas, mensagens } from "../schema";
+import { chatLeituras, loginTentativas, mensagens, pushInscricoes } from "../schema";
 
 /** As últimas `limite` mensagens (da mais antiga para a mais nova). */
 export async function listarMensagens(limite = 200) {
@@ -76,4 +76,31 @@ export async function limparTentativas(chave: string, antigasAntesDe: Date) {
     db.delete(loginTentativas).where(eq(loginTentativas.chave, chave)),
     db.delete(loginTentativas).where(lt(loginTentativas.criadoEm, antigasAntesDe)),
   ]);
+}
+
+/* ---------------- Notificações (Web Push) ---------------- */
+export async function salvarInscricao(socioId: string, i: { endpoint: string; p256dh: string; auth: string }, aparelho: string) {
+  await db
+    .insert(pushInscricoes)
+    .values({ socioId, ...i, aparelho })
+    .onConflictDoUpdate({ target: pushInscricoes.endpoint, set: { socioId, p256dh: i.p256dh, auth: i.auth, aparelho } });
+}
+
+export async function removerInscricoes(endpoints: string[]) {
+  if (endpoints.length) await db.delete(pushInscricoes).where(inArray(pushInscricoes.endpoint, endpoints));
+}
+
+/** Inscrições de todos os sócios menos `exceto` (quem mandou a mensagem). */
+export async function inscricoesDosOutros(exceto: string) {
+  return db
+    .select({ socioId: pushInscricoes.socioId, endpoint: pushInscricoes.endpoint, p256dh: pushInscricoes.p256dh, auth: pushInscricoes.auth })
+    .from(pushInscricoes)
+    .where(ne(pushInscricoes.socioId, exceto));
+}
+
+export async function inscricoesDe(socioId: string) {
+  return db
+    .select({ endpoint: pushInscricoes.endpoint, p256dh: pushInscricoes.p256dh, auth: pushInscricoes.auth })
+    .from(pushInscricoes)
+    .where(eq(pushInscricoes.socioId, socioId));
 }

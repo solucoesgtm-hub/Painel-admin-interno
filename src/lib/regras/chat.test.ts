@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { continuaBloco, esquemaMensagem, juntarMensagens, loginBloqueado, partesComLinks, podeApagar, proximoIntervalo, semUsoHaMuito, TAMANHO_MAX_MENSAGEM } from "./chat";
+import { avisoDeMensagem, servicoPushPermitido, continuaBloco, deveGravarVisto, esquemaMensagem, estaOnline, juntarMensagens, textoVisto, loginBloqueado, partesComLinks, podeApagar, proximoIntervalo, semUsoHaMuito, TAMANHO_MAX_MENSAGEM } from "./chat";
 
 describe("chat interno", () => {
   it("limpa a mensagem e recusa vazia ou longa demais", () => {
@@ -61,5 +61,49 @@ describe("atualização do chat", () => {
     const r = juntarMensagens(a, [{ id: "2", em: "2026-11-17T10:01:00Z", t: "" }, { id: "3", em: "2026-11-17T10:00:30Z", t: "novo" }]);
     expect(r.map((m) => m.id + m.t)).toEqual(["1oi", "3novo", "2"]);
     expect(juntarMensagens(a, [])).toBe(a);
+  });
+});
+
+describe("presença", () => {
+  const agora = new Date("2026-11-17T15:00:00-03:00");
+  const antes = (min: number) => new Date(agora.getTime() - min * 60_000).toISOString();
+
+  it("online por 3 minutos depois do último uso", () => {
+    expect(estaOnline(antes(2), agora)).toBe(true);
+    expect(estaOnline(antes(4), agora)).toBe(false);
+    expect(estaOnline(null, agora)).toBe(false);
+  });
+
+  it("grava visto no máximo uma vez por minuto", () => {
+    expect(deveGravarVisto(null, agora)).toBe(true);
+    expect(deveGravarVisto(antes(0.5), agora)).toBe(false);
+    expect(deveGravarVisto(antes(1), agora)).toBe(true);
+  });
+
+  it("descreve o último acesso em português, no fuso de São Paulo", () => {
+    expect(textoVisto(antes(1), agora)).toBe("Online agora");
+    expect(textoVisto(antes(12), agora)).toBe("Visto há 12 min");
+    expect(textoVisto("2026-11-17T09:05:00-03:00", agora)).toBe("Visto hoje às 09:05");
+    expect(textoVisto("2026-11-16T18:40:00-03:00", agora)).toBe("Visto ontem às 18:40");
+    expect(textoVisto("2026-11-03T09:10:00-03:00", agora)).toBe("Visto em 03/11 às 09:10");
+    expect(textoVisto(null, agora)).toBe("Ainda não acessou");
+  });
+});
+
+describe("notificações", () => {
+  it("aceita só serviços oficiais de push em https", () => {
+    expect(servicoPushPermitido("https://fcm.googleapis.com/fcm/send/abc")).toBe(true);
+    expect(servicoPushPermitido("https://web.push.apple.com/QGx")).toBe(true);
+    expect(servicoPushPermitido("https://updates.push.services.mozilla.com/wpush/v2/x")).toBe(true);
+    expect(servicoPushPermitido("https://wns2-bl2p.notify.windows.com/w/?token=x")).toBe(true);
+    expect(servicoPushPermitido("http://fcm.googleapis.com/x")).toBe(false);
+    expect(servicoPushPermitido("https://fcm.googleapis.com.evil.test/x")).toBe(false);
+    expect(servicoPushPermitido("https://localhost/x")).toBe(false);
+  });
+
+  it("resume a mensagem no aviso", () => {
+    const a = avisoDeMensagem("Thalis", "  oi\n\ntudo   bem?  ", 2);
+    expect(a).toEqual({ titulo: "Thalis · Chat GTM", texto: "oi tudo bem?", url: "/chat", naoLidas: 2 });
+    expect(avisoDeMensagem("M", "x".repeat(200), 1).texto).toHaveLength(138);
   });
 });
