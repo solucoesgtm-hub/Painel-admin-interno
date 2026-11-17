@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { exemploCodigo, exemploRelatorioPlano } from "../ia/exemplo";
+import { exemploRelatorioPlano } from "../ia/exemplo";
 import {
-  codigoMarkdown,
   custoEstimadoBRL,
-  esquemaCodigo,
   esquemaPedidoPlano,
+  esquemaPlano,
   esquemaPlanoIA,
-  esquemaRelatorioPlano,
+  esquemaRelatorio,
   inicioDoMes,
   nomeArquivo,
   numeroDoAmbiente,
@@ -19,21 +18,28 @@ import {
 const base = exemploRelatorioPlano({ nome: "Padaria Exemplo", segmento: "Padaria", pontuacao: 72, veredito: "quente" });
 
 describe("IA: relatório e plano", () => {
-  it("o exemplo da demonstração passa nos esquemas das duas etapas", () => {
-    expect(esquemaRelatorioPlano.safeParse(base).success).toBe(true);
-    expect(esquemaCodigo.safeParse({ codigo: exemploCodigo() }).success).toBe(true);
-    expect(esquemaPlanoIA.safeParse({ ...base, codigo: exemploCodigo() }).success).toBe(true);
+  it("o exemplo da demonstração passa nos esquemas", () => {
+    expect(esquemaPlanoIA.safeParse(base).success).toBe(true);
+    expect(esquemaRelatorio.safeParse({ relatorio: base.relatorio }).success).toBe(true);
+    expect(esquemaPlano.safeParse({ plano: base.plano }).success).toBe(true);
   });
 
-  it("recusa resposta sem o plano", () => {
-    expect(esquemaRelatorioPlano.safeParse({ relatorio: base.relatorio }).success).toBe(false);
+  it("recusa resposta incompleta ou com nível de risco fora da lista", () => {
+    expect(esquemaPlanoIA.safeParse({ relatorio: base.relatorio }).success).toBe(false);
+    const ruim = { ...base.relatorio, riscos: [{ risco: "x", probabilidade: "enorme", impacto: "alta", mitigacao: "y" }] };
+    expect(esquemaRelatorio.safeParse({ relatorio: ruim }).success).toBe(false);
   });
 
-  it("valida o pedido das duas etapas", () => {
-    expect(esquemaPedidoPlano.safeParse({ etapa: "plano", leadId: "l-1" }).success).toBe(true);
-    expect(esquemaPedidoPlano.safeParse({ etapa: "codigo", leadId: "l-1", planoId: "p" }).success).toBe(true);
-    expect(esquemaPedidoPlano.safeParse({ etapa: "codigo", leadId: "l-1" }).success).toBe(false);
-    expect(esquemaPedidoPlano.safeParse({ etapa: "outra", leadId: "l-1" }).success).toBe(false);
+  it("descarta campos que não fazem parte do documento (como código)", () => {
+    const r = esquemaPlanoIA.parse({ ...base, codigo: { instrucoes: "", arquivos: [] } });
+    expect("codigo" in r).toBe(false);
+  });
+
+  it("valida o pedido", () => {
+    expect(esquemaPedidoPlano.safeParse({ leadId: "l-1" }).success).toBe(true);
+    expect(esquemaPedidoPlano.safeParse({ leadId: "l-1", diagnosticoId: "d-1" }).success).toBe(true);
+    expect(esquemaPedidoPlano.safeParse({ leadId: "" }).success).toBe(false);
+    expect(esquemaPedidoPlano.safeParse(null).success).toBe(false);
   });
 
   it("estima o custo pela família do modelo, com cache", () => {
@@ -62,20 +68,21 @@ describe("IA: relatório e plano", () => {
     expect(inicioDoMes(new Date("2026-11-17T15:00:00Z")).toISOString()).toBe("2026-11-01T03:00:00.000Z");
   });
 
-  it("monta o Markdown das três abas", () => {
-    const c = { ...base, codigo: exemploCodigo() };
-    expect(relatorioMarkdown(c, "Padaria Exemplo")).toContain("# Relatório do lead — Padaria Exemplo");
-    const plano = planoMarkdown(c, "Padaria Exemplo");
-    expect(plano).toContain("## Passos de implementação (≈ 25 h)");
-    expect(plano).toContain("| Camada | Tecnologia | Motivo |");
-    const codigo = codigoMarkdown(c, "Padaria Exemplo");
-    expect(codigo).toContain("## `src/db/schema.ts`");
-    expect(codigoMarkdown(base, "X")).toContain("Ainda não gerado");
+  it("monta o Markdown do relatório e do plano com todas as seções", () => {
+    const rel = relatorioMarkdown(base, "Padaria Exemplo");
+    expect(rel).toContain("# Relatório do lead — Padaria Exemplo");
+    for (const s of ["Resumo executivo", "Diagnóstico da situação atual", "Oportunidade", "Riscos", "Recomendação"]) expect(rel).toContain(s);
+    expect(rel).toContain("| Risco | Probabilidade | Impacto | Mitigação |");
+    expect(rel).toContain("| Média | Alta |");
+    const plano = planoMarkdown(base, "Padaria Exemplo");
+    for (const s of ["Requisitos", "Fluxos", "Regras de negócio", "Normas e conformidade", "Metodologia", "Critérios de aceite"]) expect(plano).toContain(s);
+    expect(plano).toContain("## 10. Passos de implementação (≈ 25 h)");
+    expect(plano).toContain("| RF01 |");
   });
 
-  it("usa cerca mais longa que as crases do arquivo", () => {
-    const c = { ...base, codigo: { instrucoes: "", arquivos: [{ caminho: "a.md", linguagem: "md", descricao: "", conteudo: "```js\nx\n```" }] } };
-    expect(codigoMarkdown(c, "X")).toContain("````md");
+  it("escapa barra vertical nas tabelas", () => {
+    const c = { ...base, plano: { ...base.plano, normas: [{ norma: "A | B", aplicacao: "x" }] } };
+    expect(planoMarkdown(c, "X")).toContain("| A / B | x |");
   });
 
   it("gera nome de arquivo sem acento nem espaço", () => {

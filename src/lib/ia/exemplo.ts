@@ -1,33 +1,67 @@
 // Exemplo fictício usado no modo demonstração (sem ANTHROPIC_API_KEY e sem banco).
-// Não chama a API e não tem dado real: só mostra o formato do relatório, do plano e do código.
-import type { CodigoIA, ConteudoPlanoIA } from "../regras/ia";
+// Não chama a API e não tem dado real: só mostra o formato do relatório e do plano.
+import type { ConteudoPlanoIA } from "../regras/ia";
 
 type Base = { nome: string; segmento: string; pontuacao: number; veredito: string };
 
-export function exemploRelatorioPlano(l: Base): Omit<ConteudoPlanoIA, "codigo"> {
-  const seg = l.segmento || "comércio local";
+export function exemploRelatorioPlano(l: Base): ConteudoPlanoIA {
+  const seg = (l.segmento || "comércio local").toLowerCase();
   return {
     relatorio: {
-      resumo: `${l.nome} é um ${seg.toLowerCase()} de pequeno porte que atende quase tudo pelo WhatsApp e controla agenda e pedidos em caderno. A maior dor é responder clientes fora do horário e esquecer retornos. A GTM pode entregar um atendente automático no WhatsApp com agenda integrada. (Exemplo fictício da demonstração.)`,
-      vereditoExplicado: `Pontuação ${l.pontuacao}/100, veredito ${l.veredito}. A dor e a urgência pesam a favor; o orçamento ainda não foi confirmado e o decisor participou só de parte da conversa.`,
-      pontosFortes: ["Dor clara e citada várias vezes", "Dono aberto a testar", "Volume de mensagens alto justifica a automação"],
+      resumoExecutivo: `${l.nome} é um ${seg} de pequeno porte que concentra o atendimento no WhatsApp e controla agenda e pedidos em caderno. A principal dor é responder clientes fora do horário e esquecer retornos, o que gera perda de vendas.\n\nA proposta é um atendente automático no WhatsApp integrado a uma agenda simples, com painel para o balcão. (Exemplo fictício da demonstração.)`,
+      vereditoExplicado: `Pontuação ${l.pontuacao}/100, veredito ${l.veredito}. Dor e urgência têm notas altas; orçamento ainda não foi confirmado e o decisor participou só de parte da conversa.`,
+      diagnosticoAtual: {
+        contexto: "Negócio com 2 a 5 pessoas, atendimento por balcão e WhatsApp comum, agenda em caderno.",
+        processosAtuais: ["Cliente manda mensagem no WhatsApp", "Atendente responde quando tem tempo", "Horário é anotado no caderno", "Confirmação é feita por ligação no dia"],
+        gargalos: [
+          { problema: "Mensagens sem resposta fora do horário", impacto: "Clientes procuram o concorrente" },
+          { problema: "Retornos esquecidos", impacto: "Horários vagos e retrabalho" },
+        ],
+      },
+      oportunidade: {
+        solucaoProposta: "Atendimento automático no WhatsApp com marcação de horário e painel da agenda do dia.",
+        beneficios: ["Resposta em menos de 1 minuto", "Agenda organizada em um só lugar", "Menos faltas com lembrete automático"],
+        economiaEstimada: "5 horas por semana × R$ 25 por hora ≈ R$ 540 por mês.",
+      },
+      pontosFortes: ["Dor clara e citada várias vezes", "Dono aberto a testar", "Volume de mensagens justifica a automação"],
       riscos: [
-        { risco: "Orçamento não confirmado", mitigacao: "Mostrar o protótipo com a economia por mês calculada antes de falar de preço." },
-        { risco: "Dados da agenda no caderno", mitigacao: "Começar com cadastro manual dos horários na primeira semana." },
-        { risco: "Dependência da API do WhatsApp", mitigacao: "Usar a API oficial (Cloud API) e um número dedicado." },
+        { risco: "Orçamento não confirmado", probabilidade: "media", impacto: "alta", mitigacao: "Mostrar o protótipo com a economia calculada antes de falar de preço." },
+        { risco: "Agenda atual em papel", probabilidade: "alta", impacto: "media", mitigacao: "Cadastrar os horários manualmente na primeira semana." },
+        { risco: "Dependência da API do WhatsApp", probabilidade: "baixa", impacto: "alta", mitigacao: "Usar a API oficial (Cloud API) e um número dedicado." },
       ],
       premissas: ["Cerca de 40 mensagens por dia", "Um único atendente no balcão"],
+      recomendacao: "Seguir com ressalvas: confirmar o orçamento na demonstração do protótipo.",
       proximosPassos: ["Marcar 30 minutos com o dono para mostrar o protótipo", "Pedir a lista de serviços e horários", "Enviar proposta com implantação e mensalidade"],
     },
     plano: {
       prd: {
         problema: "Mensagens sem resposta fora do horário e retornos esquecidos.",
-        objetivo: "Responder perguntas comuns e marcar horários sozinho pelo WhatsApp.",
+        objetivo: "Responder dúvidas comuns e marcar horários sozinho pelo WhatsApp.",
         publico: "Dono e atendente do balcão; clientes do comércio pelo WhatsApp.",
         escopo: ["Respostas automáticas para dúvidas frequentes", "Marcação de horário com confirmação", "Painel com a agenda do dia"],
         foraDoEscopo: ["Pagamento online", "Emissão de nota fiscal", "Aplicativo próprio"],
-        metricasSucesso: ["Tempo de primeira resposta abaixo de 1 minuto", "5 horas por semana economizadas no balcão"],
+        metricasSucesso: ["Primeira resposta em menos de 1 minuto", "5 horas por semana economizadas no balcão"],
       },
+      requisitos: {
+        funcionais: [
+          { codigo: "RF01", descricao: "Responder perguntas frequentes pelo WhatsApp", prioridade: "essencial" },
+          { codigo: "RF02", descricao: "Marcar horário livre e confirmar ao cliente", prioridade: "essencial" },
+          { codigo: "RF03", descricao: "Enviar lembrete na véspera", prioridade: "desejavel" },
+        ],
+        naoFuncionais: ["Painel utilizável no celular", "Resposta em até 10 segundos", "Dados hospedados no Brasil ou em provedor com cláusulas da LGPD"],
+      },
+      fluxos: [
+        { nome: "Marcação de horário", ator: "Cliente", gatilho: "Mensagem pedindo horário", passos: ["Assistente identifica serviço e dia", "Sistema consulta horários livres", "Assistente oferece até 3 opções", "Cliente escolhe", "Horário é gravado e confirmado"], resultado: "Horário marcado na agenda do dia" },
+        { nome: "Horário ocupado", ator: "Cliente", gatilho: "Escolha de horário que acabou de ser ocupado", passos: ["Sistema detecta conflito", "Assistente oferece o próximo horário livre"], resultado: "Sem marcação duplicada" },
+      ],
+      regrasNegocio: [
+        { codigo: "RN01", regra: "Um horário só pode ter uma marcação ativa.", motivo: "Evitar atendimento duplo." },
+        { codigo: "RN02", regra: "Cancelamento até 2 horas antes libera o horário.", motivo: "Reaproveitar a agenda." },
+      ],
+      normas: [
+        { norma: "LGPD", aplicacao: "Guardar só o primeiro nome e o telefone para a marcação, com aviso de privacidade na primeira mensagem." },
+        { norma: "Política comercial do WhatsApp Business", aplicacao: "Mensagens iniciadas pela empresa só com modelos aprovados." },
+      ],
       arquitetura: {
         visaoGeral: "Aplicação Next.js na Vercel recebe o webhook do WhatsApp, consulta a agenda no Postgres (Neon) e responde com ajuda da API do Claude chamada só pelo servidor.",
         stack: [
@@ -46,6 +80,15 @@ export function exemploRelatorioPlano(l: Base): Omit<ConteudoPlanoIA, "codigo"> 
         { nome: "Agenda do dia", objetivo: "Ver e confirmar os horários marcados.", elementos: ["Lista por hora", "Etiqueta de situação", "Botão confirmar"] },
         { nome: "Serviços", objetivo: "Cadastrar serviços e duração.", elementos: ["Tabela", "Formulário com validação"] },
       ],
+      metodologia: {
+        abordagem: "Entregas curtas com validação do dono ao fim de cada fase.",
+        fases: [
+          { nome: "Preparação", objetivo: "Levantar serviços, horários e textos de resposta.", entregaveis: ["Lista de serviços", "Perguntas frequentes"], duracaoDias: 2 },
+          { nome: "Construção", objetivo: "Montar agenda, webhook e assistente.", entregaveis: ["Protótipo em ambiente de teste"], duracaoDias: 6 },
+          { nome: "Validação", objetivo: "Testar com mensagens reais do dono.", entregaveis: ["Ajustes", "Roteiro de uso"], duracaoDias: 2 },
+        ],
+        criteriosAceite: ["Marca um horário de ponta a ponta pelo WhatsApp", "Agenda do dia mostra a marcação em até 1 minuto"],
+      },
       passos: [
         { ordem: 1, titulo: "Criar projeto e banco", descricao: "Next.js, Drizzle, migração inicial no Neon.", estimativaHoras: 3 },
         { ordem: 2, titulo: "Cadastro de serviços", descricao: "Tela e server action com Zod.", estimativaHoras: 4 },
@@ -54,62 +97,5 @@ export function exemploRelatorioPlano(l: Base): Omit<ConteudoPlanoIA, "codigo"> 
         { ordem: 5, titulo: "Agenda do dia", descricao: "Tela de acompanhamento para o balcão.", estimativaHoras: 4 },
       ],
     },
-  };
-}
-
-export function exemploCodigo(): CodigoIA {
-  return {
-    instrucoes: "```bash\nnpx create-next-app@latest prototipo --ts --tailwind --app\ncd prototipo\nnpm install drizzle-orm @neondatabase/serverless zod\nnpm install -D drizzle-kit\n```\n\nCopie `.env.example` para `.env.local`, preencha e rode `npm run dev`.",
-    arquivos: [
-      {
-        caminho: "src/db/schema.ts",
-        linguagem: "ts",
-        descricao: "Tabelas de serviços e horários.",
-        conteudo: `import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-
-export const servicos = pgTable("servicos", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  nome: text("nome").notNull(),
-  duracaoMin: integer("duracao_min").notNull(),
-  precoCentavos: integer("preco_centavos").notNull().default(0),
-});
-
-export const horarios = pgTable("horarios", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  inicio: timestamp("inicio", { withTimezone: true }).notNull(),
-  servicoId: uuid("servico_id").notNull().references(() => servicos.id),
-  situacao: text("situacao").notNull().default("marcado"),
-});
-`,
-      },
-      {
-        caminho: "src/app/api/whatsapp/route.ts",
-        linguagem: "ts",
-        descricao: "Webhook do WhatsApp (stub com TODO).",
-        conteudo: `import { NextResponse } from "next/server";
-
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  if (url.searchParams.get("hub.verify_token") === process.env.WHATSAPP_VERIFY_TOKEN) {
-    return new Response(url.searchParams.get("hub.challenge") ?? "");
-  }
-  return new Response("Proibido", { status: 403 });
-}
-
-export async function POST(req: Request) {
-  const corpo = await req.json();
-  // TODO: extrair a mensagem, perguntar à IA e responder pela Cloud API.
-  console.log("mensagem recebida", JSON.stringify(corpo).slice(0, 200));
-  return NextResponse.json({ ok: true });
-}
-`,
-      },
-      {
-        caminho: ".env.example",
-        linguagem: "bash",
-        descricao: "Variáveis sem valores.",
-        conteudo: "DATABASE_URL=\nWHATSAPP_VERIFY_TOKEN=\nWHATSAPP_TOKEN=\nANTHROPIC_API_KEY=\n",
-      },
-    ],
   };
 }

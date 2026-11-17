@@ -342,7 +342,7 @@ export function Checklist({ leads, leadInicial, estadoIa }: { leads: { id: strin
         </div>
 
         <Cartao className="mt-4">
-          <CabecalhoCartao titulo="Relatório e plano com IA" descricao="Resumo para os sócios, plano do protótipo e código inicial" />
+          <CabecalhoCartao titulo="Relatório e plano com IA" descricao="Resumo para os sócios e plano de implementação do protótipo" />
           <div className="p-4">
             {salvoEm && diagnosticoSalvo ? (
               <BotaoGerarPlano leadId={salvoEm} diagnosticoId={diagnosticoSalvo} estado={estadoIa} />

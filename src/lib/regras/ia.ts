@@ -4,17 +4,33 @@ import { z } from "zod";
 
 /* ---------------- Formato da resposta (saída estruturada, validada por Zod) ---------------- */
 // Sem min/max nos campos: a saída estruturada da API aceita só um subconjunto de JSON Schema.
-// A geração é feita em duas chamadas (cada uma cabe no limite de tempo da Vercel):
-// 1) relatório + plano; 2) esqueleto de código a partir do plano.
-export const esquemaRelatorioPlano = z.object({
+// Não há geração de código: o documento é a base para a implementação, feita depois pela equipe.
+// São duas chamadas em paralelo (relatório e plano), para cada uma caber com folga no tempo da Vercel.
+const nivel = z.enum(["baixa", "media", "alta"]);
+
+export const esquemaRelatorio = z.object({
   relatorio: z.object({
-    resumo: z.string().describe("Resumo do lead para os sócios, 1 a 2 parágrafos."),
-    vereditoExplicado: z.string().describe("Por que o veredito e a pontuação fazem sentido (ou não)."),
+    resumoExecutivo: z.string().describe("Visão geral do lead e da oportunidade, 2 a 3 parágrafos."),
+    vereditoExplicado: z.string().describe("Leitura da pontuação e do veredito a partir das notas."),
+    diagnosticoAtual: z.object({
+      contexto: z.string().describe("Como o negócio funciona hoje: porte, atendimento, ferramentas."),
+      processosAtuais: z.array(z.string()),
+      gargalos: z.array(z.object({ problema: z.string(), impacto: z.string() })),
+    }),
+    oportunidade: z.object({
+      solucaoProposta: z.string(),
+      beneficios: z.array(z.string()),
+      economiaEstimada: z.string().describe("Economia em horas e reais, com a conta explicada."),
+    }),
     pontosFortes: z.array(z.string()),
-    riscos: z.array(z.object({ risco: z.string(), mitigacao: z.string() })),
+    riscos: z.array(z.object({ risco: z.string(), probabilidade: nivel, impacto: nivel, mitigacao: z.string() })),
     premissas: z.array(z.string()).describe("O que foi suposto por falta de informação no diagnóstico."),
+    recomendacao: z.string().describe("Seguir, seguir com ressalvas ou não seguir agora, e por quê."),
     proximosPassos: z.array(z.string()),
   }),
+});
+
+export const esquemaPlano = z.object({
   plano: z.object({
     prd: z.object({
       problema: z.string(),
@@ -24,6 +40,15 @@ export const esquemaRelatorioPlano = z.object({
       foraDoEscopo: z.array(z.string()),
       metricasSucesso: z.array(z.string()),
     }),
+    requisitos: z.object({
+      funcionais: z.array(z.object({ codigo: z.string(), descricao: z.string(), prioridade: z.enum(["essencial", "desejavel"]) })),
+      naoFuncionais: z.array(z.string()),
+    }),
+    fluxos: z.array(
+      z.object({ nome: z.string(), ator: z.string(), gatilho: z.string(), passos: z.array(z.string()), resultado: z.string() }),
+    ),
+    regrasNegocio: z.array(z.object({ codigo: z.string(), regra: z.string(), motivo: z.string() })),
+    normas: z.array(z.object({ norma: z.string(), aplicacao: z.string() })),
     arquitetura: z.object({
       visaoGeral: z.string(),
       stack: z.array(z.object({ camada: z.string(), tecnologia: z.string(), motivo: z.string() })),
@@ -31,42 +56,26 @@ export const esquemaRelatorioPlano = z.object({
     }),
     modeloDados: z.array(z.object({ entidade: z.string(), campos: z.array(z.string()), observacao: z.string() })),
     telas: z.array(z.object({ nome: z.string(), objetivo: z.string(), elementos: z.array(z.string()) })),
+    metodologia: z.object({
+      abordagem: z.string(),
+      fases: z.array(z.object({ nome: z.string(), objetivo: z.string(), entregaveis: z.array(z.string()), duracaoDias: z.number() })),
+      criteriosAceite: z.array(z.string()),
+    }),
     passos: z.array(
       z.object({ ordem: z.number().int(), titulo: z.string(), descricao: z.string(), estimativaHoras: z.number() }),
     ),
   }),
 });
 
-export const esquemaCodigo = z.object({
-  codigo: z.object({
-    instrucoes: z.string().describe("Como criar o projeto e rodar o esqueleto, em Markdown curto."),
-    arquivos: z.array(
-      z.object({ caminho: z.string(), linguagem: z.string(), descricao: z.string(), conteudo: z.string() }),
-    ),
-  }),
-});
-
-/** O que fica gravado: relatório e plano sempre; código quando a segunda etapa termina. */
-export const esquemaPlanoIA = esquemaRelatorioPlano.extend({ codigo: esquemaCodigo.shape.codigo.optional() });
+/** O que fica gravado: relatório + plano. Campos a mais (ex.: código de versões antigas) são descartados. */
+export const esquemaPlanoIA = esquemaRelatorio.extend(esquemaPlano.shape);
 export type ConteudoPlanoIA = z.infer<typeof esquemaPlanoIA>;
-export type CodigoIA = z.infer<typeof esquemaCodigo>["codigo"];
 
-/**
- * O que o botão envia. Etapa "plano": diagnóstico opcional (sem ele, usa o mais recente do lead).
- * Etapa "codigo": completa um plano já gravado.
- */
-export const esquemaPedidoPlano = z.discriminatedUnion("etapa", [
-  z.object({
-    etapa: z.literal("plano"),
-    leadId: z.string().trim().min(1).max(64),
-    diagnosticoId: z.string().trim().min(1).max(64).optional(),
-  }),
-  z.object({
-    etapa: z.literal("codigo"),
-    leadId: z.string().trim().min(1).max(64),
-    planoId: z.string().trim().min(1).max(64),
-  }),
-]);
+/** O que o botão envia. O diagnóstico é opcional: sem ele, usa o mais recente do lead. */
+export const esquemaPedidoPlano = z.object({
+  leadId: z.string().trim().min(1).max(64),
+  diagnosticoId: z.string().trim().min(1).max(64).optional(),
+});
 export type PedidoPlano = z.infer<typeof esquemaPedidoPlano>;
 
 /** Eventos que a rota manda ao navegador, um JSON por linha. */
@@ -146,32 +155,55 @@ export function tetoAtingido(gastoMes: number, teto: number) {
 
 /* ---------------- Markdown (copiar e baixar) ---------------- */
 const lista = (itens: string[]) => (itens.length ? itens.map((i) => `- ${i}`).join("\n") : "- —");
+const numerada = (itens: string[]) => (itens.length ? itens.map((i, n) => `${n + 1}. ${i}`).join("\n") : "—");
+const celula = (t: string) => t.replace(/\|/g, "/").replace(/\n/g, " ");
+const tabela = (cab: string[], linhas: string[][]) =>
+  linhas.length
+    ? [`| ${cab.join(" | ")} |`, `| ${cab.map(() => "---").join(" | ")} |`, ...linhas.map((l) => `| ${l.map(celula).join(" | ")} |`)].join("\n")
+    : "—";
+export const NOME_NIVEL = { baixa: "Baixa", media: "Média", alta: "Alta" } as const;
 
 export function relatorioMarkdown(c: ConteudoPlanoIA, lead: string): string {
   const r = c.relatorio;
   return [
     `# Relatório do lead — ${lead}`,
-    "## Resumo",
-    r.resumo,
-    "## Veredito",
+    "## 1. Resumo executivo",
+    r.resumoExecutivo,
+    "## 2. Pontuação e veredito",
     r.vereditoExplicado,
-    "## Pontos fortes",
+    "## 3. Diagnóstico da situação atual",
+    r.diagnosticoAtual.contexto,
+    "### Processos atuais",
+    lista(r.diagnosticoAtual.processosAtuais),
+    "### Gargalos",
+    tabela(["Problema", "Impacto"], r.diagnosticoAtual.gargalos.map((g) => [g.problema, g.impacto])),
+    "## 4. Oportunidade",
+    r.oportunidade.solucaoProposta,
+    "### Benefícios",
+    lista(r.oportunidade.beneficios),
+    `**Economia estimada:** ${r.oportunidade.economiaEstimada}`,
+    "## 5. Pontos fortes",
     lista(r.pontosFortes),
-    "## Riscos",
-    r.riscos.length ? r.riscos.map((x) => `- **${x.risco}** — ${x.mitigacao}`).join("\n") : "- —",
-    "## Premissas",
+    "## 6. Riscos",
+    tabela(
+      ["Risco", "Probabilidade", "Impacto", "Mitigação"],
+      r.riscos.map((x) => [x.risco, NOME_NIVEL[x.probabilidade], NOME_NIVEL[x.impacto], x.mitigacao]),
+    ),
+    "## 7. Premissas",
     lista(r.premissas),
-    "## Próximos passos",
-    r.proximosPassos.map((p, i) => `${i + 1}. ${p}`).join("\n") || "—",
+    "## 8. Recomendação",
+    r.recomendacao,
+    "## 9. Próximos passos",
+    numerada(r.proximosPassos),
   ].join("\n\n") + "\n";
 }
 
 export function planoMarkdown(c: ConteudoPlanoIA, lead: string): string {
-  const { prd, arquitetura, modeloDados, telas, passos } = c.plano;
+  const { prd, requisitos, fluxos, regrasNegocio, normas, arquitetura, modeloDados, telas, metodologia, passos } = c.plano;
   const totalHoras = passos.reduce((a, p) => a + p.estimativaHoras, 0);
   return [
     `# Plano de implementação — ${lead}`,
-    "## PRD",
+    "## 1. PRD",
     `**Problema:** ${prd.problema}`,
     `**Objetivo:** ${prd.objetivo}`,
     `**Público:** ${prd.publico}`,
@@ -181,39 +213,41 @@ export function planoMarkdown(c: ConteudoPlanoIA, lead: string): string {
     lista(prd.foraDoEscopo),
     "### Métricas de sucesso",
     lista(prd.metricasSucesso),
-    "## Arquitetura",
+    "## 2. Requisitos",
+    "### Funcionais",
+    tabela(["Código", "Requisito", "Prioridade"], requisitos.funcionais.map((x) => [x.codigo, x.descricao, x.prioridade === "essencial" ? "Essencial" : "Desejável"])),
+    "### Não funcionais",
+    lista(requisitos.naoFuncionais),
+    "## 3. Fluxos",
+    fluxos
+      .map((f) => `### ${f.nome}\n**Ator:** ${f.ator} · **Gatilho:** ${f.gatilho}\n\n${numerada(f.passos)}\n\n**Resultado:** ${f.resultado}`)
+      .join("\n\n") || "—",
+    "## 4. Regras de negócio",
+    tabela(["Código", "Regra", "Motivo"], regrasNegocio.map((x) => [x.codigo, x.regra, x.motivo])),
+    "## 5. Normas e conformidade",
+    tabela(["Norma", "Como se aplica"], normas.map((x) => [x.norma, x.aplicacao])),
+    "## 6. Arquitetura",
     arquitetura.visaoGeral,
-    "| Camada | Tecnologia | Motivo |\n| --- | --- | --- |\n" +
-      arquitetura.stack.map((s) => `| ${s.camada} | ${s.tecnologia} | ${s.motivo.replace(/\|/g, "/")} |`).join("\n"),
+    tabela(["Camada", "Tecnologia", "Motivo"], arquitetura.stack.map((s) => [s.camada, s.tecnologia, s.motivo])),
     "### Integrações",
     lista(arquitetura.integracoes),
-    "## Modelo de dados",
-    modeloDados.map((e) => `### ${e.entidade}\n${lista(e.campos)}${e.observacao ? `\n\n${e.observacao}` : ""}`).join("\n\n"),
-    "## Telas",
-    telas.map((t) => `### ${t.nome}\n${t.objetivo}\n\n${lista(t.elementos)}`).join("\n\n"),
-    `## Passos de implementação (≈ ${formatarHoras(totalHoras)})`,
+    "## 7. Modelo de dados",
+    modeloDados.map((e) => `### ${e.entidade}\n${lista(e.campos)}${e.observacao ? `\n\n${e.observacao}` : ""}`).join("\n\n") || "—",
+    "## 8. Telas",
+    telas.map((t) => `### ${t.nome}\n${t.objetivo}\n\n${lista(t.elementos)}`).join("\n\n") || "—",
+    "## 9. Metodologia",
+    metodologia.abordagem,
+    metodologia.fases
+      .map((f) => `### ${f.nome} (${f.duracaoDias} ${f.duracaoDias === 1 ? "dia" : "dias"})\n${f.objetivo}\n\n${lista(f.entregaveis)}`)
+      .join("\n\n"),
+    "### Critérios de aceite",
+    lista(metodologia.criteriosAceite),
+    `## 10. Passos de implementação (≈ ${formatarHoras(totalHoras)})`,
     [...passos]
       .sort((a, b) => a.ordem - b.ordem)
       .map((p) => `${p.ordem}. **${p.titulo}** (${formatarHoras(p.estimativaHoras)}) — ${p.descricao}`)
       .join("\n"),
   ].join("\n\n") + "\n";
-}
-
-export function codigoMarkdown(c: ConteudoPlanoIA, lead: string): string {
-  if (!c.codigo) return `# Esqueleto de código — ${lead}\n\nAinda não gerado.\n`;
-  return [
-    `# Esqueleto de código — ${lead}`,
-    c.codigo.instrucoes,
-    ...c.codigo.arquivos.map(
-      (a) => `## \`${a.caminho}\`\n${a.descricao}\n\n${cerca(a.conteudo)}${a.linguagem}\n${a.conteudo.replace(/\n$/, "")}\n${cerca(a.conteudo)}`,
-    ),
-  ].join("\n\n") + "\n";
-}
-
-/** Cerca de código mais longa que qualquer sequência de crases dentro do arquivo. */
-function cerca(conteudo: string) {
-  const maior = Math.max(2, ...(conteudo.match(/`+/g) ?? []).map((s) => s.length));
-  return "`".repeat(maior + 1);
 }
 
 export function formatarHoras(h: number) {

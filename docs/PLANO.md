@@ -23,7 +23,7 @@ Legenda: ✅ pronto · 🟡 tela pronta com dados de demonstração · ⬜ a faz
 - ✅ Checklist de visita em 6 seções: rascunho no aparelho (funciona sem sinal) e botão Salvar que grava no banco, com pontuação recalculada no servidor
 - ✅ Pontuação 0–100 (5 fatores, pesos), veredito, complexidade e calculadora de economia
 - ⬜ Enviar o rascunho sozinho ao voltar o sinal (hoje o sócio toca em Salvar); pesos em tabela editável
-- ✅ Relatório do lead, plano do protótipo (PRD, arquitetura, dados, telas, passos) e esqueleto de código com IA, a partir do diagnóstico, com custo registrado e teto mensal (`src/lib/ia`)
+- ✅ Relatório do lead (resumo executivo, diagnóstico atual, oportunidade, riscos, recomendação) e plano de implementação do protótipo (PRD, requisitos, fluxos, regras de negócio, normas, arquitetura, dados, telas, metodologia, passos) com IA, a partir do diagnóstico, com custo registrado e teto mensal (`src/lib/ia`). Sem geração de código: a implementação é feita depois, a partir do plano
 - ⬜ Texto de proposta comercial com IA
 - ✅ Painel de análise calculado dos leads reais (conversão, dias na etapa atual, origem, segmento, perdas, calibração)
 - ⬜ Guardar a data de cada mudança de etapa para medir tempo médio por etapa e em que etapa o lead foi perdido

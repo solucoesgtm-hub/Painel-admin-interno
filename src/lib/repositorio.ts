@@ -7,7 +7,7 @@ import type { DadosEvento } from "./regras/agenda";
 import { MINUTOS_PARA_APAGAR, podeApagar, type Mensagem } from "./regras/chat";
 import { EMPRESA_VAZIA, type ContratoCliente, type DadosContrato, type DadosEmpresa } from "./regras/empresa";
 import { nomeEtapa, type DadosEditarLead, type DadosNovoLead, type EtapaId } from "./regras/funil";
-import { inicioDoMes, type CodigoIA, type ConteudoPlanoIA, type PlanoIASalvo } from "./regras/ia";
+import { inicioDoMes, type ConteudoPlanoIA, type PlanoIASalvo } from "./regras/ia";
 import {
   calcularPontuacao,
   complexidade,
@@ -746,7 +746,7 @@ export async function registrarGeracaoIa(g: RegistroGeracao, socio: { id: string
   };
 }
 
-type LinhaPlano = Awaited<ReturnType<Awaited<ReturnType<typeof consultasIa>>["buscarPlanoIa"]>>;
+type LinhaPlano = Awaited<ReturnType<Awaited<ReturnType<typeof consultasIa>>["ultimoPlanoIa"]>>;
 
 async function paraPlanoSalvo(r: LinhaPlano): Promise<PlanoIASalvo | null> {
   if (!r?.plano.conteudo || r.plano.situacao !== "ok") return null;
@@ -774,48 +774,4 @@ export async function ultimoPlanoIa(leadId: string): Promise<PlanoIASalvo | null
   if (!ehUuid(leadId)) return null;
   const { ultimoPlanoIa } = await consultasIa();
   return paraPlanoSalvo(await ultimoPlanoIa(leadId));
-}
-
-/** Plano gravado do lead indicado (segunda etapa: código). */
-export async function buscarPlanoIa(leadId: string, planoId: string): Promise<PlanoIASalvo | null> {
-  if (modoDemo) return memoria().planosIa.find((p) => p.id === planoId && p.leadId === leadId) ?? null;
-  if (!ehUuid(planoId)) return null;
-  const { buscarPlanoIa } = await consultasIa();
-  const p = await paraPlanoSalvo(await buscarPlanoIa(planoId));
-  return p && p.leadId === leadId ? p : null;
-}
-
-/** Junta o esqueleto de código ao plano e soma o custo. Devolve o plano completo. */
-export async function anexarCodigoIa(
-  plano: PlanoIASalvo,
-  g: Pick<RegistroGeracao, "leadNome" | "tokens" | "custoBRL"> & { codigo: CodigoIA },
-  socio: { id: string; nome: string },
-): Promise<PlanoIASalvo> {
-  const completo: PlanoIASalvo = {
-    ...plano,
-    conteudo: { ...plano.conteudo, codigo: g.codigo },
-    tokensEntrada: plano.tokensEntrada + g.tokens.entrada,
-    tokensSaida: plano.tokensSaida + g.tokens.saida,
-    custoBRL: Math.round((plano.custoBRL + g.custoBRL) * 100) / 100,
-  };
-  if (modoDemo) {
-    memoria().planosIa = memoria().planosIa.map((p) => (p.id === plano.id ? completo : p));
-    registrar(socio.nome, "editou", "plano_ia", `${g.leadNome} — esqueleto de código`);
-    return completo;
-  }
-  const { anexarCodigo } = await consultasIa();
-  await anexarCodigo(
-    plano.id,
-    completo.conteudo,
-    {
-      tokensEntrada: g.tokens.entrada,
-      tokensSaida: g.tokens.saida,
-      tokensCacheLeitura: g.tokens.cacheLeitura,
-      tokensCacheEscrita: g.tokens.cacheEscrita,
-      custoCentavos: Math.round(g.custoBRL * 100),
-    },
-    socio.id,
-    g.leadNome,
-  );
-  return completo;
 }
