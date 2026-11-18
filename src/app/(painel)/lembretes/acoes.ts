@@ -2,7 +2,7 @@
 // Aba Lembretes: criar lembretes/tarefas (soltos, num assunto ou num projeto), marcar, editar e excluir.
 import { revalidatePath } from "next/cache";
 import { esquemaEditarItem, esquemaIdItem, esquemaItem, esquemaMarcarItem, MAX_LEMBRETES, MAX_POR_GRUPO } from "@/lib/regras/lembretes";
-import { alterarItem, buscarProjeto, contarNoGrupo, criarItem, listarSocios } from "@/lib/repositorio";
+import { alterarItem, atualizarItem, buscarProjeto, contarNoGrupo, criarItem, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 export type RespostaItem = { ok: true; id?: string } | { ok: false; mensagem: string; erros?: Record<string, string> };
@@ -13,6 +13,17 @@ const atualizar = () => {
 };
 
 export async function acaoCriarItem(dados: unknown): Promise<RespostaItem> {
+  return salvarItem(null, dados);
+}
+
+/** Edição completa: texto, tipo, vínculo, responsável e prazo. */
+export async function acaoAtualizarItem(id: unknown, dados: unknown): Promise<RespostaItem> {
+  const r = esquemaIdItem.safeParse({ id });
+  if (!r.success) return { ok: false, mensagem: "Item inválido." };
+  return salvarItem(r.data.id, dados);
+}
+
+async function salvarItem(idExistente: string | null, dados: unknown): Promise<RespostaItem> {
   const socio = await exigirSocio();
   const r = esquemaItem.safeParse(dados);
   if (!r.success) {
@@ -32,7 +43,12 @@ export async function acaoCriarItem(dados: unknown): Promise<RespostaItem> {
       return { ok: false, mensagem: "Responsável inválido.", erros: { responsavelId: "Escolha um sócio." } };
     }
     const limite = d.projetoId ? MAX_LEMBRETES : MAX_POR_GRUPO;
-    if ((await contarNoGrupo(d)) >= limite) return { ok: false, mensagem: `Este grupo já tem ${limite} itens. Conclua ou exclua algum antes.` };
+    if ((await contarNoGrupo(d, idExistente ?? undefined)) >= limite) return { ok: false, mensagem: `Este grupo já tem ${limite} itens. Conclua ou exclua algum antes.` };
+    if (idExistente) {
+      if (!(await atualizarItem(idExistente, d, socio, projetoNome))) return { ok: false, mensagem: "Item não encontrado." };
+      atualizar();
+      return { ok: true, id: idExistente };
+    }
     const id = await criarItem(d, socio, projetoNome);
     atualizar();
     return { ok: true, id };

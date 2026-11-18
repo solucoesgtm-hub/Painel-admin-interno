@@ -141,3 +141,21 @@ export async function alterarItem(
   }
   return true;
 }
+
+/** Troca texto, tipo, vínculo, responsável e prazo de um item (aba Lembretes). */
+export async function atualizarItem(id: string, dados: DadosItem, socioId: string, grupo: string) {
+  const [l] = await db.select({ id: lembretes.id }).from(lembretes).where(eq(lembretes.id, id));
+  if (!l) return false;
+  await db.batch([
+    db.update(lembretes).set(dados).where(eq(lembretes.id, id)),
+    db.insert(historico).values({
+      atorTipo: "socio",
+      atorId: socioId,
+      acao: "editou",
+      entidade: dados.tipo,
+      entidadeId: id,
+      detalhes: { nome: `${grupo} — ${dados.texto}` },
+    }),
+  ]);
+  return true;
+}

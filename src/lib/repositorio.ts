@@ -895,9 +895,9 @@ export async function listarTodosLembretes(): Promise<Lembrete[]> {
   return (await (await consultasLembretes()).listarTodos()).map(paraLembrete);
 }
 
-/** Quantos itens existem no mesmo grupo (projeto, assunto ou sem vínculo). */
-export async function contarNoGrupo(g: { projetoId: string | null; assunto: string | null }): Promise<number> {
-  const todos = await listarTodosLembretes();
+/** Quantos itens existem no mesmo grupo (projeto, assunto ou sem vínculo), sem contar `ignorar`. */
+export async function contarNoGrupo(g: { projetoId: string | null; assunto: string | null }, ignorar?: string): Promise<number> {
+  const todos = (await listarTodosLembretes()).filter((l) => l.id !== ignorar);
   return todos.filter((l) => (g.projetoId ? l.projetoId === g.projetoId : !l.projetoId && (l.assunto ?? "").toLowerCase() === (g.assunto ?? "").toLowerCase())).length;
 }
 
@@ -911,6 +911,18 @@ export async function criarItem(dados: DadosItem, socio: { id: string; nome: str
     return l.id;
   }
   return (await consultasLembretes()).criarItem(dados, socio.id, nomeDoGrupo(dados, projetoNome));
+}
+
+/** Troca todos os campos de um item (aba Lembretes). Devolve false se não existir. */
+export async function atualizarItem(id: string, dados: DadosItem, socio: { id: string; nome: string }, projetoNome: string | null): Promise<boolean> {
+  if (modoDemo) {
+    const l = (memoria().lembretes ?? []).find((x) => x.id === id);
+    if (!l) return false;
+    Object.assign(l, dados);
+    registrar(socio.nome, "editou", dados.tipo, `${nomeDoGrupo(dados, projetoNome)} — ${dados.texto}`);
+    return true;
+  }
+  return (await consultasLembretes()).atualizarItem(id, dados, socio.id, nomeDoGrupo(dados, projetoNome));
 }
 
 /** Marca, edita ou exclui um item pelo id (aba Lembretes). Devolve false se não existir. */

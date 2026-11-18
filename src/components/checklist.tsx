@@ -14,7 +14,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { useConfirmar } from "@/components/ui/confirmar";
 import { useAviso } from "@/components/ui/toast";
 import { MAX_LEMBRETES, MAX_TEXTO_LEMBRETE, type Lembrete } from "@/lib/regras/lembretes";
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { Check, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
 
 /* ── uma mola, para tudo que assenta (em quadros, não em ms) ── */
 const springOf = (tune: number) => ({ k: 0.08 + (tune / 100) * 0.16, d: 0.62 + (tune / 100) * 0.2 });
@@ -112,6 +112,7 @@ export function Checklist({
   aoMudar,
   max = MAX_LEMBRETES,
   detalhes,
+  aoAbrirDetalhes,
   placeholder = "Novo lembrete",
   rotuloNovo = "Adicionar lembrete",
 }: {
@@ -124,6 +125,8 @@ export function Checklist({
   max?: number;
   /** Informação extra à direita de cada linha (prazo, responsável…), por id. */
   detalhes?: Record<string, ReactNode>;
+  /** Quando presente, o modo de edição ganha o botão "Detalhes" (prazo, responsável, vínculo…). */
+  aoAbrirDetalhes?: (id: string) => void;
   placeholder?: string;
   rotuloNovo?: string;
 }) {
@@ -286,6 +289,10 @@ export function Checklist({
             onSalvar={(t) => salvarEdicao(task.id, t)}
             onCancelar={() => setEditando(null)}
             onExcluir={() => excluir(task.id)}
+            onDetalhes={aoAbrirDetalhes ? () => {
+              setEditando(null);
+              aoAbrirDetalhes(task.id);
+            } : undefined}
             detalhe={detalhes?.[task.id]}
           />
         ))}
@@ -350,8 +357,10 @@ function Row({
   onCancelar,
   onExcluir,
   detalhe,
+  onDetalhes,
 }: {
   detalhe?: ReactNode;
+  onDetalhes?: () => void;
   editando: boolean;
   podeEditar: boolean;
   onEditar: () => void;
@@ -458,6 +467,21 @@ function Row({
             }}
             onBlur={() => fechar(true)}
           />
+          {onDetalhes && (
+            <button
+              type="button"
+              className="chk-acao"
+              aria-label={`Prazo, responsável e vínculo: ${label}`}
+              title="Prazo, responsável e vínculo"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                encerrado.current = true;
+                onDetalhes();
+              }}
+            >
+              <SlidersHorizontal aria-hidden className="size-4" />
+            </button>
+          )}
           <button
             type="button"
             className="chk-acao chk-acao-perigo"

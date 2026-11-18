@@ -37,6 +37,7 @@ import {
   type TipoLembrete,
 } from "@/lib/regras/lembretes";
 import { acaoCriarItem, acaoEditarItem, acaoExcluirItem, acaoMarcarItem } from "./acoes";
+import { ModalEditarItem } from "./editar";
 
 type SocioMin = { id: string; nome: string; cor: string; foto: string | null };
 const dataCurtaBR = (iso: string) => paraData(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" });
@@ -79,6 +80,13 @@ export function QuadroLembretes({
   hoje: string;
 }) {
   const [filtro, setFiltro] = useState<FiltroLembretes>({ tipo: "todos", responsavel: "todos", vinculo: "todos" });
+  const avisar = useAviso();
+  const [detalheId, setDetalheId] = useState<string | null>(null);
+  const emDetalhe = detalheId ? itens.find((l) => l.id === detalheId) : undefined;
+  const abrirDetalhes = (id: string) => {
+    if (itens.some((l) => l.id === id)) setDetalheId(id);
+    else avisar({ tom: "info", texto: "Salvando o item… tente de novo em um instante." });
+  };
   const resumo = resumoLembretes(itens, hoje);
   const grupos = useMemo(() => agruparLembretes(filtrarLembretes(itens, filtro, socioAtualId), projetos, hoje), [itens, filtro, socioAtualId, projetos, hoje]);
   const assuntos = useMemo(() => [...new Set(itens.map((l) => l.assunto).filter((a): a is string => !!a))].sort((a, b) => a.localeCompare(b, "pt-BR")), [itens]);
@@ -129,10 +137,21 @@ export function QuadroLembretes({
         <ul className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {grupos.map((g, i) => (
             <li key={g.chave} className={`animate-surgir escala-${Math.min(i + 1, 5)}`}>
-              <CartaoGrupo grupo={g} socios={socios} hoje={hoje} filtroChave={`${filtro.tipo}-${filtro.responsavel}`} />
+              <CartaoGrupo grupo={g} socios={socios} hoje={hoje} filtroChave={`${filtro.tipo}-${filtro.responsavel}`} aoAbrirDetalhes={abrirDetalhes} />
             </li>
           ))}
         </ul>
+      )}
+      {emDetalhe && (
+        <ModalEditarItem
+          key={emDetalhe.id}
+          item={emDetalhe}
+          projetos={projetos}
+          socios={socios}
+          assuntos={assuntos}
+          socioAtualId={socioAtualId}
+          aoFechar={() => setDetalheId(null)}
+        />
       )}
     </div>
   );
@@ -282,7 +301,19 @@ function NovoItem({ projetos, socios, socioAtualId, assuntos }: { projetos: { id
 /* ---------------- Um grupo (sem vínculo, assunto ou projeto) ---------------- */
 const ICONE_GRUPO: Record<Grupo["tipo"], LucideIcon> = { nenhum: Inbox, assunto: Tag, projeto: FolderKanban };
 
-function CartaoGrupo({ grupo, socios, hoje, filtroChave }: { grupo: Grupo; socios: SocioMin[]; hoje: string; filtroChave: string }) {
+function CartaoGrupo({
+  grupo,
+  socios,
+  hoje,
+  filtroChave,
+  aoAbrirDetalhes,
+}: {
+  grupo: Grupo;
+  socios: SocioMin[];
+  hoje: string;
+  filtroChave: string;
+  aoAbrirDetalhes: (id: string) => void;
+}) {
   const [itens, setItens] = useState<{ feito: boolean }[]>(grupo.itens);
   useEffect(() => setItens(grupo.itens), [grupo.itens]);
   const p = progressoLembretes(itens);
@@ -366,6 +397,7 @@ function CartaoGrupo({ grupo, socios, hoje, filtroChave }: { grupo: Grupo; socio
         aoMudar={setItens}
         max={grupo.tipo === "projeto" ? MAX_LEMBRETES : MAX_POR_GRUPO}
         detalhes={detalhes}
+        aoAbrirDetalhes={aoAbrirDetalhes}
       />
     </Cartao>
   );
