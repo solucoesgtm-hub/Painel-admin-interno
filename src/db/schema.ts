@@ -2,6 +2,7 @@
 // Para mudar o banco: edite este arquivo, rode `npm run db:gerar` e depois `npm run db:migrar`.
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   date,
   index,
   integer,
@@ -245,6 +246,26 @@ export const loginTentativas = pgTable(
     criadoEm,
   },
   (t) => [index("login_tentativas_chave_idx").on(t.chave, t.criadoEm)],
+);
+
+/**
+ * Lembretes de um projeto: checklist que cada sócio vai marcando como feito.
+ * `projetoId` é texto porque os projetos ainda vêm da demonstração; quando ganharem tabela,
+ * vira uma referência.
+ */
+export const lembretes = pgTable(
+  "lembretes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projetoId: text("projeto_id").notNull(),
+    texto: text("texto").notNull(),
+    feito: boolean("feito").notNull().default(false),
+    feitoEm: timestamp("feito_em", { withTimezone: true }),
+    feitoPor: uuid("feito_por").references(() => socios.id, { onDelete: "set null" }),
+    criadoPor: uuid("criado_por").references(() => socios.id, { onDelete: "set null" }),
+    criadoEm,
+  },
+  (t) => [index("lembretes_projeto_idx").on(t.projetoId, t.criadoEm)],
 );
 
 export const leadsRelacoes = relations(leads, ({ one, many }) => ({

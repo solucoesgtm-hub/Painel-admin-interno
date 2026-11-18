@@ -5,6 +5,7 @@ import { Logo } from "@/components/layout/logo";
 import { Aviso, cn } from "@/components/ui/base";
 import { auth, authConfigurado } from "@/auth";
 import { FormularioLogin } from "./formulario";
+import { Particulas } from "./particulas";
 import { MarcaAnimada } from "./vitrine";
 
 export const metadata: Metadata = { title: "Entrar" };
@@ -42,7 +43,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         </span>
 
         <div className="relative">
-          <MarcaAnimada className="mb-12 size-36 xl:size-44 [@media(max-height:820px)]:mb-6 [@media(max-height:820px)]:size-24" />
+          <Particulas className="animate-surgir-marca -ml-6 mb-8 block w-[300px] cursor-pointer text-azul-claro xl:w-[360px] [@media(max-height:820px)]:mb-3 [@media(max-height:820px)]:w-[210px]" />
           <div className="max-w-xl">
             <p className="animate-revelar atraso-1 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-[#c9cedb]">
               <Sparkles aria-hidden className="size-3.5 text-azul-claro" />

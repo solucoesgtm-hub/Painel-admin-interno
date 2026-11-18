@@ -57,6 +57,13 @@
       "when": 1794950466874,
       "tag": "0007_empresa_mei",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794968715853,
+      "tag": "0008_lembretes",
+      "breakpoints": true
     }
   ]
 }

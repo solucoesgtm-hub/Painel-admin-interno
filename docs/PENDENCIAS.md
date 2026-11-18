@@ -17,7 +17,8 @@
 - Estudo do sistema e imagens dos protótipos em `docs/` — as telas foram desenhadas a partir da especificação; comparar quando chegarem.
 
 ## Próximas telas (a camada de conexão já está pronta)
-- Financeiro lendo `provedorBancario()` em vez do extrato fictício, com o extrato guardado no Neon.
+- Financeiro: guardar o extrato no Neon (hoje é lido do banco com cache de 5 min) e conciliação manual das entradas que não batem sozinhas.
+- Projetos ainda são de demonstração; os lembretes já ficam no Neon (`lembretes.projeto_id`). Falta excluir/editar lembrete.
 - Guardar no Neon as mensagens recebidas pelo webhook do WhatsApp e enviar pela caixa de aprovações.
 
 ## Decisões em aberto

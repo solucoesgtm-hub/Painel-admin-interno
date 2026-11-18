@@ -137,3 +137,42 @@ export function provedorBancario(): ProvedorBancario {
     return { tipo: "inter", saldo: falha, extrato: falha, testar: async () => ({ ok: false, detalhe: erro }) };
   }
 }
+
+/* ---------------- Leitura para as telas (com cache) ---------------- */
+
+/** Janela máxima por consulta de extrato. Períodos maiores viram várias consultas seguidas. */
+const JANELA_DIAS = 90;
+/** O Inter limita consultas por minuto: o resultado fica guardado alguns minutos por instância. */
+const CACHE_MS = 5 * 60_000;
+const cacheLeituras = new Map<string, { em: number; valor: unknown }>();
+
+async function comCache<T>(chave: string, ler: () => Promise<T>): Promise<T> {
+  const c = cacheLeituras.get(chave);
+  if (c && Date.now() - c.em < CACHE_MS) return c.valor as T;
+  const valor = await ler();
+  cacheLeituras.set(chave, { em: Date.now(), valor });
+  return valor;
+}
+
+const somarDiasISO = (iso: string, dias: number) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+};
+
+/** Saldo e extrato de um período, em janelas de até 90 dias, com cache de 5 minutos. */
+export async function lerBanco(de: string, ate: string): Promise<{ tipo: ProvedorBancario["tipo"]; saldo: Saldo; extrato: Lancamento[] }> {
+  const p = provedorBancario();
+  return comCache(`${p.tipo}:${de}:${ate}`, async () => {
+    const janelas: [string, string][] = [];
+    for (let ini = de; ini <= ate; ini = somarDiasISO(ini, JANELA_DIAS)) {
+      const fim = somarDiasISO(ini, JANELA_DIAS - 1);
+      janelas.push([ini, fim < ate ? fim : ate]);
+    }
+    const saldo = await p.saldo();
+    const extrato: Lancamento[] = [];
+    // Em sequência, não em paralelo: respeita o limite de consultas do banco.
+    for (const [a, b] of janelas) extrato.push(...(await p.extrato(a, b)));
+    return { tipo: p.tipo, saldo, extrato: extrato.sort((x, y) => y.data.localeCompare(x.data)) };
+  });
+}

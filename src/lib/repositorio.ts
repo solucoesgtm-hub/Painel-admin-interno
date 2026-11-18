@@ -8,6 +8,7 @@ import { MINUTOS_PARA_APAGAR, podeApagar, type Mensagem } from "./regras/chat";
 import { EMPRESA_VAZIA, type ContratoCliente, type DadosContrato, type DadosEmpresa } from "./regras/empresa";
 import { nomeEtapa, type DadosEditarLead, type DadosNovoLead, type EtapaId } from "./regras/funil";
 import { inicioDoMes, type ConteudoPlanoIA, type PlanoIASalvo } from "./regras/ia";
+import type { Lembrete } from "./regras/lembretes";
 import {
   calcularPontuacao,
   complexidade,
@@ -44,6 +45,7 @@ type Memoria = {
   vistos: Record<string, string>;
   inscricoes?: (InscricaoPushMemoria)[];
   usoIa?: { finalidade: string; custoBRL: number; em: string }[];
+  lembretes?: Lembrete[];
 };
 const g = globalThis as unknown as { __gtmMemoria?: Memoria };
 function memoria(): Memoria {
@@ -805,4 +807,51 @@ export async function ultimoPlanoIa(leadId: string): Promise<PlanoIASalvo | null
   if (!ehUuid(leadId)) return null;
   const { ultimoPlanoIa } = await consultasIa();
   return paraPlanoSalvo(await ultimoPlanoIa(leadId));
+}
+
+/* ---------------- Lembretes dos projetos ---------------- */
+async function consultasLembretes() {
+  return import("@/db/consultas/lembretes");
+}
+
+/** Lembretes dos projetos indicados, do mais antigo para o mais novo. */
+export async function listarLembretes(projetoIds: string[]): Promise<Lembrete[]> {
+  if (modoDemo) return (memoria().lembretes ?? []).filter((l) => projetoIds.includes(l.projetoId));
+  const linhas = await (await consultasLembretes()).listarLembretes(projetoIds);
+  return linhas.map((l) => ({
+    id: l.id,
+    projetoId: l.projetoId,
+    texto: l.texto,
+    feito: l.feito,
+    feitoEm: l.feitoEm?.toISOString() ?? null,
+    feitoPor: l.feitoPor,
+    criadoEm: l.criadoEm.toISOString(),
+  }));
+}
+
+export async function contarLembretes(projetoId: string): Promise<number> {
+  if (modoDemo) return (memoria().lembretes ?? []).filter((l) => l.projetoId === projetoId).length;
+  return (await consultasLembretes()).contarLembretes(projetoId);
+}
+
+export async function criarLembrete(projeto: { id: string; nome: string }, texto: string, socio: { id: string; nome: string }): Promise<string> {
+  if (modoDemo) {
+    const m = memoria();
+    const id = `lb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    (m.lembretes ??= []).push({ id, projetoId: projeto.id, texto, feito: false, feitoEm: null, feitoPor: null, criadoEm: new Date().toISOString() });
+    registrar(socio.nome, "criou", "lembrete", `${projeto.nome} — ${texto}`);
+    return id;
+  }
+  return (await consultasLembretes()).criarLembrete(projeto.id, texto, socio.id, projeto.nome);
+}
+
+export async function marcarLembrete(id: string, projeto: { id: string; nome: string }, feito: boolean, socio: { id: string; nome: string }): Promise<boolean> {
+  if (modoDemo) {
+    const l = (memoria().lembretes ?? []).find((x) => x.id === id && x.projetoId === projeto.id);
+    if (!l) return false;
+    Object.assign(l, { feito, feitoEm: feito ? new Date().toISOString() : null, feitoPor: feito ? socio.id : null });
+    registrar(socio.nome, feito ? "executou" : "editou", "lembrete", `${projeto.nome} — ${l.texto}${feito ? " (feito)" : " (reaberto)"}`);
+    return true;
+  }
+  return (await consultasLembretes()).marcarLembrete(id, projeto.id, feito, socio.id, projeto.nome);
 }
