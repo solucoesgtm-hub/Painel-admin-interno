@@ -24,22 +24,48 @@ type Ponto = { hx: number; hy: number; x: number; y: number; vx: number; vy: num
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
-/** Pontos espalhados por igual nas partes claras do símbolo (grade hexagonal ajustada à área). */
+/** Casas calculadas uma vez por carregamento (voltar ao login não refaz a conta). */
+let casasGuardadas: [number, number][] | null = null;
+
+/**
+ * Pontos espalhados por igual nas partes claras do símbolo (grade hexagonal ajustada à área).
+ * O símbolo é pintado uma vez num canvas fora da tela e lido de uma vez só (getImageData):
+ * antes eram centenas de milhares de isPointInPath no início, o que travava a entrada.
+ */
 function casasDoLogo(): [number, number][] {
-  const g = document.createElement("canvas").getContext("2d")!;
-  const silhueta = new Path2D(SILHUETA);
-  const claros = [new Path2D(BARRIGA), new Path2D(FAIXA_ESQ), new Path2D(FAIXA_DIR)];
-  // (x, y) no canvas → coordenadas do desenho original.
+  if (casasGuardadas) return casasGuardadas;
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const g = c.getContext("2d", { willReadFrequently: true })!;
+  // Coordenadas do desenho original (centro 640,640) → canvas.
+  g.setTransform(ESCALA, 0, 0, ESCALA, CX - 640 * ESCALA, CY - 640 * ESCALA);
+  const circulo = (r: number) => {
+    const p = new Path2D();
+    p.arc(640, 640, r, 0, Math.PI * 2);
+    return p;
+  };
+  // Círculo claro; pinguim escuro recortado no círculo interno; barriga e faixas claras por cima.
+  g.fillStyle = "#fff";
+  g.fill(circulo(RAIO_LOGO));
+  g.save();
+  g.clip(circulo(RAIO_RECORTE));
+  g.fillStyle = "#000";
+  g.fill(new Path2D(SILHUETA));
+  g.restore();
+  g.save();
+  g.clip(circulo(RAIO_LOGO));
+  g.fillStyle = "#fff";
+  for (const d of [BARRIGA, FAIXA_ESQ, FAIXA_DIR]) g.fill(new Path2D(d));
+  g.restore();
+  const px = g.getImageData(0, 0, W, H).data;
   const claro = (x: number, y: number) => {
-    const lx = 640 + (x - CX) / ESCALA;
-    const ly = 640 + (y - CY) / ESCALA;
-    const r = Math.hypot(lx - 640, ly - 640);
-    if (r > RAIO_LOGO) return false;
-    const recortado = r <= RAIO_RECORTE && g.isPointInPath(silhueta, lx, ly);
-    return !recortado || claros.some((p) => g.isPointInPath(p, lx, ly));
+    const ix = Math.floor(x);
+    const iy = Math.floor(y);
+    return ix >= 0 && iy >= 0 && ix < W && iy < H && px[(iy * W + ix) * 4]! > 127;
   };
   let area = 0;
-  for (let y = 1; y < H; y += 3) for (let x = 1; x < W; x += 3) if (claro(x, y)) area += 9;
+  for (let i = 0; i < px.length; i += 4) if (px[i]! > 127) area++;
   const sp = Math.sqrt((area / N) * (2 / Math.sqrt(3)));
   const rowH = (sp * Math.sqrt(3)) / 2;
   const pts: [number, number][] = [];
@@ -48,6 +74,7 @@ function casasDoLogo(): [number, number][] {
   }
   const out: [number, number][] = [];
   for (let i = 0; i < N; i++) out.push(pts[Math.floor((i * pts.length) / N)]!);
+  casasGuardadas = out;
   return out;
 }
 
@@ -57,6 +84,7 @@ export function Particulas({ alcance = 90, forca = 60, className }: { alcance?: 
   const mao = useRef<{ x: number; y: number } | null>(null);
   const raf = useRef(0);
   const parado = useRef(false);
+  const cor = useRef("#f1f0eb");
 
   const desenhar = () => {
     const c = cv.current;
@@ -65,23 +93,32 @@ export function Particulas({ alcance = 90, forca = 60, className }: { alcance?: 
     const k = c.width / W;
     x.setTransform(k, 0, 0, k, 0, 0);
     x.clearRect(0, 0, W, H);
-    x.fillStyle = getComputedStyle(c).color;
     const r = 2.4;
-    x.beginPath();
+    // Parados: círculos num só caminho. Em movimento: um traço de ponta redonda na direção da
+    // velocidade (parece um respingo) — bem mais leve que uma elipse girada por ponto.
+    const parados = new Path2D();
+    const andando = new Path2D();
+    let algumAndando = false;
     for (const d of pontos.current) {
       const sp = Math.hypot(d.vx, d.vy);
       if (sp < 0.3) {
-        x.moveTo(d.x + r, d.y);
-        x.arc(d.x, d.y, r, 0, Math.PI * 2);
+        parados.moveTo(d.x + r, d.y);
+        parados.arc(d.x, d.y, r, 0, Math.PI * 2);
       } else {
-        // Esticado na direção do movimento: a onda parece um respingo.
-        const s = Math.min(2.6, 1 + sp * 0.12);
-        const rot = Math.atan2(d.vy, d.vx);
-        x.moveTo(d.x + Math.cos(rot) * r * s, d.y + Math.sin(rot) * r * s);
-        x.ellipse(d.x, d.y, r * s, r / Math.sqrt(s), rot, 0, Math.PI * 2);
+        const meio = (r * Math.min(1.6, sp * 0.12)) / sp;
+        andando.moveTo(d.x - d.vx * meio, d.y - d.vy * meio);
+        andando.lineTo(d.x + d.vx * meio, d.y + d.vy * meio);
+        algumAndando = true;
       }
     }
-    x.fill();
+    x.fillStyle = cor.current;
+    x.fill(parados);
+    if (algumAndando) {
+      x.strokeStyle = cor.current;
+      x.lineWidth = r * 1.7;
+      x.lineCap = "round";
+      x.stroke(andando);
+    }
   };
 
   const rodar = () => {
@@ -129,16 +166,24 @@ export function Particulas({ alcance = 90, forca = 60, className }: { alcance?: 
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = Math.round(W * dpr);
     c.height = Math.round(H * dpr);
-    // Chegada: cada ponto nasce num anel largo fora do logo e vem para a sua casa.
-    pontos.current = casasDoLogo().map(([hx, hy]) => {
-      if (parado.current) return { hx, hy, x: hx, y: hy, vx: 0, vy: 0 };
-      const a = Math.random() * Math.PI * 2;
-      const r = W * (0.55 + Math.random() * 0.35);
-      return { hx, hy, x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, vx: 0, vy: 0 };
+    cor.current = getComputedStyle(c).color || cor.current;
+    // Espera a tela terminar de aparecer (hidratação e primeiro desenho) antes de começar:
+    // a chegada dos pontos começa num quadro livre, sem disputar com o carregamento da página.
+    let inicio = requestAnimationFrame(() => {
+      inicio = requestAnimationFrame(() => {
+        // Chegada: cada ponto nasce num anel largo fora do logo e vem para a sua casa.
+        pontos.current = casasDoLogo().map(([hx, hy]) => {
+          if (parado.current) return { hx, hy, x: hx, y: hy, vx: 0, vy: 0 };
+          const a = Math.random() * Math.PI * 2;
+          const r = W * (0.55 + Math.random() * 0.35);
+          return { hx, hy, x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, vx: 0, vy: 0 };
+        });
+        desenhar();
+        if (!parado.current) rodar();
+      });
     });
-    desenhar();
-    if (!parado.current) rodar();
     return () => {
+      cancelAnimationFrame(inicio);
       cancelAnimationFrame(raf.current);
       raf.current = 0;
     };

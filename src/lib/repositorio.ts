@@ -2,6 +2,7 @@
 // Com DATABASE_URL definida, leads e histórico vêm do Neon (src/db).
 // Sem ela, o Hub roda em modo demonstração com dados fictícios em memória.
 import "server-only";
+import { cache } from "react";
 import { CONTRATOS, PROJETOS, EMPRESA_DEMO, EVENTOS, HISTORICO_INICIAL, MENSAGENS_DEMO, LEADS_INICIAIS, SOCIOS, type Evento, type EventoHistorico, type Lead, type Socio } from "./demo/dados";
 import type { DadosEvento } from "./regras/agenda";
 import { MINUTOS_PARA_APAGAR, podeApagar, type Mensagem } from "./regras/chat";
@@ -130,7 +131,9 @@ async function neon() {
 const CORES_SOCIOS = ["#3f6fd8", "#eb6834", "#1baf7a", "#eda100"];
 
 /** Sócios: tabela `socios` do Neon (ordem de cadastro) ou a lista fictícia da demonstração. */
-export async function listarSocios(): Promise<Socio[]> {
+/** Leitura repetida na mesma requisição (layout + página) sai da memória: uma consulta só. */
+export const listarSocios = cache(_listarSocios);
+async function _listarSocios(): Promise<Socio[]> {
   if (modoDemo) return SOCIOS.map((s) => ({ ...s, vistoEm: memoria().vistos[s.id] ?? null, fotoEm: memoria().fotos?.[s.id]?.em ?? null }));
   const [{ db }, { socios }, { asc }] = await Promise.all([import("@/db"), import("@/db/schema"), import("drizzle-orm")]);
   const linhas = await db
@@ -185,7 +188,9 @@ export async function registrarVisto(socioId: string) {
   await db.update(socios).set({ vistoEm: new Date() }).where(eq(socios.id, socioId));
 }
 
-export async function listarLeads(): Promise<Lead[]> {
+/** Leitura repetida na mesma requisição (layout + página) sai da memória: uma consulta só. */
+export const listarLeads = cache(_listarLeads);
+async function _listarLeads(): Promise<Lead[]> {
   if (modoDemo) return memoria().leads;
   const { listarFunil } = await neon();
   const linhas = await listarFunil();
@@ -931,7 +936,9 @@ export async function listarLembretes(projetoIds: string[]): Promise<Lembrete[]>
 }
 
 /** Todos os lembretes e tarefas (aba Lembretes), do mais antigo para o mais novo. */
-export async function listarTodosLembretes(): Promise<Lembrete[]> {
+/** Leitura repetida na mesma requisição (layout + página) sai da memória: uma consulta só. */
+export const listarTodosLembretes = cache(_listarTodosLembretes);
+async function _listarTodosLembretes(): Promise<Lembrete[]> {
   if (modoDemo) return [...(memoria().lembretes ?? [])];
   return (await (await consultasLembretes()).listarTodos()).map(paraLembrete);
 }

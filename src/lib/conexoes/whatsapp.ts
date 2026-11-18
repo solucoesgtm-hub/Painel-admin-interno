@@ -63,6 +63,8 @@ function meta(v: Record<(typeof VARIAVEIS_WHATSAPP)[number], string>): ProvedorW
   async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
     const r = await fetch(`${api}${caminho}`, {
       ...init,
+      // Tempo-limite: serviço externo lento não pode travar a tela.
+      signal: init.signal ?? AbortSignal.timeout(15_000),
       headers: { Authorization: `Bearer ${v.WHATSAPP_TOKEN}`, "Content-Type": "application/json", ...init.headers },
       cache: "no-store",
     });

@@ -18,6 +18,10 @@ const erro = (mensagem: string, status: number) => Response.json({ mensagem }, {
 
 export async function POST(req: Request) {
   const socio = await exigirSocio();
+  // Só aceita pedidos vindos do próprio Hub (bloqueia envio forjado por outro site).
+  const origem = req.headers.get("origin");
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (origem && host && (!URL.canParse(origem) || new URL(origem).host !== host)) return erro("Origem não permitida.", 403);
   const pedido = esquemaPedidoPlano.safeParse(await req.json().catch(() => null));
   if (!pedido.success) return erro("Pedido inválido.", 400);
   const p = pedido.data;

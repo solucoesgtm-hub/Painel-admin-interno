@@ -48,6 +48,7 @@ async function token(conta: Credenciais): Promise<string> {
   const assinatura = createSign("RSA-SHA256").update(`${cabecalho}.${corpo}`).sign(conta.private_key);
   const r = await fetch(URL_TOKEN, {
     method: "POST",
+    signal: AbortSignal.timeout(15_000),
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
@@ -66,6 +67,8 @@ async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
   if (!c) throw new Error("Google Agenda não configurado.");
   const r = await fetch(`${API}/calendars/${encodeURIComponent(c.agendaId)}${caminho}`, {
     ...init,
+    // Tempo-limite: serviço externo lento não pode travar a tela.
+    signal: init.signal ?? AbortSignal.timeout(15_000),
     headers: { Authorization: `Bearer ${await token(c.conta)}`, "Content-Type": "application/json", ...init.headers },
     cache: "no-store",
   });

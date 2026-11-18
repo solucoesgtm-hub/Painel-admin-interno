@@ -51,7 +51,7 @@ const nomeArquivo = (cliente: string) =>
     .replace(/^-|-$/g, "")}`;
 
 const ESTILO_DOC = "body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.5;color:#111;max-width:720px;margin:32px auto;padding:0 24px}h1{font-size:15pt;text-align:center;margin-bottom:24px}h2{font-size:12pt;margin-top:20px}p{margin:6px 0;text-align:justify}ul{margin:6px 0 6px 20px}";
-const paginaHtml = (titulo: string, corpo: string) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${titulo}</title><style>${ESTILO_DOC}</style></head><body>${corpo}</body></html>`;
+const paginaHtml = (titulo: string, corpo: string) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${titulo.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</title><style>${ESTILO_DOC}</style></head><body>${corpo}</body></html>`;
 
 export function ModalDocumento({
   contrato,

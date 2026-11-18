@@ -55,6 +55,7 @@ async function token(v: Record<(typeof VARIAVEIS_GMAIL)[number], string>): Promi
   if (cache && cache.expira - 60_000 > agora) return cache.token;
   const r = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
+    signal: AbortSignal.timeout(15_000),
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "refresh_token",
@@ -81,6 +82,8 @@ function gmail(v: Record<(typeof VARIAVEIS_GMAIL)[number], string>): ProvedorEma
   async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
     const r = await fetch(`${API}${caminho}`, {
       ...init,
+      // Tempo-limite: serviço externo lento não pode travar a tela.
+      signal: init.signal ?? AbortSignal.timeout(15_000),
       headers: { Authorization: `Bearer ${await token(v)}`, "Content-Type": "application/json", ...init.headers },
       cache: "no-store",
     });

@@ -66,8 +66,15 @@ export async function contarTentativas(chave: string, desde: Date) {
   return r?.n ?? 0;
 }
 
+/**
+ * Registra a recusa e apaga as tentativas com mais de 24 h de todos: a tabela não cresce sem
+ * limite mesmo sob tentativas em massa (só o login certo limpava antes).
+ */
 export async function registrarTentativa(chave: string) {
-  await db.insert(loginTentativas).values({ chave });
+  await db.batch([
+    db.insert(loginTentativas).values({ chave }),
+    db.delete(loginTentativas).where(lt(loginTentativas.criadoEm, new Date(Date.now() - 24 * 60 * 60_000))),
+  ]);
 }
 
 /** Login certo zera as tentativas do e-mail; aproveita para limpar as antigas de todos. */

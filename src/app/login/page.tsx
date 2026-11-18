@@ -28,8 +28,9 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgb(255_255_255/0.6)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.6)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_60%_45%,#000_20%,transparent_70%)]"
         />
-        <span aria-hidden className="animate-pulsar pointer-events-none absolute -left-40 -top-40 size-[34rem] rounded-full bg-azul/25 blur-3xl" />
-        <span aria-hidden className="animate-pulsar pointer-events-none absolute -bottom-48 right-[-10rem] size-[30rem] rounded-full bg-[#ff8a4c]/12 blur-3xl [animation-delay:2.5s]" />
+        {/* Luzes em degradê radial (sem filtro de desfoque: o blur animado pesava junto com as partículas). */}
+        <span aria-hidden className="animate-pulsar pointer-events-none absolute -left-52 -top-52 size-[42rem] rounded-full bg-[radial-gradient(closest-side,rgb(63_111_216/0.28),transparent)] will-change-transform" />
+        <span aria-hidden className="animate-pulsar pointer-events-none absolute -bottom-60 right-[-13rem] size-[38rem] rounded-full bg-[radial-gradient(closest-side,rgb(255_138_76/0.14),transparent)] will-change-transform [animation-delay:2.5s]" />
 
         <h1 className="sr-only">GTM Soluções</h1>
         <div className="relative grid flex-1 place-items-center">
