@@ -43,6 +43,7 @@ type Memoria = {
   apagadasEm: Record<string, string>;
   vistos: Record<string, string>;
   inscricoes?: (InscricaoPushMemoria)[];
+  usoIa?: { finalidade: string; custoBRL: number; em: string }[];
 };
 const g = globalThis as unknown as { __gtmMemoria?: Memoria };
 function memoria(): Memoria {
@@ -676,9 +677,32 @@ export async function buscarDiagnosticoParaIa(leadId: string, diagnosticoId?: st
 /** Gasto estimado com IA no mês corrente (fuso de São Paulo), em reais. */
 export async function gastoIaDoMes(): Promise<number> {
   const desde = inicioDoMes();
-  if (modoDemo) return memoria().planosIa.filter((p) => new Date(p.criadoEm) >= desde).reduce((a, p) => a + p.custoBRL, 0);
+  if (modoDemo) {
+    const planos = memoria().planosIa.filter((p) => new Date(p.criadoEm) >= desde).reduce((a, p) => a + p.custoBRL, 0);
+    const outros = (memoria().usoIa ?? []).filter((u) => new Date(u.em) >= desde).reduce((a, u) => a + u.custoBRL, 0);
+    return planos + outros;
+  }
   const { gastoDesde } = await consultasIa();
   return (await gastoDesde(desde)) / 100;
+}
+
+/**
+ * Registra o custo de uma chamada de IA que não é um plano (ex.: triagem de e-mail),
+ * para entrar no teto mensal. Fica no histórico como "uso_ia", sem tabela nova.
+ */
+export async function registrarUsoIa(uso: { finalidade: string; modelo: string; custoBRL: number; erro?: string }) {
+  if (modoDemo) {
+    const m = memoria();
+    (m.usoIa ??= []).push({ finalidade: uso.finalidade, custoBRL: uso.custoBRL, em: new Date().toISOString() });
+    return;
+  }
+  const [{ db }, { historico }] = await Promise.all([import("@/db"), import("@/db/schema")]);
+  await db.insert(historico).values({
+    atorTipo: "sistema",
+    acao: "executou",
+    entidade: "uso_ia",
+    detalhes: { nome: uso.finalidade, modelo: uso.modelo, custoCentavos: Math.round(uso.custoBRL * 100), ...(uso.erro ? { erro: uso.erro } : {}) },
+  });
 }
 
 export type RegistroGeracao = {

@@ -12,6 +12,7 @@ import {
   FileSearch,
   FolderKanban,
   History,
+  PlugZap,
   Inbox,
   LayoutDashboard,
   LogOut,
@@ -76,6 +77,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/empresa", nome: "Nossa empresa", curto: "Empresa", icone: Building2 },
       { href: "/equipe", nome: "Equipe", icone: Users },
       { href: "/historico", nome: "Histórico", icone: History },
+      { href: "/conexoes", nome: "Conexões", icone: PlugZap },
     ],
   },
 ];
@@ -110,7 +112,7 @@ function usePopover<T extends HTMLElement = HTMLDivElement>() {
 function Contador({ n }: { n?: number }) {
   if (!n) return null;
   return (
-    <span className="numeros grid min-w-5 place-items-center rounded-full bg-quente px-1.5 text-[11px] font-semibold leading-5 text-white">
+    <span className="numeros relative grid min-w-5 place-items-center rounded-full bg-quente px-1.5 text-[11px] font-semibold leading-5 text-white">
       {n}
       <span className="sr-only"> pendentes</span>
     </span>

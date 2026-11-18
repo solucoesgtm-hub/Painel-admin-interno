@@ -9,6 +9,8 @@ import { COTACAO_PADRAO, custoEstimadoBRL, numeroDoAmbiente, TETO_PADRAO_BRL, ty
 
 export const iaConfigurada = () => !!process.env.ANTHROPIC_API_KEY?.trim();
 export const modeloIa = () => process.env.CLAUDE_MODEL?.trim() || "claude-opus-4-7";
+/** Modelo barato e rápido para tarefas curtas e repetidas (triagem de e-mail). */
+export const modeloRapido = () => process.env.CLAUDE_MODELO_RAPIDO?.trim() || "claude-haiku-5-5";
 export const tetoMensalBRL = () => numeroDoAmbiente(process.env.IA_TETO_MENSAL_BRL, TETO_PADRAO_BRL);
 export const cotacaoDolar = () => numeroDoAmbiente(process.env.IA_COTACAO_DOLAR, COTACAO_PADRAO);
 
@@ -27,9 +29,13 @@ export async function gerarEstruturado<T>(opcoes: {
   sistema: string;
   mensagens: string[];
   esquema: z.ZodType<T>;
+  /** Outro modelo só para esta chamada (padrão: CLAUDE_MODEL). */
+  modelo?: string;
+  /** Limite de tokens de saída (padrão 32000). */
+  maxTokens?: number;
   aoProgresso?: (fase: "pensando" | "escrevendo", caracteres: number) => void;
 }): Promise<ResultadoChamada<T>> {
-  const modelo = modeloIa();
+  const modelo = opcoes.modelo ?? modeloIa();
   const cliente = new Anthropic({ timeout: LIMITE_MS, maxRetries: 1 });
   const total: Uso = { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 };
   const inicio = Date.now();
@@ -43,7 +49,7 @@ export async function gerarEstruturado<T>(opcoes: {
     try {
       const stream = cliente.messages.stream({
         model: modelo,
-        max_tokens: 32000,
+        max_tokens: opcoes.maxTokens ?? 32000,
         ...(haiku ? {} : { thinking: { type: "adaptive" as const } }),
         output_config: { format: { type, schema }, ...(haiku ? {} : { effort: "medium" as const }) },
         system: [{ type: "text", text: opcoes.sistema, cache_control: { type: "ephemeral" } }],
@@ -108,4 +114,23 @@ function somar(total: Uso, u: Uso) {
   u.output_tokens = 0;
   u.cache_creation_input_tokens = 0;
   u.cache_read_input_tokens = 0;
+}
+
+/** Confere a chave e o modelo sem gerar texto (sem custo). */
+export async function verificarIa(): Promise<{ ok: true; detalhe: string } | { ok: false; detalhe: string }> {
+  if (!iaConfigurada()) return { ok: false, detalhe: "ANTHROPIC_API_KEY não definida." };
+  const cliente = new Anthropic({ timeout: 15_000, maxRetries: 0 });
+  try {
+    const [principal, rapido] = await Promise.all([cliente.models.retrieve(modeloIa()), cliente.models.retrieve(modeloRapido())]);
+    return { ok: true, detalhe: `Modelos disponíveis: ${principal.id} e ${rapido.id}.` };
+  } catch (e) {
+    return {
+      ok: false,
+      detalhe:
+        e instanceof Anthropic.AuthenticationError ? "Chave da API do Claude inválida."
+        : e instanceof Anthropic.NotFoundError ? "Modelo não encontrado. Confira CLAUDE_MODEL e CLAUDE_MODELO_RAPIDO."
+        : e instanceof Anthropic.APIError ? `Erro da API do Claude (${e.status ?? "sem código"}).`
+        : "Não foi possível falar com a API do Claude.",
+    };
+  }
 }

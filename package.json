@@ -14,7 +14,8 @@
     "db:painel": "drizzle-kit studio",
     "db:socios": "tsx --env-file=.env.local src/db/seed.ts",
     "db:testar": "tsx --env-file=.env.local src/db/testar-conexao.ts",
-    "db:senha": "tsx --env-file=.env.local src/db/definir-senha.ts"
+    "db:senha": "tsx --env-file=.env.local src/db/definir-senha.ts",
+    "gmail:autorizar": "tsx --env-file=.env.local scripts/gmail-autorizar.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.9.0",

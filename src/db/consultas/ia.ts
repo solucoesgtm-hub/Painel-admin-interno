@@ -1,5 +1,5 @@
 // Consultas das gerações por IA. Gravar a geração e o histórico vão no mesmo lote.
-import { and, desc, eq, gte, sum } from "drizzle-orm";
+import { and, desc, eq, gte, sql, sum } from "drizzle-orm";
 import { db } from "../index";
 import { diagnosticos, historico, planosIa, socios, type NovoPlanoIa } from "../schema";
 
@@ -48,8 +48,17 @@ export async function diagnosticoParaIa(leadId: string, diagnosticoId?: string) 
   return linha ?? null;
 }
 
-/** Soma do custo estimado (centavos) das gerações desde `desde`, inclusive as que falharam. */
+/**
+ * Soma do custo estimado (centavos) desde `desde`: gerações de plano (inclusive as que falharam)
+ * e os demais usos de IA registrados no histórico como "uso_ia" (ex.: triagem de e-mail).
+ */
 export async function gastoDesde(desde: Date) {
-  const [r] = await db.select({ total: sum(planosIa.custoCentavos) }).from(planosIa).where(gte(planosIa.criadoEm, desde));
-  return Number(r?.total ?? 0);
+  const [[planos], [outros]] = await Promise.all([
+    db.select({ total: sum(planosIa.custoCentavos) }).from(planosIa).where(gte(planosIa.criadoEm, desde)),
+    db
+      .select({ total: sql<string>`coalesce(sum((${historico.detalhes}->>'custoCentavos')::int), 0)` })
+      .from(historico)
+      .where(and(eq(historico.entidade, "uso_ia"), gte(historico.criadoEm, desde))),
+  ]);
+  return Number(planos?.total ?? 0) + Number(outros?.total ?? 0);
 }
