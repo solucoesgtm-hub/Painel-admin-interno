@@ -8,7 +8,7 @@ import { MINUTOS_PARA_APAGAR, podeApagar, type Mensagem } from "./regras/chat";
 import { EMPRESA_VAZIA, type ContratoCliente, type DadosContrato, type DadosEmpresa } from "./regras/empresa";
 import { nomeEtapa, type DadosEditarLead, type DadosNovoLead, type EtapaId } from "./regras/funil";
 import { inicioDoMes, type ConteudoPlanoIA, type PlanoIASalvo } from "./regras/ia";
-import type { Lembrete } from "./regras/lembretes";
+import type { DadosItem, Lembrete } from "./regras/lembretes";
 import { NOME_SITUACAO_PROJETO, type DadosProjeto, type ProjetoSalvo } from "./regras/projetos";
 import {
   calcularPontuacao,
@@ -855,19 +855,89 @@ async function consultasLembretes() {
   return import("@/db/consultas/lembretes");
 }
 
+type LinhaLembrete = Awaited<ReturnType<Awaited<ReturnType<typeof consultasLembretes>>["listarTodos"]>>[number];
+const paraLembrete = (l: LinhaLembrete): Lembrete => ({
+  id: l.id,
+  projetoId: l.projetoId,
+  tipo: l.tipo,
+  assunto: l.assunto,
+  prazo: l.prazo,
+  responsavelId: l.responsavelId,
+  texto: l.texto,
+  feito: l.feito,
+  feitoEm: l.feitoEm?.toISOString() ?? null,
+  feitoPor: l.feitoPor,
+  criadoEm: l.criadoEm.toISOString(),
+});
+const novoLembreteDemo = (p: Partial<Lembrete> & Pick<Lembrete, "texto">): Lembrete => ({
+  id: `lb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  projetoId: null,
+  tipo: "lembrete",
+  assunto: null,
+  prazo: null,
+  responsavelId: null,
+  feito: false,
+  feitoEm: null,
+  feitoPor: null,
+  criadoEm: new Date().toISOString(),
+  ...p,
+});
+
 /** Lembretes dos projetos indicados, do mais antigo para o mais novo. */
 export async function listarLembretes(projetoIds: string[]): Promise<Lembrete[]> {
-  if (modoDemo) return (memoria().lembretes ?? []).filter((l) => projetoIds.includes(l.projetoId));
-  const linhas = await (await consultasLembretes()).listarLembretes(projetoIds);
-  return linhas.map((l) => ({
-    id: l.id,
-    projetoId: l.projetoId,
-    texto: l.texto,
-    feito: l.feito,
-    feitoEm: l.feitoEm?.toISOString() ?? null,
-    feitoPor: l.feitoPor,
-    criadoEm: l.criadoEm.toISOString(),
-  }));
+  if (modoDemo) return (memoria().lembretes ?? []).filter((l) => !!l.projetoId && projetoIds.includes(l.projetoId));
+  return (await (await consultasLembretes()).listarLembretes(projetoIds)).map(paraLembrete);
+}
+
+/** Todos os lembretes e tarefas (aba Lembretes), do mais antigo para o mais novo. */
+export async function listarTodosLembretes(): Promise<Lembrete[]> {
+  if (modoDemo) return [...(memoria().lembretes ?? [])];
+  return (await (await consultasLembretes()).listarTodos()).map(paraLembrete);
+}
+
+/** Quantos itens existem no mesmo grupo (projeto, assunto ou sem vínculo). */
+export async function contarNoGrupo(g: { projetoId: string | null; assunto: string | null }): Promise<number> {
+  const todos = await listarTodosLembretes();
+  return todos.filter((l) => (g.projetoId ? l.projetoId === g.projetoId : !l.projetoId && (l.assunto ?? "").toLowerCase() === (g.assunto ?? "").toLowerCase())).length;
+}
+
+const nomeDoGrupo = (l: Pick<Lembrete, "projetoId" | "assunto">, projetoNome?: string | null) => projetoNome ?? l.assunto ?? "Lembretes";
+
+export async function criarItem(dados: DadosItem, socio: { id: string; nome: string }, projetoNome: string | null): Promise<string> {
+  if (modoDemo) {
+    const l = novoLembreteDemo(dados);
+    (memoria().lembretes ??= []).push(l);
+    registrar(socio.nome, "criou", dados.tipo, `${nomeDoGrupo(dados, projetoNome)} — ${dados.texto}`);
+    return l.id;
+  }
+  return (await consultasLembretes()).criarItem(dados, socio.id, nomeDoGrupo(dados, projetoNome));
+}
+
+/** Marca, edita ou exclui um item pelo id (aba Lembretes). Devolve false se não existir. */
+export async function alterarItem(
+  id: string,
+  mudanca: { tipo: "marcar"; feito: boolean } | { tipo: "editar"; texto: string } | { tipo: "excluir" },
+  socio: { id: string; nome: string },
+): Promise<boolean> {
+  if (modoDemo) {
+    const m = memoria();
+    const l = (m.lembretes ?? []).find((x) => x.id === id);
+    if (!l) return false;
+    const projeto = l.projetoId ? m.projetos?.find((p) => p.id === l.projetoId)?.nome : null;
+    const grupo = nomeDoGrupo(l, projeto);
+    if (mudanca.tipo === "marcar") {
+      Object.assign(l, { feito: mudanca.feito, feitoEm: mudanca.feito ? new Date().toISOString() : null, feitoPor: mudanca.feito ? socio.id : null });
+      registrar(socio.nome, mudanca.feito ? "executou" : "editou", l.tipo, `${grupo} — ${l.texto}${mudanca.feito ? " (feito)" : " (reaberto)"}`);
+    } else if (mudanca.tipo === "editar") {
+      registrar(socio.nome, "editou", l.tipo, `${grupo} — ${l.texto} → ${mudanca.texto}`);
+      l.texto = mudanca.texto;
+    } else {
+      m.lembretes = (m.lembretes ?? []).filter((x) => x !== l);
+      registrar(socio.nome, "excluiu", l.tipo, `${grupo} — ${l.texto}`);
+    }
+    return true;
+  }
+  return (await consultasLembretes()).alterarItem(id, mudanca, socio.id);
 }
 
 export async function contarLembretes(projetoId: string): Promise<number> {
@@ -879,7 +949,7 @@ export async function criarLembrete(projeto: { id: string; nome: string }, texto
   if (modoDemo) {
     const m = memoria();
     const id = `lb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    (m.lembretes ??= []).push({ id, projetoId: projeto.id, texto, feito: false, feitoEm: null, feitoPor: null, criadoEm: new Date().toISOString() });
+    (m.lembretes ??= []).push(novoLembreteDemo({ id, projetoId: projeto.id, texto }));
     registrar(socio.nome, "criou", "lembrete", `${projeto.nome} — ${texto}`);
     return id;
   }

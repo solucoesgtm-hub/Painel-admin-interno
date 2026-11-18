@@ -10,12 +10,11 @@
 // - linhas de 44 px (alvo de toque mínimo do painel), largura fluida e textos em pt-BR;
 // - cores dos tokens do painel (globals.css, .chk).
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useConfirmar } from "@/components/ui/confirmar";
 import { useAviso } from "@/components/ui/toast";
 import { MAX_LEMBRETES, MAX_TEXTO_LEMBRETE, type Lembrete } from "@/lib/regras/lembretes";
 import { Check, Pencil, Trash2 } from "lucide-react";
-import { acaoCriarLembrete, acaoEditarLembrete, acaoExcluirLembrete, acaoMarcarLembrete } from "@/app/(painel)/projetos/acoes";
 
 /* ── uma mola, para tudo que assenta (em quadros, não em ms) ── */
 const springOf = (tune: number) => ({ k: 0.08 + (tune / 100) * 0.16, d: 0.62 + (tune / 100) * 0.2 });
@@ -96,18 +95,39 @@ const gapFor = (leans: number[], runs: number[], mid: number) =>
 
 type Item = Pick<Lembrete, "id" | "texto" | "feito">;
 
+type Resposta = { ok: true; id?: string } | { ok: false; mensagem: string };
+
+/** O que o checklist faz no servidor. Cada tela liga as suas ações (projeto, aba Lembretes…). */
+export type AcoesChecklist = {
+  criar: (texto: string) => Promise<Resposta>;
+  marcar: (id: string, feito: boolean) => Promise<Resposta>;
+  editar: (id: string, texto: string) => Promise<Resposta>;
+  excluir: (id: string) => Promise<Resposta>;
+};
+
 export function Checklist({
-  projetoId,
-  projetoNome,
+  nome,
   iniciais,
+  acoes,
   aoMudar,
+  max = MAX_LEMBRETES,
+  detalhes,
+  placeholder = "Novo lembrete",
+  rotuloNovo = "Adicionar lembrete",
 }: {
-  projetoId: string;
-  projetoNome: string;
+  /** Nome do grupo (projeto, assunto…), usado nos rótulos e na confirmação de exclusão. */
+  nome: string;
   iniciais: Item[];
-  /** Avisa o cartão do projeto para atualizar o progresso. */
+  acoes: AcoesChecklist;
+  /** Avisa quem está fora (ex.: o medidor do cartão) a cada mudança. */
   aoMudar?: (itens: Item[]) => void;
+  max?: number;
+  /** Informação extra à direita de cada linha (prazo, responsável…), por id. */
+  detalhes?: Record<string, ReactNode>;
+  placeholder?: string;
+  rotuloNovo?: string;
 }) {
+  const projetoNome = nome;
   const avisar = useAviso();
   const [items, setItemsBruto] = useState<Item[]>(iniciais);
   const setItems = useCallback(
@@ -148,7 +168,7 @@ export function Checklist({
 
   const side = BOX;
   const fell = items.length > 0 && items.every((t) => t.feito);
-  const spare = items.length < MAX_LEMBRETES;
+  const spare = items.length < max;
 
   const slack = (ROW - side) / 2;
   const padV = Math.max(0, PAD - slack);
@@ -175,7 +195,7 @@ export function Checklist({
     if (!alvo || alvo.id.startsWith("tmp-")) return;
     const feito = !alvo.feito;
     setItems((v) => v.map((t, k) => (k === i ? { ...t, feito } : t)));
-    acaoMarcarLembrete({ id: alvo.id, projetoId, feito }).then((r) => {
+    acoes.marcar(alvo.id, feito).then((r) => {
       if (r.ok) return;
       setItems((v) => v.map((t) => (t.id === alvo.id ? { ...t, feito: !feito } : t)));
       avisar({ tom: "risco", texto: r.mensagem });
@@ -188,7 +208,7 @@ export function Checklist({
     const antes = items.find((t) => t.id === id);
     if (!antes || texto.length < 2 || texto === antes.texto) return;
     setItems((v) => v.map((t) => (t.id === id ? { ...t, texto } : t)));
-    acaoEditarLembrete({ id, projetoId, texto }).then((r) => {
+    acoes.editar(id, texto).then((r) => {
       if (r.ok) return;
       setItems((v) => v.map((t) => (t.id === id ? { ...t, texto: antes.texto } : t)));
       avisar({ tom: "risco", texto: r.mensagem });
@@ -210,7 +230,7 @@ export function Checklist({
       rotulo: "Excluir lembrete",
       pendente: "Excluindo…",
       acao: async () => {
-        const r = await acaoExcluirLembrete({ id, projetoId });
+        const r = await acoes.excluir(id);
         if (!r.ok) throw new Error(r.mensagem);
       },
     });
@@ -223,10 +243,10 @@ export function Checklist({
     const texto = draft.trim().slice(0, MAX_TEXTO_LEMBRETE);
     setAdding(false);
     setDraft("");
-    if (texto.length < 2 || items.length >= MAX_LEMBRETES) return;
+    if (texto.length < 2 || items.length >= max) return;
     const tmp = `tmp-${Date.now()}`;
     setItems((v) => [...v, { id: tmp, texto, feito: false }]);
-    acaoCriarLembrete({ projetoId, texto }).then((r) => {
+    acoes.criar(texto).then((r) => {
       if (r.ok && r.id) return setItems((v) => v.map((t) => (t.id === tmp ? { ...t, id: r.id! } : t)));
       setItems((v) => v.filter((t) => t.id !== tmp));
       avisar({ tom: "risco", texto: r.ok ? "Não foi possível salvar o lembrete." : r.mensagem });
@@ -266,6 +286,7 @@ export function Checklist({
             onSalvar={(t) => salvarEdicao(task.id, t)}
             onCancelar={() => setEditando(null)}
             onExcluir={() => excluir(task.id)}
+            detalhe={detalhes?.[task.id]}
           />
         ))}
       </AnimatePresence>
@@ -278,8 +299,8 @@ export function Checklist({
               className="chk-field"
               autoFocus
               value={draft}
-              placeholder="Novo lembrete"
-              aria-label={`Novo lembrete em ${projetoNome}`}
+              placeholder={placeholder}
+              aria-label={`${placeholder} em ${projetoNome}`}
               maxLength={MAX_TEXTO_LEMBRETE}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
@@ -297,7 +318,7 @@ export function Checklist({
             />
           ) : (
             <button type="button" className="chk-new" onClick={() => setAdding(true)} tabIndex={fell ? -1 : 0}>
-              Adicionar lembrete
+              {rotuloNovo}
             </button>
           )}
         </div>
@@ -328,7 +349,9 @@ function Row({
   onSalvar,
   onCancelar,
   onExcluir,
+  detalhe,
 }: {
+  detalhe?: ReactNode;
   editando: boolean;
   podeEditar: boolean;
   onEditar: () => void;
@@ -405,6 +428,11 @@ function Row({
               {label}
             </span>
             <span className="chk-rule" aria-hidden="true" style={{ transform: `scaleX(${cut.toFixed(4)})` }} />
+          </span>
+        )}
+        {!editando && detalhe && (
+          <span className="chk-meta" style={{ opacity: mix(1, 0.55, held) }}>
+            {detalhe}
           </span>
         )}
       </button>

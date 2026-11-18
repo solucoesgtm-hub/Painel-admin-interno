@@ -2,6 +2,7 @@
 // Navegação: abas em cápsula no topo (computador), dock de atalhos à esquerda (computador)
 // e dock inferior + menu completo em folha (celular).
 import {
+  ListChecks,
   Camera,
   BarChart3,
   Bot,
@@ -49,6 +50,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/agenda", nome: "Agenda", icone: CalendarDays },
       { href: "/chat", nome: "Chat dos sócios", curto: "Chat", icone: MessagesSquare },
       { href: "/email", nome: "E-mail", icone: Mail },
+      { href: "/lembretes", nome: "Lembretes", icone: ListChecks },
     ],
   },
   {

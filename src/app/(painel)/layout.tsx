@@ -4,7 +4,8 @@ import { ProvedorAvisos } from "@/components/ui/toast";
 import { APROVACOES } from "@/lib/demo/dados";
 import { data, diaSemana, hojeISO } from "@/lib/formato";
 import { estaParado, nomeEtapa } from "@/lib/regras/funil";
-import { contarMensagensNaoLidas, listarLeads, modoDemo } from "@/lib/repositorio";
+import { contarMensagensNaoLidas, listarLeads, listarTodosLembretes, modoDemo } from "@/lib/repositorio";
+import { resumoLembretes } from "@/lib/regras/lembretes";
 import { exigirSocio } from "@/lib/sessao";
 import { fotoDoSocio } from "@/lib/regras/avatar";
 import { chavePublicaPush } from "@/lib/push";
@@ -12,11 +13,13 @@ import { signOut } from "@/auth";
 
 export default async function PainelLayout({ children }: { children: React.ReactNode }) {
   const socio = await exigirSocio();
-  const [leads, naoLidas] = await Promise.all([listarLeads(), contarMensagensNaoLidas(socio)]);
+  const [leads, naoLidas, lembretes] = await Promise.all([listarLeads(), contarMensagensNaoLidas(socio), listarTodosLembretes().catch(() => [])]);
   const contadores = {
     "/leads": leads.filter((l) => estaParado(l.etapa, l.etapaDesde)).length,
     "/automacao": APROVACOES.length,
     "/chat": naoLidas,
+    // Lembretes e tarefas atrasados (abertos com prazo vencido).
+    "/lembretes": resumoLembretes(lembretes, hojeISO()).atrasados,
   };
   const hoje = hojeISO();
 

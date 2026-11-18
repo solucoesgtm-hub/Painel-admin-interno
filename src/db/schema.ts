@@ -273,14 +273,21 @@ export const projetos = pgTable(
   (t) => [index("projetos_prazo_idx").on(t.prazo), index("projetos_lead_idx").on(t.leadId)],
 );
 
-/** Lembretes de um projeto: checklist que cada sócio vai marcando como feito. Somem com o projeto. */
+export const tipoLembrete = pgEnum("tipo_lembrete", ["lembrete", "tarefa"]);
+
+/**
+ * Lembretes e tarefas (checklist). Podem estar ligados a um projeto (somem com ele),
+ * a um assunto livre (ex.: "Financeiro", "Marketing") ou a nada.
+ */
 export const lembretes = pgTable(
   "lembretes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projetoId: uuid("projeto_id")
-      .notNull()
-      .references(() => projetos.id, { onDelete: "cascade" }),
+    projetoId: uuid("projeto_id").references(() => projetos.id, { onDelete: "cascade" }),
+    tipo: tipoLembrete("tipo").notNull().default("lembrete"),
+    assunto: text("assunto"),
+    prazo: date("prazo"),
+    responsavelId: uuid("responsavel_id").references(() => socios.id, { onDelete: "set null" }),
     texto: text("texto").notNull(),
     feito: boolean("feito").notNull().default(false),
     feitoEm: timestamp("feito_em", { withTimezone: true }),
@@ -288,7 +295,7 @@ export const lembretes = pgTable(
     criadoPor: uuid("criado_por").references(() => socios.id, { onDelete: "set null" }),
     criadoEm,
   },
-  (t) => [index("lembretes_projeto_idx").on(t.projetoId, t.criadoEm)],
+  (t) => [index("lembretes_projeto_idx").on(t.projetoId, t.criadoEm), index("lembretes_prazo_idx").on(t.feito, t.prazo)],
 );
 
 export const leadsRelacoes = relations(leads, ({ one, many }) => ({

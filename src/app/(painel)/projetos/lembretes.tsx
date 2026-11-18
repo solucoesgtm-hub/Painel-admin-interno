@@ -1,8 +1,9 @@
 "use client";
 // Progresso + checklist de lembretes de um projeto. O medidor acompanha cada marcação na hora.
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CheckCircle2, ListChecks } from "lucide-react";
-import { Checklist } from "@/components/checklist";
+import { Checklist, type AcoesChecklist } from "@/components/checklist";
+import { acaoCriarLembrete, acaoEditarLembrete, acaoExcluirLembrete, acaoMarcarLembrete } from "./acoes";
 import { Medidor } from "@/components/ui/base";
 import { progressoLembretes, type Lembrete } from "@/lib/regras/lembretes";
 
@@ -12,6 +13,15 @@ export function LembretesProjeto({ projetoId, projetoNome, iniciais }: { projeto
   const [itens, setItens] = useState(iniciais);
   const aoMudar = useCallback((n: Item[]) => setItens(n), []);
   const p = progressoLembretes(itens);
+  const acoes = useMemo<AcoesChecklist>(
+    () => ({
+      criar: (texto) => acaoCriarLembrete({ projetoId, texto }),
+      marcar: (id, feito) => acaoMarcarLembrete({ id, projetoId, feito }),
+      editar: (id, texto) => acaoEditarLembrete({ id, projetoId, texto }),
+      excluir: (id) => acaoExcluirLembrete({ id, projetoId }),
+    }),
+    [projetoId],
+  );
   return (
     <div className="mb-5 mt-5 space-y-3">
       <div className="space-y-2">
@@ -26,7 +36,7 @@ export function LembretesProjeto({ projetoId, projetoNome, iniciais }: { projeto
         </div>
         <Medidor valor={p.fracao} rotulo={`Lembretes feitos em ${projetoNome}`} tom={p.concluido ? "ok" : "azul"} />
       </div>
-      <Checklist projetoId={projetoId} projetoNome={projetoNome} iniciais={iniciais} aoMudar={aoMudar} />
+      <Checklist nome={projetoNome} iniciais={iniciais} acoes={acoes} aoMudar={aoMudar} />
     </div>
   );
 }
