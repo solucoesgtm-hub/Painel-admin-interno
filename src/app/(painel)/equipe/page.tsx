@@ -4,6 +4,8 @@ import { Avatar, CabecalhoPagina, Cartao, Etiqueta } from "@/components/ui/base"
 import { listarLeads, listarProjetos, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 import { PontoPresenca, ProvedorPresenca, TextoPresenca } from "@/components/presenca";
+import { fotoDoSocio } from "@/lib/regras/avatar";
+import { TrocarFoto } from "./foto";
 
 export const metadata: Metadata = { title: "Equipe" };
 
@@ -24,13 +26,14 @@ export default async function Equipe() {
                 <div className="h-16" style={{ background: `linear-gradient(120deg, ${s.cor}, rgb(8 10 16 / 0))` }} />
                 <div className="-mt-7 px-5 pb-5">
                   <span className="relative inline-block">
-                    <Avatar nome={s.nome} cor={s.cor} tamanho="lg" />
+                    <Avatar foto={fotoDoSocio(s)} nome={s.nome} cor={s.cor} tamanho="xl" />
                     <PontoPresenca socioId={s.id} className="size-3.5" />
                   </span>
                   <div className="mt-3 flex items-center gap-2">
                     <h2 className="text-lg font-semibold">{s.nome}</h2>
                     {s.id === eu.id && <Etiqueta tom="info">Você</Etiqueta>}
                   </div>
+                  {s.id === eu.id && <TrocarFoto temFoto={!!s.fotoEm} />}
                   <p className="text-sm font-medium text-azul-escuro">{s.area}</p>
                   <p className="mt-1 text-xs"><TextoPresenca socioId={s.id} /></p>
                   <p className="mt-1 text-sm text-tinta-3">{s.foco}</p>

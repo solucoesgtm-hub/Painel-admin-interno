@@ -7,6 +7,7 @@ import { CalendarDays, CalendarPlus, ChevronDown, ChevronLeft, ChevronRight, Clo
 import { Avatar, cn } from "@/components/ui/base";
 import type { Evento, Socio } from "@/lib/demo/dados";
 import { hojeISO, paraData, somarDias } from "@/lib/formato";
+import { fotoDoSocio } from "@/lib/regras/avatar";
 
 export type InfoTipo = Record<Evento["tipo"], { nome: string; plural: string; icone: LucideIcon }>;
 
@@ -115,7 +116,7 @@ export function DetalhesEvento({
         </dd>
         <dt className="text-tinta-3">Responsável</dt>
         <dd className="inline-flex items-center gap-2">
-          <Avatar nome={dono?.nome ?? "Agenda da GTM"} cor={cor} tamanho="sm" />
+          <Avatar foto={fotoDoSocio(dono)} nome={dono?.nome ?? "Agenda da GTM"} cor={cor} tamanho="sm" />
           {dono?.nome ?? "Agenda da GTM"}
         </dd>
       </dl>

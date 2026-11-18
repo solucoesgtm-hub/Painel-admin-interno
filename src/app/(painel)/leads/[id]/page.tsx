@@ -23,6 +23,7 @@ import { buscarLead, listarContratos, listarDiagnosticos, listarLembretes, lista
 import { progressoLembretes } from "@/lib/regras/lembretes";
 import { exigirSocio } from "@/lib/sessao";
 import { EditarLead } from "./editar";
+import { fotoDoSocio } from "@/lib/regras/avatar";
 
 // Título da aba com o nome do cliente (a página continua conferindo o login antes de mostrar os dados).
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -75,7 +76,7 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
           <p className="text-sm font-medium">{l.proximoPasso}</p>
           <div className="flex items-center justify-between text-xs text-tinta-3">
             <span>{data(l.proximoPassoData)} · {relativo(l.proximoPassoData)}</span>
-            {dono && <span className="inline-flex items-center gap-1.5" title="Cadastrante"><span className="sr-only">Cadastrante: </span><Avatar nome={dono.nome} cor={dono.cor} tamanho="sm" />{dono.nome}</span>}
+            {dono && <span className="inline-flex items-center gap-1.5" title="Cadastrante"><span className="sr-only">Cadastrante: </span><Avatar foto={fotoDoSocio(dono)} nome={dono.nome} cor={dono.cor} tamanho="sm" />{dono.nome}</span>}
           </div>
           <EditarLead lead={l} socios={socios} />
         </div>

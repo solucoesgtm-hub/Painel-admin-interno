@@ -41,6 +41,8 @@ import { emailContaServico } from "@/lib/google-agenda";
 import { exigirSocio } from "@/lib/sessao";
 import { BotaoNovoContrato, EtiquetaContrato } from "../contratos/gestao";
 import { Copiar, EditarEmpresa } from "./formularios";
+import { fotoDoSocio } from "@/lib/regras/avatar";
+import { BotaoTexto } from "@/components/ui/botao-link";
 
 export const metadata: Metadata = { title: "Nossa empresa" };
 
@@ -176,12 +178,12 @@ export default async function NossaEmpresa() {
           <ul className="divide-y divide-areia">
             {socios.map((s) => (
               <li key={s.id} className="flex items-center gap-3 px-5 py-3.5 sm:px-6">
-                <Avatar nome={s.nome} cor={s.cor} />
+                <Avatar foto={fotoDoSocio(s)} nome={s.nome} cor={s.cor} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-tinta">{s.nome}</p>
                   <p className="truncate text-xs text-tinta-3">{s.area}</p>
                 </div>
-                <a href={`mailto:${s.email}`} className="truncate text-xs text-azul-escuro hover:underline max-sm:sr-only">{s.email}</a>
+                <BotaoTexto href={`mailto:${s.email}`} tamanho="mini" className="max-w-full truncate font-medium max-sm:sr-only">{s.email}</BotaoTexto>
               </li>
             ))}
           </ul>

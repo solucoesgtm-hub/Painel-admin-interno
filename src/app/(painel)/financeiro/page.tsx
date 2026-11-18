@@ -33,6 +33,7 @@ import {
 import { limiteMei, situacaoMei } from "@/lib/regras/mei";
 import { listarContratos, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
+import { fotoDoSocio } from "@/lib/regras/avatar";
 
 export const metadata: Metadata = { title: "Financeiro" };
 
@@ -144,7 +145,7 @@ export default async function Financeiro() {
           <ul className="divide-y divide-areia">
             {socios.map((s, i) => (
               <li key={s.id} className="flex items-center gap-3 px-5 py-3.5">
-                <Avatar nome={s.nome} cor={s.cor} />
+                <Avatar foto={fotoDoSocio(s)} nome={s.nome} cor={s.cor} />
                 <span className="flex-1 text-sm font-medium">{s.nome}</span>
                 <span className="numeros font-semibold">{brl(partes[i] ?? 0)}</span>
               </li>

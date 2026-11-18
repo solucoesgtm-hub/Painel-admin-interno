@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { FolderPlus, Pencil, Trash2 } from "lucide-react";
 import { AreaTexto, Botao, Campo, Entrada, Selecao } from "@/components/ui/base";
 import { Modal } from "@/components/ui/modal";
+import { useConfirmar } from "@/components/ui/confirmar";
 import { useAviso } from "@/components/ui/toast";
 import { hojeISO, somarDias } from "@/lib/formato";
 import { NOME_SITUACAO_PROJETO, SITUACOES_PROJETO, type ProjetoSalvo } from "@/lib/regras/projetos";
@@ -71,18 +72,27 @@ function ModalProjeto({ projeto, socios, leads, socioAtualId, aoFechar }: Opcoes
     });
   };
 
-  const excluir = () => {
-    if (!projeto || !window.confirm(`Excluir o projeto “${projeto.nome}”? Os lembretes dele também saem. Não dá para desfazer.`)) return;
-    iniciar(async () => {
-      const r = await acaoExcluirProjeto(projeto.id);
-      if (!r.ok) {
-        setMensagem(r.mensagem);
-        return;
-      }
-      avisar({ tom: "ok", texto: "Projeto excluído" });
-      aoFechar();
-      router.refresh();
+  const confirmar = useConfirmar();
+  const excluir = async () => {
+    if (!projeto) return;
+    const ok = await confirmar({
+      titulo: "Excluir projeto?",
+      descricao: (
+        <>
+          <strong className="font-medium text-tinta">{projeto.nome}</strong> e todos os lembretes dele serão excluídos para todos os sócios. Não dá para desfazer.
+        </>
+      ),
+      rotulo: "Excluir projeto",
+      pendente: "Excluindo…",
+      acao: async () => {
+        const r = await acaoExcluirProjeto(projeto.id);
+        if (!r.ok) throw new Error(r.mensagem);
+      },
     });
+    if (!ok) return;
+    avisar({ tom: "ok", texto: "Projeto excluído" });
+    aoFechar();
+    router.refresh();
   };
 
   return (

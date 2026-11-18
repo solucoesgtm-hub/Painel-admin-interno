@@ -2,6 +2,7 @@
 // Navegação: abas em cápsula no topo (computador), dock de atalhos à esquerda (computador)
 // e dock inferior + menu completo em folha (celular).
 import {
+  Camera,
   BarChart3,
   Bot,
   Building2,
@@ -31,7 +32,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { cn, corDoTexto } from "@/components/ui/base";
+import { Avatar, cn, corDoTexto } from "@/components/ui/base";
+import { BotaoTexto } from "@/components/ui/botao-link";
 import { Logo } from "./logo";
 import { LinhaNotificacoes } from "@/components/notificacoes";
 import { BotaoTema, Dica, LinhaTema } from "./tema";
@@ -121,7 +123,7 @@ function Contador({ n }: { n?: number }) {
   );
 }
 
-export type Usuario = { nome: string; email: string; cor: string; demo: boolean };
+export type Usuario = { nome: string; email: string; cor: string; demo: boolean; foto?: string | null };
 
 /* ---------------- Abas em cápsula (≥ 1280 px) ---------------- */
 export function AbasTopo({ contadores }: { contadores: Record<string, number> }) {
@@ -342,14 +344,19 @@ export function MenuConta({
         aria-haspopup="menu"
         aria-label={`Conta de ${usuario.nome}`}
         onClick={() => p.setAberto((v) => !v)}
-        className="grid size-11 place-items-center rounded-full text-sm font-semibold ring-2 ring-papel transition-transform hover:scale-105"
-        style={{ background: usuario.cor, color: corDoTexto(usuario.cor) }}
+        className="grid size-11 place-items-center rounded-full transition-transform hover:scale-105"
       >
-        {usuario.nome.slice(0, 1)}
+        <Avatar nome={usuario.nome} cor={usuario.cor} foto={usuario.foto} tamanho="xl" className="size-11 text-sm ring-papel" />
       </button>
       {p.aberto && (
         <div role="menu" className="vidro-forte animate-entrar-modal absolute right-0 top-[calc(100%+10px)] z-40 w-72 rounded-2xl p-2">
           <div className="px-3 pb-3 pt-2">
+            <div className="mb-2 flex items-center gap-3">
+              <Avatar nome={usuario.nome} cor={usuario.cor} foto={usuario.foto} tamanho="lg" anel={false} />
+              <BotaoTexto href="/equipe#minha-foto" tamanho="mini" iconeInicio={Camera}>
+                {usuario.foto ? "Trocar foto" : "Adicionar foto"}
+              </BotaoTexto>
+            </div>
             <p className="truncate text-sm font-semibold text-tinta">{usuario.nome}</p>
             <p className="truncate text-xs text-tinta-3">{usuario.demo ? "Modo demonstração" : usuario.email}</p>
             <p className="mt-2 text-xs text-tinta-3 first-letter:uppercase">{data}</p>

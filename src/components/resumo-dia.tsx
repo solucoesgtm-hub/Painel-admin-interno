@@ -3,9 +3,10 @@
 // e cabeçalho que troca os textos com desfoque. Adaptado do "Calendar Day Card" (transitions.dev),
 // mantendo durações, curvas e o modo sem movimento; as cores vêm dos tokens do painel (globals.css, .rd).
 import Link from "next/link";
-import { ArrowUpRight, CalendarCheck2, FileSearch, Handshake, MapPin, Users, type LucideIcon } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CalendarCheck2, FileSearch, Handshake, MapPin, Users, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as EventoPonteiro } from "react";
 import { Avatar, cn } from "@/components/ui/base";
+import { BotaoTexto } from "@/components/ui/botao-link";
 
 export type DiaResumo = {
   iso: string;
@@ -26,7 +27,7 @@ export type CompromissoResumo = {
   inicio: string;
   fim: string;
   tipo: "visita" | "proximo_passo" | "edital" | "reuniao";
-  pessoas: { nome: string; cor: string }[];
+  pessoas: { nome: string; cor: string; foto?: string | null }[];
   cor: string;
 };
 
@@ -227,9 +228,9 @@ export function ResumoDia({ dias, hoje, compromissos }: { dias: DiaResumo[]; hoj
                   })}
                   {lista.length > MAX_POR_DIA && (
                     <li>
-                      <Link href="/agenda" className="flex min-h-11 items-center px-3 text-xs font-medium text-azul-escuro hover:underline">
+                      <BotaoTexto href="/agenda" tamanho="mini" iconeFim={ArrowRight} className="px-3">
                         e mais {lista.length - MAX_POR_DIA} na agenda
-                      </Link>
+                      </BotaoTexto>
                     </li>
                   )}
                 </ul>
@@ -296,7 +297,7 @@ function TextoSuave({ texto, className }: { texto: string; className?: string })
 }
 
 /* ---------- Avatares que sobem no hover, com queda suave para os vizinhos ---------- */
-function GrupoAvatares({ pessoas }: { pessoas: { nome: string; cor: string }[] }) {
+function GrupoAvatares({ pessoas }: { pessoas: { nome: string; cor: string; foto?: string | null }[] }) {
   const raiz = useRef<HTMLDivElement>(null);
 
   const deslocar = (ativo: number | null, fase: "entra" | "sai") => {
@@ -330,7 +331,7 @@ function GrupoAvatares({ pessoas }: { pessoas: { nome: string; cor: string }[] }
     >
       {pessoas.map((p, i) => (
         <span key={p.nome} className="rd-avatar" onMouseEnter={() => deslocar(i, "entra")}>
-          <Avatar nome={p.nome} cor={p.cor} tamanho="sm" />
+          <Avatar nome={p.nome} cor={p.cor} foto={p.foto} tamanho="sm" />
         </span>
       ))}
     </div>

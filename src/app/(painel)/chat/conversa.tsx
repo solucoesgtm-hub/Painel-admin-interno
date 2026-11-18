@@ -3,6 +3,7 @@
 import { ArrowDown, MessagesSquare, RotateCcw, SendHorizontal, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Avatar, Cartao, EstadoVazio, cn } from "@/components/ui/base";
+import { useConfirmar } from "@/components/ui/confirmar";
 import { useAviso } from "@/components/ui/toast";
 import { PontoPresenca, TextoPresenca } from "@/components/presenca";
 import { ConviteNotificacoes } from "@/components/notificacoes";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/regras/chat";
 import { marcarPausado, ultimoUsoEm, useUsoDoPainel } from "@/lib/uso";
 import { acaoApagarMensagem, acaoAtualizarChat, acaoEnviarMensagem } from "./acoes";
+import { fotoDoSocio } from "@/lib/regras/avatar";
 
 type SocioChat = { id: string; nome: string; cor: string };
 type Local = Mensagem & { estado?: "enviando" | "falhou" };
@@ -47,6 +49,7 @@ export function Conversa({
   chavePush: string | null;
 }) {
   const avisar = useAviso();
+  const confirmar = useConfirmar();
   const [mensagens, setMensagens] = useState<Local[]>(iniciais);
   const [texto, setTexto] = useState("");
   const [novasAbaixo, setNovasAbaixo] = useState(false);
@@ -175,10 +178,17 @@ export function Conversa({
   };
 
   const apagar = async (m: Local) => {
-    if (!window.confirm("Apagar esta mensagem para todos?")) return;
-    const r = await acaoApagarMensagem(m.id);
-    if (r.ok) setMensagens((lista) => lista.map((x) => (x.id === m.id ? { ...x, texto: "", apagada: true } : x)));
-    else avisar({ tom: "risco", texto: r.mensagem ?? "Não foi possível apagar." });
+    const ok = await confirmar({
+      titulo: "Apagar mensagem?",
+      descricao: "A mensagem some para todos os sócios e fica só a marca “mensagem apagada”. Não dá para desfazer.",
+      rotulo: "Apagar mensagem",
+      pendente: "Apagando…",
+      acao: async () => {
+        const r = await acaoApagarMensagem(m.id);
+        if (!r.ok) throw new Error(r.mensagem ?? "Não foi possível apagar.");
+      },
+    });
+    if (ok) setMensagens((lista) => lista.map((x) => (x.id === m.id ? { ...x, texto: "", apagada: true } : x)));
   };
 
   const sobra = TAMANHO_MAX_MENSAGEM - texto.length;
@@ -203,7 +213,7 @@ export function Conversa({
         <div className="hidden -space-x-2 sm:flex" aria-hidden>
           {socios.map((s) => (
             <span key={s.id} className="relative">
-              <Avatar nome={s.nome} cor={s.cor} />
+              <Avatar foto={fotoDoSocio(s)} nome={s.nome} cor={s.cor} />
               <PontoPresenca socioId={s.id} className="size-2.5" />
             </span>
           ))}
@@ -239,7 +249,7 @@ export function Conversa({
                       </p>
                     )}
                     <div className={cn("animate-mensagem flex max-w-[88%] items-end gap-2 sm:max-w-[75%]", minha ? "flex-row-reverse self-end" : "self-start")}>
-                      {!minha && <span className={cn("shrink-0", junto && "invisible")}><Avatar nome={autor?.nome ?? "?"} cor={autor?.cor} /></span>}
+                      {!minha && <span className={cn("shrink-0", junto && "invisible")}><Avatar foto={fotoDoSocio(autor)} nome={autor?.nome ?? "?"} cor={autor?.cor} /></span>}
                       <div className={cn("min-w-0", minha && "text-right")}>
                         {!junto && !minha && <p className="mb-1 flex items-center gap-1.5 px-1 text-xs font-semibold text-tinta-2"><span aria-hidden className="size-1.5 rounded-full" style={{ background: autor?.cor }} />{autor?.nome ?? "Sócio removido"}</p>}
                         <div

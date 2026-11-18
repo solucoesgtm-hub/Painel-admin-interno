@@ -6,8 +6,10 @@ import { dataCurta, hojeISO, relativo } from "@/lib/formato";
 import { linkRepositorio, NOME_SITUACAO_PROJETO, ordenarProjetos, type SituacaoProjeto } from "@/lib/regras/projetos";
 import { listarLeads, listarLembretes, listarProjetos, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
+import { BotaoTexto } from "@/components/ui/botao-link";
 import { BotaoEditarProjeto, BotaoNovoProjeto } from "./gestao";
 import { LembretesProjeto } from "./lembretes";
+import { fotoDoSocio } from "@/lib/regras/avatar";
 
 export const metadata: Metadata = { title: "Projetos" };
 
@@ -54,17 +56,16 @@ export default async function Projetos() {
                   <div className="flex items-start justify-between gap-3">
                     <Etiqueta tom={TOM[p.situacao]}>{NOME_SITUACAO_PROJETO[p.situacao]}</Etiqueta>
                     <div className="-mr-2 -mt-2 flex items-center">
-                      {dono && <Avatar nome={dono.nome} cor={dono.cor} tamanho="sm" />}
+                      {dono && <Avatar foto={fotoDoSocio(dono)} nome={dono.nome} cor={dono.cor} tamanho="sm" />}
                       <BotaoEditarProjeto {...opcoes} projeto={p} />
                     </div>
                   </div>
                   <h2 className="mt-1 text-base font-semibold tracking-tight">{p.nome}</h2>
                   <p className="text-sm text-tinta-3">
                     {p.leadId ? (
-                      <Link href={`/leads/${p.leadId}`} className="inline-flex items-center gap-1 underline-offset-2 hover:text-azul-escuro hover:underline">
-                        <UserRound aria-hidden className="size-3.5" />
+                      <BotaoTexto href={`/leads/${p.leadId}`} variante="secundario" iconeInicio={UserRound} alvo={false} className="font-normal">
                         {p.cliente}
-                      </Link>
+                      </BotaoTexto>
                     ) : (
                       p.cliente
                     )}
@@ -81,10 +82,9 @@ export default async function Projetos() {
                       {dataCurta(p.prazo)} · {atrasado ? `atrasado ${relativo(p.prazo)}` : relativo(p.prazo)}
                     </span>
                     {repo ? (
-                      <a href={repo} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-8 items-center gap-1 text-tinta-3 hover:text-azul-escuro hover:underline">
-                        <GitBranch aria-hidden className="size-3.5" />
+                      <BotaoTexto href={repo} variante="secundario" tamanho="mini" iconeInicio={GitBranch} className="font-medium">
                         {p.repositorio.split("/").pop()}
-                      </a>
+                      </BotaoTexto>
                     ) : (
                       <span className="text-tinta-3">Sem repositório</span>
                     )}

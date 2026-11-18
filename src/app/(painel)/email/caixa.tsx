@@ -23,6 +23,7 @@ import { dataCurta, hojeISO, hora } from "@/lib/formato";
 import type { ResultadoTriagem } from "@/lib/ia/triagem-email";
 import { CATEGORIAS_EMAIL, NOME_CATEGORIA, ordenarTriagem, type CategoriaEmail, type ItemTriagem } from "@/lib/regras/email";
 import { acaoCriarRascunho, acaoTriarComIa } from "./acoes";
+import { BotaoTexto } from "@/components/ui/botao-link";
 
 const ICONE_CATEGORIA: Record<CategoriaEmail, LucideIcon> = {
   lead: UserPlus,
@@ -239,24 +240,14 @@ function Detalhe({ id, item, gmail }: { id: string; item: ItemTriagem & { email:
           {criado ? "Rascunho criado" : salvando ? "Criando…" : "Criar rascunho"}
         </Botao>
         {gmail && (
-          <a
-            href={`https://mail.google.com/mail/u/0/#all/${e.conversaId}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-azul-escuro hover:bg-superficie-2"
-          >
-            <ExternalLink aria-hidden className="size-4" />
+          <BotaoTexto href={`https://mail.google.com/mail/u/0/#all/${e.conversaId}`} iconeFim={ExternalLink} className="px-2">
             Abrir no Gmail
-          </a>
+          </BotaoTexto>
         )}
         {item.categoria === "lead" && (
-          <Link
-            href="/leads?novo=1"
-            className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-azul-escuro hover:bg-superficie-2"
-          >
-            <Building2 aria-hidden className="size-4" />
+          <BotaoTexto href="/leads?novo=1" iconeInicio={Building2} className="px-2">
             Cadastrar lead
-          </Link>
+          </BotaoTexto>
         )}
       </div>
     </div>

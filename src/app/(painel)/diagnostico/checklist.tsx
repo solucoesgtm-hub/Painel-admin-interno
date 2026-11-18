@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import {
+import { ArrowRight,
   Building2,
   Calculator,
   Check,
@@ -27,6 +27,7 @@ import { FATORES, PESOS_PADRAO, calcularPontuacao, complexidade, economia, vered
 import type { EstadoIA } from "@/lib/regras/ia";
 import { BotaoGerarPlano } from "@/components/ia/plano-ia";
 import { acaoSalvarDiagnostico } from "./acoes";
+import { BotaoTexto } from "@/components/ui/botao-link";
 
 type Estado = {
   leadId: string;
@@ -354,7 +355,7 @@ export function Checklist({ leads, leadInicial, estadoIa }: { leads: { id: strin
           {salvoEm && !erroSalvar && (
             <p role="status" className="text-sm text-ok">
               Diagnóstico salvo na ficha do cliente.{" "}
-              <Link href={`/leads/${salvoEm}`} className="font-medium underline underline-offset-2">Abrir ficha</Link>
+              <BotaoTexto href={`/leads/${salvoEm}`} iconeFim={ArrowRight} alvo={false}>Abrir ficha</BotaoTexto>
             </p>
           )}
           <p className="text-xs text-tinta-3">Grava pontuação, veredito e respostas na ficha do lead. Antes disso, tudo fica só neste aparelho.</p>

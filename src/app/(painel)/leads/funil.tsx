@@ -26,6 +26,7 @@ import type { Lead, Socio } from "@/lib/demo/dados";
 import { brl, dataCurta, hojeISO, relativo, somarDias } from "@/lib/formato";
 import { ETAPAS, MOTIVOS_PERDA, ORIGENS, SEGMENTOS, estaParado, nomeEtapa, type EtapaId } from "@/lib/regras/funil";
 import { acaoCriarLead, acaoMoverLead } from "./acoes";
+import { fotoDoSocio } from "@/lib/regras/avatar";
 
 const COR_ETAPA: Record<EtapaId, string> = {
   lead: "#8b90a6",
@@ -171,7 +172,7 @@ export function Funil({
                   <Tr key={l.id}>
                     <Td><Link className="font-medium hover:text-azul-escuro" href={`/leads/${l.id}`}>{l.nome}</Link><p className="text-xs text-tinta-3">{[l.segmento, l.cidade].filter(Boolean).join(" · ")}</p></Td>
                     <Td><span className="inline-flex items-center gap-1.5 text-[13px]"><span aria-hidden className="size-2 rounded-full" style={{ background: COR_ETAPA[l.etapa] }} />{nomeEtapa(l.etapa)}</span></Td>
-                    <Td>{s && <span className="inline-flex items-center gap-2"><Avatar nome={s.nome} cor={s.cor} tamanho="sm" />{s.nome}</span>}</Td>
+                    <Td>{s && <span className="inline-flex items-center gap-2"><Avatar foto={fotoDoSocio(s)} nome={s.nome} cor={s.cor} tamanho="sm" />{s.nome}</span>}</Td>
                     <Td><p className="text-[13px]">{l.proximoPasso}</p><p className={cn("text-xs", l.proximoPassoData < hojeISO() ? "text-risco" : "text-tinta-3")}>{dataCurta(l.proximoPassoData)} · {relativo(l.proximoPassoData)}</p></Td>
                     <Td><EtiquetaVeredito v={l.veredito} /></Td>
                     <Td className="numeros text-right">{l.mensalidade ? brl(l.mensalidade) : "—"}</Td>
@@ -236,7 +237,7 @@ function CardLead({
           </Link>
           <p className="mt-0.5 text-xs text-tinta-3">{[l.segmento, l.cidade].filter(Boolean).join(" · ")}</p>
         </div>
-        {socio && <Avatar nome={socio.nome} cor={socio.cor} tamanho="sm" />}
+        {socio && <Avatar foto={fotoDoSocio(socio)} nome={socio.nome} cor={socio.cor} tamanho="sm" />}
       </div>
 
       <div className="mt-2.5 rounded-[5px] bg-superficie-2 px-2.5 py-2">

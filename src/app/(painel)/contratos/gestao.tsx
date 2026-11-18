@@ -1,12 +1,13 @@
 "use client";
 // Lista de contratos com cadastro, edição e encerramento.
-import { BellRing, FilePlus2, FileSignature, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, BellRing, FilePlus2, FileSignature, Pencil } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Botao, BotaoIcone, CabecalhoCartao, Cartao, EstadoVazio, Etiqueta, Tabela, Td, Th, Tr } from "@/components/ui/base";
 import { brl, data } from "@/lib/formato";
 import { estadoContrato, type ContratoCliente, type EstadoContrato } from "@/lib/regras/empresa";
 import { ModalContrato, type OpcaoLead } from "../empresa/formularios";
+import { BotaoTexto } from "@/components/ui/botao-link";
 
 export function EtiquetaContrato({ estado }: { estado: EstadoContrato }) {
   switch (estado.tipo) {
@@ -92,9 +93,9 @@ export function GestaoContratos({ contratos, leads }: { contratos: ContratoClien
       )}
       {encerrados.length > 0 && (
         <div className="border-t border-areia px-5 py-3 sm:px-6">
-          <button type="button" onClick={() => setMostrarEncerrados((v) => !v)} className="min-h-11 text-sm font-medium text-azul-escuro hover:underline">
+          <BotaoTexto onClick={() => setMostrarEncerrados((v) => !v)} iconeFim={mostrarEncerrados ? ChevronUp : ChevronDown} aria-expanded={mostrarEncerrados}>
             {mostrarEncerrados ? "Esconder encerrados" : `Mostrar ${encerrados.length} encerrado${encerrados.length > 1 ? "s" : ""}`}
-          </button>
+          </BotaoTexto>
         </div>
       )}
       <ModalContrato key={alvo?.n ?? -1} aberto={!!alvo} aoFechar={fechar} contrato={alvo?.contrato ?? null} leads={leads} />

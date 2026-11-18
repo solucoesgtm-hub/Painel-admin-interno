@@ -11,6 +11,7 @@
 // - cores dos tokens do painel (globals.css, .chk).
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useConfirmar } from "@/components/ui/confirmar";
 import { useAviso } from "@/components/ui/toast";
 import { MAX_LEMBRETES, MAX_TEXTO_LEMBRETE, type Lembrete } from "@/lib/regras/lembretes";
 import { Check, Pencil, Trash2 } from "lucide-react";
@@ -194,17 +195,28 @@ export function Checklist({
     });
   };
 
-  const excluir = (id: string) => {
+  const confirmar = useConfirmar();
+  const excluir = async (id: string) => {
     const alvo = items.find((t) => t.id === id);
-    if (!alvo || !window.confirm(`Excluir o lembrete “${alvo.texto}”?`)) return;
+    if (!alvo) return;
     setEditando(null);
-    const posicao = items.indexOf(alvo);
-    setItems((v) => v.filter((t) => t.id !== id));
-    acaoExcluirLembrete({ id, projetoId }).then((r) => {
-      if (r.ok) return avisar({ tom: "ok", texto: "Lembrete excluído" });
-      setItems((v) => [...v.slice(0, posicao), alvo, ...v.slice(posicao)]);
-      avisar({ tom: "risco", texto: r.mensagem });
+    const ok = await confirmar({
+      titulo: "Excluir lembrete?",
+      descricao: (
+        <>
+          <strong className="font-medium text-tinta">{alvo.texto}</strong> sai de {projetoNome}. Não dá para desfazer.
+        </>
+      ),
+      rotulo: "Excluir lembrete",
+      pendente: "Excluindo…",
+      acao: async () => {
+        const r = await acaoExcluirLembrete({ id, projetoId });
+        if (!r.ok) throw new Error(r.mensagem);
+      },
     });
+    if (!ok) return;
+    setItems((v) => v.filter((t) => t.id !== id));
+    avisar({ tom: "ok", texto: "Lembrete excluído" });
   };
 
   const add = () => {

@@ -27,6 +27,8 @@ import { ETAPAS, estaParado, type EtapaId } from "@/lib/regras/funil";
 import { limiteMei, situacaoMei } from "@/lib/regras/mei";
 import { listarEventos, listarLeads, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
+import { fotoDoSocio } from "@/lib/regras/avatar";
+import { BotaoTexto } from "@/components/ui/botao-link";
 
 function saudacao() {
   const h = Number(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo", hour: "numeric", hour12: false }));
@@ -150,11 +152,14 @@ export default async function Inicio() {
     numero: String(Number(iso.slice(8))),
     dataLonga: fmt(iso, { day: "numeric", month: "long" }),
   }));
-  const pessoa = (id: string) =>
-    id === AGENDA_GTM ? { nome: "Agenda da GTM", cor: "#6b7280" } : (socios.find((s) => s.id === id) ?? { nome: "Sem responsável", cor: "#6b7280" });
+  const pessoa = (id: string) => {
+    const s = socios.find((x) => x.id === id);
+    if (s) return { nome: s.nome, cor: s.cor, foto: fotoDoSocio(s) };
+    return { nome: id === AGENDA_GTM ? "Agenda da GTM" : "Sem responsável", cor: "#6b7280", foto: null };
+  };
   const compromissos: CompromissoResumo[] = agenda.eventos.map((e) => {
     const p = pessoa(e.socioId);
-    return { id: e.id, titulo: e.titulo, data: e.data, inicio: e.inicio, fim: e.fim, tipo: e.tipo, cor: p.cor, pessoas: [{ nome: p.nome, cor: p.cor }] };
+    return { id: e.id, titulo: e.titulo, data: e.data, inicio: e.inicio, fim: e.fim, tipo: e.tipo, cor: p.cor, pessoas: [p] };
   });
 
   const tons: Record<Tom, { fundo: string; icone: string }> = {
@@ -295,7 +300,7 @@ export default async function Inicio() {
             <ul className="flex flex-wrap gap-3">
               {equipe.map((s) => (
                 <li key={s.id} className="inline-flex items-center gap-1.5 text-xs text-tinta-2" title={`${s.nome}: ${s.pendentes} passos na semana`}>
-                  <Avatar nome={s.nome} cor={s.cor} tamanho="sm" />
+                  <Avatar foto={fotoDoSocio(s)} nome={s.nome} cor={s.cor} tamanho="sm" />
                   <span className="numeros font-medium">{s.pendentes}</span>
                   <span className="sr-only">passos de {s.nome}</span>
                 </li>
@@ -307,7 +312,7 @@ export default async function Inicio() {
         {/* ---------- Resumo do dia ---------- */}
         <Cartao className="animate-surgir escala-4 p-5 sm:p-6 xl:self-start" aria-label="Resumo do dia">
           {agenda.erro ? (
-            <p className="text-sm text-tinta-3">Não foi possível ler a agenda agora. <Link href="/agenda" className="font-medium text-azul-escuro underline underline-offset-2">Abrir agenda</Link>.</p>
+            <p className="text-sm text-tinta-3">Não foi possível ler a agenda agora. <BotaoTexto href="/agenda" alvo={false}>Abrir agenda</BotaoTexto>.</p>
           ) : (
             <ResumoDia dias={diasResumo} hoje={hoje} compromissos={compromissos} />
           )}
@@ -323,7 +328,7 @@ export default async function Inicio() {
           <div className="p-5 sm:p-6">
             {totalFunil === 0 ? (
               <p className="py-6 text-center text-sm text-tinta-3">
-                Nenhum lead ativo. <Link href="/leads?novo=1" className="font-medium text-azul-escuro underline underline-offset-2">Cadastre o primeiro</Link>.
+                Nenhum lead ativo. <BotaoTexto href="/leads?novo=1" alvo={false}>Cadastre o primeiro</BotaoTexto>.
               </p>
             ) : (
               <>

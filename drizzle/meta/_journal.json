@@ -71,6 +71,13 @@
       "when": 1794970218123,
       "tag": "0009_projetos",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794971091256,
+      "tag": "0010_avatar_socios",
+      "breakpoints": true
     }
   ]
 }

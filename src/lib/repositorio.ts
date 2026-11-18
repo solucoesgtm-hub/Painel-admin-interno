@@ -48,6 +48,7 @@ type Memoria = {
   usoIa?: { finalidade: string; custoBRL: number; em: string }[];
   lembretes?: Lembrete[];
   projetos?: ProjetoSalvo[];
+  fotos?: Record<string, { foto: string; em: string }>;
 };
 const g = globalThis as unknown as { __gtmMemoria?: Memoria };
 function memoria(): Memoria {
@@ -104,10 +105,10 @@ const CORES_SOCIOS = ["#3f6fd8", "#eb6834", "#1baf7a", "#eda100"];
 
 /** Sócios: tabela `socios` do Neon (ordem de cadastro) ou a lista fictícia da demonstração. */
 export async function listarSocios(): Promise<Socio[]> {
-  if (modoDemo) return SOCIOS.map((s) => ({ ...s, vistoEm: memoria().vistos[s.id] ?? null }));
+  if (modoDemo) return SOCIOS.map((s) => ({ ...s, vistoEm: memoria().vistos[s.id] ?? null, fotoEm: memoria().fotos?.[s.id]?.em ?? null }));
   const [{ db }, { socios }, { asc }] = await Promise.all([import("@/db"), import("@/db/schema"), import("drizzle-orm")]);
   const linhas = await db
-    .select({ id: socios.id, nome: socios.nome, email: socios.email, area: socios.area, vistoEm: socios.vistoEm })
+    .select({ id: socios.id, nome: socios.nome, email: socios.email, area: socios.area, vistoEm: socios.vistoEm, fotoEm: socios.fotoEm })
     .from(socios)
     .orderBy(asc(socios.criadoEm), asc(socios.nome));
   return linhas.map((s, i) => ({
@@ -118,7 +119,34 @@ export async function listarSocios(): Promise<Socio[]> {
     foco: s.area ?? "",
     cor: CORES_SOCIOS[i % CORES_SOCIOS.length]!,
     vistoEm: s.vistoEm?.toISOString() ?? null,
+    fotoEm: s.fotoEm?.toISOString() ?? null,
   }));
+}
+
+/** Foto do avatar de um sócio (data URL) ou null. Só o servidor lê; a tela usa /api/avatar/[id]. */
+export async function lerFotoSocio(id: string): Promise<string | null> {
+  if (modoDemo) return memoria().fotos?.[id]?.foto ?? null;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const [{ db }, { socios }, { eq }] = await Promise.all([import("@/db"), import("@/db/schema"), import("drizzle-orm")]);
+  const [l] = await db.select({ foto: socios.foto }).from(socios).where(eq(socios.id, id));
+  return l?.foto ?? null;
+}
+
+/** Troca (ou remove, com null) a foto do próprio sócio. Fica no histórico. */
+export async function salvarFotoSocio(socio: { id: string; nome: string }, foto: string | null) {
+  if (modoDemo) {
+    const m = memoria();
+    m.fotos ??= {};
+    if (foto) m.fotos[socio.id] = { foto, em: new Date().toISOString() };
+    else delete m.fotos[socio.id];
+    registrar(socio.nome, "editou", "socio", foto ? "Foto do perfil atualizada" : "Foto do perfil removida");
+    return;
+  }
+  const [{ db }, { socios, historico }, { eq }] = await Promise.all([import("@/db"), import("@/db/schema"), import("drizzle-orm")]);
+  await db.batch([
+    db.update(socios).set({ foto, fotoEm: foto ? new Date() : null }).where(eq(socios.id, socio.id)),
+    db.insert(historico).values({ atorTipo: "socio", atorId: socio.id, acao: "editou", entidade: "socio", entidadeId: socio.id, detalhes: { nome: foto ? "Foto do perfil atualizada" : "Foto do perfil removida" } }),
+  ]);
 }
 
 /** Marca que o sócio usou o painel agora ("visto por último"). Quem chama limita a uma vez por minuto. */

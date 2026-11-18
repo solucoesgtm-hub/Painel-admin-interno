@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus, CalendarX2, ChevronLeft, ChevronRight, ExternalLink, FileSearch, Handshake, MapPin, Plus, Trash2, Users } from "lucide-react";
 import { AreaTexto, Botao, Campo, Cartao, Entrada, EstadoVazio, Selecao, cn } from "@/components/ui/base";
 import { Modal } from "@/components/ui/modal";
+import { useConfirmar } from "@/components/ui/confirmar";
 import { useAviso } from "@/components/ui/toast";
 import type { Evento, Socio } from "@/lib/demo/dados";
 import { hojeISO, paraData, somarDias } from "@/lib/formato";
@@ -35,17 +36,26 @@ export function Calendario({
   const router = useRouter();
   const avisar = useAviso();
   const [novo, setNovo] = useState<{ data: string; n: number } | null>(null);
-  const [, iniciar] = useTransition();
-  const excluir = (e: Evento) => {
-    const onde = google ? " Ele também sai do Google Agenda." : "";
-    if (!window.confirm(`Excluir “${e.titulo}”?${onde}`)) return;
-    iniciar(async () => {
-      const r = await acaoExcluirEvento({ id: e.id, titulo: e.titulo });
-      if (r.ok) {
-        avisar({ tom: "ok", texto: "Evento excluído" });
-        router.refresh();
-      } else avisar({ tom: "risco", texto: r.mensagem });
+  const confirmar = useConfirmar();
+  const excluir = async (e: Evento) => {
+    const ok = await confirmar({
+      titulo: "Excluir evento?",
+      descricao: (
+        <>
+          <strong className="font-medium text-tinta">{e.titulo}</strong> ({fmtDia(e.data, { day: "numeric", month: "long" })}
+          {e.inicio ? `, ${e.inicio}` : ""}) será excluído{google ? " também do Google Agenda da GTM" : ""}. Não dá para desfazer.
+        </>
+      ),
+      rotulo: "Excluir evento",
+      pendente: "Excluindo…",
+      acao: async () => {
+        const r = await acaoExcluirEvento({ id: e.id, titulo: e.titulo });
+        if (!r.ok) throw new Error(r.mensagem);
+      },
     });
+    if (!ok) return;
+    avisar({ tom: "ok", texto: "Evento excluído" });
+    router.refresh();
   };
   const [visao, setVisao] = useState<"semana" | "mes">("semana");
   const [ref, setRef] = useState(hoje);

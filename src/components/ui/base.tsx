@@ -264,16 +264,56 @@ export function corDoTexto(fundo: string) {
   return 1.05 / (l + 0.05) >= (l + 0.05) / 0.058 ? "#ffffff" : "#12151f";
 }
 
-export function Avatar({ nome, cor, tamanho = "md" }: { nome: string; cor?: string; tamanho?: "sm" | "md" | "lg" }) {
-  const t = { sm: "size-6 text-[10px]", md: "size-8 text-xs", lg: "size-12 text-base" }[tamanho];
-  const fundo = cor ?? "#2a3046";
+/* ---------------- Avatar ---------------- */
+// Foto (quando o sócio enviou uma) ou iniciais num disco colorido. Tamanhos da BoardUI:
+// xs 20 (marcas pequenas) · sm 24 (linhas de tabela) · md 32 (menus, cartões) · lg 36 (pessoas) · xl 48 (perfil).
+// Sem `cor`, usa o tom neutro ou azul. As iniciais ficam por baixo da foto: se a imagem falhar, elas aparecem.
+type TamanhoAvatar = "xs" | "sm" | "md" | "lg" | "xl";
+const tamanhoAvatar: Record<TamanhoAvatar, string> = {
+  xs: "size-5 text-[10px] leading-[15px]",
+  sm: "size-6 text-[11px] leading-4",
+  md: "size-8 text-[13px] leading-5",
+  lg: "size-9 text-sm leading-6",
+  xl: "size-12 text-base",
+};
+
+export function Avatar({
+  nome,
+  cor,
+  foto,
+  tamanho = "md",
+  tom = "neutro",
+  anel = true,
+  className,
+}: {
+  nome: string;
+  cor?: string;
+  /** Endereço da foto (fotoDoSocio). Ganha das iniciais. */
+  foto?: string | null;
+  tamanho?: TamanhoAvatar;
+  tom?: "neutro" | "azul";
+  /** Anel da cor do cartão, para separar avatares sobrepostos. */
+  anel?: boolean;
+  className?: string;
+}) {
+  const estilo = cor ? { background: cor, color: corDoTexto(cor) } : undefined;
   return (
     <span
       title={nome}
-      className={cn("inline-grid shrink-0 place-items-center rounded-full font-semibold ring-2 ring-papel-forte", t)}
-      style={{ background: fundo, color: corDoTexto(fundo) }}
+      className={cn(
+        "relative inline-grid shrink-0 select-none place-items-center overflow-hidden rounded-full font-semibold",
+        anel && "ring-2 ring-papel-forte",
+        !cor && (tom === "azul" ? "bg-azul-suave text-azul-escuro" : "bg-superficie-2 text-tinta-2"),
+        tamanhoAvatar[tamanho],
+        className,
+      )}
+      style={estilo}
     >
-      {iniciais(nome)}
+      <span aria-hidden={!!foto}>{iniciais(nome)}</span>
+      {foto && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={foto} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />
+      )}
     </span>
   );
 }

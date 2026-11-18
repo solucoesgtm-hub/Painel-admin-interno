@@ -4,8 +4,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
-import { Bot, Copy, Download, FileText, ListChecks, RotateCcw, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, Copy, Download, FileText, ListChecks, RotateCcw, ShieldAlert, Sparkles } from "lucide-react";
 import { Aviso, Botao, Etiqueta, Medidor, cn } from "@/components/ui/base";
+import { useConfirmar } from "@/components/ui/confirmar";
 import { useAviso } from "@/components/ui/toast";
 import { VerPlano, VerRelatorio } from "./ver-plano";
 import { brl, dataHora } from "@/lib/formato";
@@ -18,6 +19,7 @@ import {
   type PedidoPlano,
   type PlanoIASalvo,
 } from "@/lib/regras/ia";
+import { BotaoTexto } from "@/components/ui/botao-link";
 
 type Andamento = { fase: "enviando" | "pensando" | "escrevendo"; caracteres: number } | null;
 
@@ -115,7 +117,7 @@ export function BotaoGerarPlano({ leadId, diagnosticoId, estado }: { leadId: str
       {pronto && !andamento && (
         <p role="status" className="text-sm text-ok">
           Relatório e plano prontos.{" "}
-          <Link href={`/leads/${leadId}#plano-ia`} className="font-medium underline underline-offset-2">Ver na ficha do lead</Link>
+          <BotaoTexto href={`/leads/${leadId}#plano-ia`} iconeFim={ArrowRight} alvo={false}>Ver na ficha do lead</BotaoTexto>
         </p>
       )}
       <Rodape estado={estado} />
@@ -153,6 +155,7 @@ export function PainelPlanoIA({
   const [aba, setAba] = useState<Aba>("relatorio");
   const { andamento, erro, rodar } = useGerador(leadId, setPlano);
   const avisar = useAviso();
+  const confirmar = useConfirmar();
   const base = useId();
   const bloqueio = motivoBloqueio(estado) ?? (!temDiagnostico && estado.tipo !== "exemplo" ? "Salve um diagnóstico primeiro" : null);
 
@@ -177,8 +180,14 @@ export function PainelPlanoIA({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function gerarDeNovo() {
-    const msg = estado.tipo === "ligada" ? "Gerar de novo usa a IA e entra no gasto do mês. Continuar?" : "Gerar o exemplo de novo?";
-    if (window.confirm(msg)) rodar();
+    void confirmar({
+      titulo: estado.tipo === "ligada" ? "Gerar de novo com a IA?" : "Gerar o exemplo de novo?",
+      descricao: estado.tipo === "ligada" ? "Uma nova geração usa a IA e entra no gasto do mês. A versão atual continua no histórico." : "O exemplo é montado de novo a partir do diagnóstico, sem custo.",
+      rotulo: "Gerar de novo",
+      perigo: false,
+    }).then((ok) => {
+      if (ok) rodar();
+    });
   }
 
   return (

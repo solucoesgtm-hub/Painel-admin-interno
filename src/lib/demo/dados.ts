@@ -9,7 +9,7 @@ const H = hojeISO();
 const d = (dias: number) => somarDias(H, dias);
 const ts = (dias: number, hora = "10:00") => `${d(dias)}T${hora}:00-03:00`;
 
-export type Socio = { id: string; nome: string; email: string; area: string; cor: string; foco: string; vistoEm?: string | null };
+export type Socio = { id: string; nome: string; email: string; area: string; cor: string; foco: string; vistoEm?: string | null; fotoEm?: string | null };
 
 export const SOCIOS: Socio[] = [
   { id: "s-gabriel", nome: "Gabriel", email: "gabriel@exemplo.test", area: "Tecnologia e produto", cor: "#3f6fd8", foco: "Implantações e agentes de IA" },

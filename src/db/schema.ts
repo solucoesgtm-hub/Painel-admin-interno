@@ -45,6 +45,9 @@ export const socios = pgTable("socios", {
   senhaDefinidaEm: timestamp("senha_definida_em", { withTimezone: true }),
   /** Última vez que usou o painel (gravado no máximo uma vez por minuto). */
   vistoEm: timestamp("visto_em", { withTimezone: true }),
+  /** Foto do avatar: imagem pequena (256 px) em data URL. Servida por /api/avatar/[id]. */
+  foto: text("foto"),
+  fotoEm: timestamp("foto_em", { withTimezone: true }),
   criadoEm,
 });
 
