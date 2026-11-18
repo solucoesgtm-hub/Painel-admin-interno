@@ -16,6 +16,9 @@ export type EmailResumo = {
   mensagemId?: string;
 };
 
+/** Quantos e-mails recentes a tela mostra e a IA tria de uma vez. */
+export const LIMITE_EMAILS = 25;
+
 export const CATEGORIAS_EMAIL = ["lead", "cliente", "financeiro", "edital", "fornecedor", "promocao", "outro"] as const;
 export type CategoriaEmail = (typeof CATEGORIAS_EMAIL)[number];
 
@@ -72,11 +75,13 @@ export function triagemPorRegras(e: EmailResumo): ItemTriagem {
   let categoria: CategoriaEmail = "outro";
   if (TEM(t, ["edital", "chamada publica", "licitacao", "pregao", "fapes", "finep", "sebrae"])) categoria = "edital";
   else if (TEM(t, ["boleto", "fatura", "pix", "pagamento", "nota fiscal", "nf-e", "cobranca", "vencimento"])) categoria = "financeiro";
+  // Problema de quem já é cliente vem antes: "o atendente não está funcionando" não é um lead novo.
+  else if (TEM(t, ["suporte", "ajuste", "nao esta funcionando", "parou de funcionar", "fora do ar", "erro", "problema", "contrato"])) categoria = "cliente";
   else if (TEM(t, ["orcamento", "proposta", "interesse", "gostaria de saber", "quanto custa", "atendente", "whatsapp"])) categoria = "lead";
-  else if (TEM(t, ["suporte", "ajuste", "nao esta funcionando", "erro", "problema", "contrato"])) categoria = "cliente";
   else if (TEM(t, ["newsletter", "promocao", "desconto", "oferta", "unsubscribe", "descadastrar", "no-reply", "noreply"])) categoria = "promocao";
 
-  const urgente = TEM(t, ["urgente", "hoje", "prazo", "vence", "vencido", "atraso", "nao esta funcionando"]);
+  // Só sinais claros de pressa; "vence dia 25" ou "prazo em 20 dias" não são urgência.
+  const urgente = TEM(t, ["urgente", "urgencia", "vence hoje", "ate hoje", "vencido", "vencida", "em atraso", "atrasad", "nao esta funcionando", "parou de funcionar", "fora do ar"]);
   const urgencia: ItemTriagem["urgencia"] =
     categoria === "promocao" ? "baixa" : urgente || categoria === "lead" ? "alta" : categoria === "outro" ? "baixa" : "media";
 

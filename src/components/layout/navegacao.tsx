@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Mail,
   MessagesSquare,
   Package,
   Search,
@@ -45,6 +46,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/", nome: "Início", icone: LayoutDashboard },
       { href: "/agenda", nome: "Agenda", icone: CalendarDays },
       { href: "/chat", nome: "Chat dos sócios", curto: "Chat", icone: MessagesSquare },
+      { href: "/email", nome: "E-mail", icone: Mail },
     ],
   },
   {

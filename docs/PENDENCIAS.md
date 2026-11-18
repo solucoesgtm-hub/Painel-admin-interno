@@ -17,7 +17,6 @@
 - Estudo do sistema e imagens dos protótipos em `docs/` — as telas foram desenhadas a partir da especificação; comparar quando chegarem.
 
 ## Próximas telas (a camada de conexão já está pronta)
-- Página "E-mail" com a entrada triada e o botão "Criar rascunho".
 - Financeiro lendo `provedorBancario()` em vez do extrato fictício, com o extrato guardado no Neon.
 - Guardar no Neon as mensagens recebidas pelo webhook do WhatsApp e enviar pela caixa de aprovações.
 

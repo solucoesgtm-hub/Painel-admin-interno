@@ -491,7 +491,7 @@ export async function excluirEvento(id: string, titulo: string, socio: { id: str
 }
 
 /** Histórico de ações sem tabela própria (ex.: eventos que vivem no Google). */
-async function registrarNoHistorico(socio: { id: string; nome: string }, acao: "criou" | "excluiu", entidade: string, nome: string) {
+export async function registrarNoHistorico(socio: { id: string; nome: string }, acao: "criou" | "excluiu", entidade: string, nome: string) {
   if (modoDemo) return registrar(socio.nome, acao, entidade, nome);
   const [{ db }, { historico }] = await Promise.all([import("@/db"), import("@/db/schema")]);
   await db.insert(historico).values({ atorTipo: "socio", atorId: socio.id, acao, entidade, detalhes: { nome } });

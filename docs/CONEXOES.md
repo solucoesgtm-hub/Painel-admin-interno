@@ -51,7 +51,7 @@ O Hub **lê** e cria **rascunhos**. Nada é enviado sem um sócio abrir o Gmail 
 
 Escopo usado: `gmail.modify` (ler, marcar e criar rascunhos; não apaga definitivamente).
 
-Próximo passo de tela: uma página "E-mail" que lista a entrada já triada (`provedorEmail().listarEntrada()` + `triarEmails()`), com o botão "Criar rascunho" (`criarRascunho()`).
+Tela: **/email**. Ao abrir, a triagem é por regras (sem custo). O botão "Analisar com IA" usa o Claude, e cada e-mail aberto tem a resposta sugerida e o botão "Criar rascunho".
 
 ## 3. Banco Inter: saldo e extrato (somente leitura)
 

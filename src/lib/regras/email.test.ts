@@ -28,6 +28,14 @@ describe("triagem por regras", () => {
     expect(ed.respostaSugerida).toBeNull();
   });
 
+  it("prazo distante não é urgência; cliente com problema é", () => {
+    expect(triagemPorRegras(email({ assunto: "Nova chamada pública", trecho: "Prazo de envio em 20 dias." })).urgencia).toBe("media");
+    expect(triagemPorRegras(email({ assunto: "Fatura", trecho: "Sua fatura vence no dia 25." })).urgencia).toBe("media");
+    const cliente = triagemPorRegras(email({ assunto: "O atendente não está funcionando", trecho: "Não responde no WhatsApp." }));
+    expect(cliente.categoria).toBe("cliente");
+    expect(cliente.urgencia).toBe("alta");
+  });
+
   it("promoção é sempre baixa urgência", () => {
     const t = triagemPorRegras(email({ de: "noreply@loja.com", assunto: "Desconto urgente só hoje" }));
     expect(t.categoria).toBe("promocao");
