@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Bot, CalendarCheck2, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
-import { Logo } from "@/components/layout/logo";
-import { Aviso, cn } from "@/components/ui/base";
+import { ShieldCheck } from "lucide-react";
+import { Aviso } from "@/components/ui/base";
 import { auth, authConfigurado } from "@/auth";
 import { FormularioLogin } from "./formulario";
 import { Particulas } from "./particulas";
@@ -15,12 +14,6 @@ const ERROS: Record<string, string> = {
   removido: "Seu acesso foi removido. Fale com outro sócio.",
 };
 
-const PILARES = [
-  { icone: MessageCircle, texto: "Atendentes de IA no WhatsApp" },
-  { icone: CalendarCheck2, texto: "Agendamento automático" },
-  { icone: Bot, texto: "Automação de rotinas e estoque" },
-];
-
 export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string; erro?: string }> }) {
   const p = await searchParams;
   const erro = ERROS[p.error ?? p.erro ?? ""] ?? (p.error ? "Não foi possível entrar. Tente de novo." : null);
@@ -29,7 +22,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   return (
     <main className="grid min-h-dvh lg:grid-cols-[1.15fr_1fr]">
       {/* Lado da marca (computador) */}
-      <section className="relative hidden flex-col justify-between overflow-hidden bg-[#0e0f12] p-12 text-white lg:flex xl:p-16 [@media(max-height:820px)]:py-8">
+      <section className="relative hidden flex-col overflow-hidden bg-[#0e0f12] p-12 text-white lg:flex">
         {/* Grade fina e luzes de fundo */}
         <span
           aria-hidden
@@ -38,46 +31,10 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         <span aria-hidden className="animate-pulsar pointer-events-none absolute -left-40 -top-40 size-[34rem] rounded-full bg-azul/25 blur-3xl" />
         <span aria-hidden className="animate-pulsar pointer-events-none absolute -bottom-48 right-[-10rem] size-[30rem] rounded-full bg-[#ff8a4c]/12 blur-3xl [animation-delay:2.5s]" />
 
-        <span className="animate-revelar relative">
-          <Logo />
-        </span>
-
-        <div className="relative">
-          <Particulas className="animate-surgir-marca -ml-6 mb-8 block w-[300px] cursor-pointer text-azul-claro xl:w-[360px] [@media(max-height:820px)]:mb-3 [@media(max-height:820px)]:w-[210px]" />
-          <div className="max-w-xl">
-            <p className="animate-revelar atraso-1 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-[#c9cedb]">
-              <Sparkles aria-hidden className="size-3.5 text-azul-claro" />
-              GTM Soluções · Marilândia, ES
-            </p>
-            <h1 className="animate-revelar atraso-2 mt-6 text-[46px] font-semibold leading-[1.04] tracking-[-0.04em] xl:text-[56px] [@media(max-height:820px)]:mt-4 [@media(max-height:820px)]:text-[40px]">
-              Tecnologia que atende, agenda e vende{" "}
-              <span className="text-azul-claro">pelo seu cliente.</span>
-            </h1>
-            <p className="animate-revelar atraso-3 mt-5 max-w-md text-base leading-relaxed text-[#b4bacb]">
-              Criamos agentes de inteligência artificial e automações sob medida para comércios e clínicas do interior do
-              Espírito Santo — do primeiro diagnóstico à manutenção de todo mês.
-            </p>
-            <ul className="mt-8 flex flex-wrap gap-2 [@media(max-height:820px)]:mt-5">
-              {PILARES.map(({ icone: Icone, texto }, i) => (
-                <li
-                  key={texto}
-                  className={cn(
-                    "animate-revelar inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3.5 py-2 text-[13px] text-[#dfe3ec] backdrop-blur",
-                    ["atraso-4", "atraso-5", "atraso-6"][i],
-                  )}
-                >
-                  <Icone aria-hidden className="size-4 text-azul-claro" />
-                  {texto}
-                </li>
-              ))}
-            </ul>
-          </div>
+        <h1 className="sr-only">GTM Soluções</h1>
+        <div className="relative grid flex-1 place-items-center">
+          <Particulas className="block w-[min(88%,calc(100dvh-6rem),760px)] cursor-pointer text-[#f1f0eb]" />
         </div>
-
-        <p className="animate-revelar atraso-6 relative flex items-center gap-2 text-xs text-[#8b91a5]">
-          <span className="size-1.5 rounded-full bg-ok" aria-hidden />
-          Painel interno dos sócios · acesso protegido
-        </p>
       </section>
 
       {/* Lado do acesso */}

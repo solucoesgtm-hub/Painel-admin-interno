@@ -1,97 +1,62 @@
 "use client";
-// Partículas interativas do login (adaptado do bloco "Particles" enviado pelos sócios).
-// Uma forma feita de pontos: o ponteiro empurra os pontos, que voltam por mola; um clique solta
-// uma onda e os pontos se reúnem na PRÓXIMA forma (círculo → quadrado → flor → círculo).
-// O laço de animação para sozinho quando tudo assenta. Com "menos movimento", fica parado.
+// Partículas interativas do login: os pontos formam o símbolo da GTM (o pinguim dentro do círculo).
+// Os pontos ficam nas partes claras do símbolo, então o pinguim aparece como o vazio no meio.
+// Ao abrir, os pontos chegam espalhados e se juntam no logo. O ponteiro empurra os pontos, que
+// voltam por mola; um clique solta uma onda e eles se reúnem de novo. O laço para quando tudo
+// assenta. Com "menos movimento", o logo aparece pronto e parado.
 import { useEffect, useRef } from "react";
+import { BARRIGA, FAIXA_DIR, FAIXA_ESQ, RAIO_RECORTE, SILHUETA } from "@/lib/marca";
 
 const stillness = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-const W = 480;
-const H = 400;
+/** Espaço interno do desenho (o canvas escala para o tamanho na tela). */
+const W = 800;
+const H = 800;
 const CX = W / 2;
 const CY = H / 2;
-/** Quantos pontos cada forma tem. */
-const N = 720;
-
-const FORMAS = ["Circulo", "Quadrado", "Flor"] as const;
-type Forma = (typeof FORMAS)[number];
+/** Raio do círculo do símbolo no desenho original (viewBox centrado em 640,640). */
+const RAIO_LOGO = 366;
+const ESCALA = (W * 0.47) / RAIO_LOGO;
+/** Quantos pontos formam o logo. */
+const N = 2600;
 
 type Ponto = { hx: number; hy: number; x: number; y: number; vx: number; vy: number };
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
-function contorno(s: Forma): Path2D {
-  const p = new Path2D();
-  if (s === "Circulo") p.arc(CX, CY, 150, 0, Math.PI * 2);
-  else if (s === "Quadrado") p.roundRect(CX - 140, CY - 140, 280, 280, 36);
-  else {
-    for (let i = 0; i < 5; i++) {
-      const a = -Math.PI / 2 + (i * Math.PI * 2) / 5;
-      const x = CX + Math.cos(a) * 104;
-      const y = CY + 8 + Math.sin(a) * 104;
-      p.moveTo(x + 60, y);
-      p.arc(x, y, 60, 0, Math.PI * 2);
-    }
-    p.moveTo(CX + 58, CY + 8);
-    p.arc(CX, CY + 8, 58, 0, Math.PI * 2);
-  }
-  return p;
-}
-
-/** N pontos espalhados por igual dentro da forma (grade hexagonal ajustada à área). */
-function casas(s: Forma): [number, number][] {
-  const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
-  const g = c.getContext("2d")!;
-  const path = contorno(s);
+/** Pontos espalhados por igual nas partes claras do símbolo (grade hexagonal ajustada à área). */
+function casasDoLogo(): [number, number][] {
+  const g = document.createElement("canvas").getContext("2d")!;
+  const silhueta = new Path2D(SILHUETA);
+  const claros = [new Path2D(BARRIGA), new Path2D(FAIXA_ESQ), new Path2D(FAIXA_DIR)];
+  // (x, y) no canvas → coordenadas do desenho original.
+  const claro = (x: number, y: number) => {
+    const lx = 640 + (x - CX) / ESCALA;
+    const ly = 640 + (y - CY) / ESCALA;
+    const r = Math.hypot(lx - 640, ly - 640);
+    if (r > RAIO_LOGO) return false;
+    const recortado = r <= RAIO_RECORTE && g.isPointInPath(silhueta, lx, ly);
+    return !recortado || claros.some((p) => g.isPointInPath(p, lx, ly));
+  };
   let area = 0;
-  for (let y = 1; y < H; y += 2) for (let x = 1; x < W; x += 2) if (g.isPointInPath(path, x, y)) area += 4;
+  for (let y = 1; y < H; y += 3) for (let x = 1; x < W; x += 3) if (claro(x, y)) area += 9;
   const sp = Math.sqrt((area / N) * (2 / Math.sqrt(3)));
   const rowH = (sp * Math.sqrt(3)) / 2;
   const pts: [number, number][] = [];
   for (let y = rowH / 2, row = 0; y < H; y += rowH, row++) {
-    for (let x = sp / 2 + (row % 2) * (sp / 2); x < W; x += sp) {
-      if (g.isPointInPath(path, x, y)) pts.push([x, y]);
-    }
+    for (let x = sp / 2 + (row % 2) * (sp / 2); x < W; x += sp) if (claro(x, y)) pts.push([x, y]);
   }
   const out: [number, number][] = [];
   for (let i = 0; i < N; i++) out.push(pts[Math.floor((i * pts.length) / N)]!);
   return out;
 }
 
-const angulo = (x: number, y: number) => Math.atan2(y - CY, x - CX);
-
-export function Particulas({ alcance = 80, forca = 60, className }: { alcance?: number; forca?: number; className?: string }) {
+export function Particulas({ alcance = 90, forca = 60, className }: { alcance?: number; forca?: number; className?: string }) {
   const cv = useRef<HTMLCanvasElement | null>(null);
   const pontos = useRef<Ponto[]>([]);
-  const atual = useRef<Forma>("Circulo");
   const mao = useRef<{ x: number; y: number } | null>(null);
   const raf = useRef(0);
   const parado = useRef(false);
-
-  const virar = (s: Forma) => {
-    atual.current = s;
-    const prox = casas(s);
-    const ps = pontos.current;
-    if (!ps.length) {
-      pontos.current = prox.map(([x, y]) => ({ hx: x, hy: y, x, y, vx: 0, vy: 0 }));
-      return;
-    }
-    // Pareia por ângulo em volta do centro: o enxame gira para a nova forma sem se cruzar.
-    const a = ps.map((d, i) => [angulo(d.x, d.y), i] as const).sort((p, q) => p[0] - q[0]);
-    const b = prox.map((h, i) => [angulo(h[0], h[1]), i] as const).sort((p, q) => p[0] - q[0]);
-    a.forEach(([, di], k) => {
-      const h = prox[b[k]![1]]!;
-      ps[di]!.hx = h[0];
-      ps[di]!.hy = h[1];
-      if (parado.current) {
-        ps[di]!.x = h[0];
-        ps[di]!.y = h[1];
-      }
-    });
-  };
 
   const desenhar = () => {
     const c = cv.current;
@@ -101,7 +66,7 @@ export function Particulas({ alcance = 80, forca = 60, className }: { alcance?: 
     x.setTransform(k, 0, 0, k, 0, 0);
     x.clearRect(0, 0, W, H);
     x.fillStyle = getComputedStyle(c).color;
-    const r = 1.9;
+    const r = 2.4;
     x.beginPath();
     for (const d of pontos.current) {
       const sp = Math.hypot(d.vx, d.vy);
@@ -126,7 +91,7 @@ export function Particulas({ alcance = 80, forca = 60, className }: { alcance?: 
       const dt = prev ? clamp((t - prev) / 16.67, 0, 2.5) : 1;
       prev = t;
       const h = mao.current;
-      const R = clamp(alcance, 30, 160);
+      const R = clamp(alcance, 30, 180);
       const S = (clamp(forca, 0, 100) / 100) * 11;
       let ocupado = !!h;
       for (const d of pontos.current) {
@@ -164,8 +129,15 @@ export function Particulas({ alcance = 80, forca = 60, className }: { alcance?: 
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = Math.round(W * dpr);
     c.height = Math.round(H * dpr);
-    virar("Circulo");
+    // Chegada: cada ponto nasce num anel largo fora do logo e vem para a sua casa.
+    pontos.current = casasDoLogo().map(([hx, hy]) => {
+      if (parado.current) return { hx, hy, x: hx, y: hy, vx: 0, vy: 0 };
+      const a = Math.random() * Math.PI * 2;
+      const r = W * (0.55 + Math.random() * 0.35);
+      return { hx, hy, x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, vx: 0, vy: 0 };
+    });
     desenhar();
+    if (!parado.current) rodar();
     return () => {
       cancelAnimationFrame(raf.current);
       raf.current = 0;
@@ -185,7 +157,7 @@ export function Particulas({ alcance = 80, forca = 60, className }: { alcance?: 
       className={className}
       style={{ aspectRatio: `${W} / ${H}`, touchAction: "none" }}
       role="img"
-      aria-label="Forma feita de pontos. Passe o mouse para empurrar os pontos; clique para mudar a forma."
+      aria-label="Símbolo da GTM feito de pontos. Passe o mouse para empurrar os pontos; clique para espalhar."
       onPointerMove={(e) => {
         if (parado.current) return;
         mao.current = onde(e);
@@ -196,21 +168,19 @@ export function Particulas({ alcance = 80, forca = 60, className }: { alcance?: 
         rodar();
       }}
       onPointerDown={(e) => {
+        if (parado.current) return;
+        // Onda de choque a partir do clique; a mola traz tudo de volta para o logo.
         const p = onde(e);
-        if (!parado.current) {
-          const S = 0.4 + (clamp(forca, 0, 100) / 100) * 1.2;
-          for (const d of pontos.current) {
-            const dx = d.x - p.x;
-            const dy = d.y - p.y;
-            const dd = Math.hypot(dx, dy);
-            if (dd > 200 || dd < 0.01) continue;
-            const f = (1 - dd / 200) * 30 * S;
-            d.vx += (dx / dd) * f;
-            d.vy += (dy / dd) * f;
-          }
+        const S = 0.4 + (clamp(forca, 0, 100) / 100) * 1.2;
+        for (const d of pontos.current) {
+          const dx = d.x - p.x;
+          const dy = d.y - p.y;
+          const dd = Math.hypot(dx, dy);
+          if (dd > 260 || dd < 0.01) continue;
+          const f = (1 - dd / 260) * 30 * S;
+          d.vx += (dx / dd) * f;
+          d.vy += (dy / dd) * f;
         }
-        virar(FORMAS[(FORMAS.indexOf(atual.current) + 1) % FORMAS.length]!);
-        desenhar();
         rodar();
       }}
     />
