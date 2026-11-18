@@ -2,13 +2,14 @@
 // Com DATABASE_URL definida, leads e histórico vêm do Neon (src/db).
 // Sem ela, o Hub roda em modo demonstração com dados fictícios em memória.
 import "server-only";
-import { CONTRATOS, EMPRESA_DEMO, EVENTOS, HISTORICO_INICIAL, MENSAGENS_DEMO, LEADS_INICIAIS, SOCIOS, type Evento, type EventoHistorico, type Lead, type Socio } from "./demo/dados";
+import { CONTRATOS, PROJETOS, EMPRESA_DEMO, EVENTOS, HISTORICO_INICIAL, MENSAGENS_DEMO, LEADS_INICIAIS, SOCIOS, type Evento, type EventoHistorico, type Lead, type Socio } from "./demo/dados";
 import type { DadosEvento } from "./regras/agenda";
 import { MINUTOS_PARA_APAGAR, podeApagar, type Mensagem } from "./regras/chat";
 import { EMPRESA_VAZIA, type ContratoCliente, type DadosContrato, type DadosEmpresa } from "./regras/empresa";
 import { nomeEtapa, type DadosEditarLead, type DadosNovoLead, type EtapaId } from "./regras/funil";
 import { inicioDoMes, type ConteudoPlanoIA, type PlanoIASalvo } from "./regras/ia";
 import type { Lembrete } from "./regras/lembretes";
+import { NOME_SITUACAO_PROJETO, type DadosProjeto, type ProjetoSalvo } from "./regras/projetos";
 import {
   calcularPontuacao,
   complexidade,
@@ -46,6 +47,7 @@ type Memoria = {
   inscricoes?: (InscricaoPushMemoria)[];
   usoIa?: { finalidade: string; custoBRL: number; em: string }[];
   lembretes?: Lembrete[];
+  projetos?: ProjetoSalvo[];
 };
 const g = globalThis as unknown as { __gtmMemoria?: Memoria };
 function memoria(): Memoria {
@@ -71,6 +73,17 @@ function memoria(): Memoria {
     observacoes: "",
   }));
   m.eventos ??= structuredClone(EVENTOS);
+  m.projetos ??= PROJETOS.map((p) => ({
+    id: p.id,
+    nome: p.nome,
+    cliente: p.cliente,
+    leadId: null,
+    situacao: p.situacao,
+    donoId: p.donoId,
+    prazo: p.prazo,
+    repositorio: p.repositorio,
+    descricao: "",
+  }));
   m.mensagens ??= structuredClone(MENSAGENS_DEMO);
   m.leituras ??= {};
   m.apagadasEm ??= {};
@@ -877,4 +890,70 @@ export async function marcarLembrete(id: string, projeto: { id: string; nome: st
     return true;
   }
   return (await consultasLembretes()).marcarLembrete(id, projeto.id, feito, socio.id, projeto.nome);
+}
+
+/* ---------------- Projetos ---------------- */
+async function consultasProjetos() {
+  return import("@/db/consultas/projetos");
+}
+
+const paraProjeto = (p: {
+  id: string;
+  nome: string;
+  cliente: string;
+  leadId: string | null;
+  situacao: ProjetoSalvo["situacao"];
+  donoId: string | null;
+  prazo: string;
+  repositorio: string;
+  descricao: string;
+}): ProjetoSalvo => ({ id: p.id, nome: p.nome, cliente: p.cliente, leadId: p.leadId, situacao: p.situacao, donoId: p.donoId, prazo: p.prazo, repositorio: p.repositorio, descricao: p.descricao });
+
+export async function listarProjetos(): Promise<ProjetoSalvo[]> {
+  if (modoDemo) return [...(memoria().projetos ?? [])].sort((a, b) => a.prazo.localeCompare(b.prazo));
+  return (await (await consultasProjetos()).listarProjetos()).map(paraProjeto);
+}
+
+export async function buscarProjeto(id: string): Promise<ProjetoSalvo | null> {
+  if (modoDemo) return memoria().projetos?.find((p) => p.id === id) ?? null;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const p = await (await consultasProjetos()).buscarProjeto(id);
+  return p ? paraProjeto(p) : null;
+}
+
+export async function criarProjeto(dados: DadosProjeto, socio: { id: string; nome: string }): Promise<string> {
+  if (modoDemo) {
+    const id = `pj-${Date.now()}`;
+    (memoria().projetos ??= []).push({ id, ...dados });
+    registrar(socio.nome, "criou", "projeto", `${dados.nome} — ${dados.cliente}`);
+    return id;
+  }
+  return (await consultasProjetos()).criarProjeto(dados, socio.id);
+}
+
+export async function editarProjeto(id: string, dados: DadosProjeto, socio: { id: string; nome: string }): Promise<boolean> {
+  const antes = await buscarProjeto(id);
+  if (!antes) return false;
+  const mudou = antes.situacao !== dados.situacao ? NOME_SITUACAO_PROJETO[dados.situacao] : null;
+  if (modoDemo) {
+    Object.assign(antes, dados);
+    registrar(socio.nome, "editou", "projeto", `${dados.nome}${mudou ? ` → ${mudou}` : ""}`);
+    return true;
+  }
+  await (await consultasProjetos()).editarProjeto(id, dados, socio.id, mudou);
+  return true;
+}
+
+export async function excluirProjeto(id: string, socio: { id: string; nome: string }): Promise<boolean> {
+  const antes = await buscarProjeto(id);
+  if (!antes) return false;
+  if (modoDemo) {
+    const m = memoria();
+    m.projetos = (m.projetos ?? []).filter((p) => p.id !== id);
+    m.lembretes = (m.lembretes ?? []).filter((l) => l.projetoId !== id);
+    registrar(socio.nome, "excluiu", "projeto", antes.nome);
+    return true;
+  }
+  await (await consultasProjetos()).excluirProjeto(id, antes.nome, socio.id);
+  return true;
 }

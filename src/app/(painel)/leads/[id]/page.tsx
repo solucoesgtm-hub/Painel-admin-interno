@@ -11,7 +11,7 @@ import {
   EstadoVazio,
   Medidor,
 } from "@/components/ui/base";
-import { MENSALIDADES, PROJETOS } from "@/lib/demo/dados";
+import { MENSALIDADES } from "@/lib/demo/dados";
 import { estadoContrato } from "@/lib/regras/empresa";
 import { EtiquetaContrato } from "../../contratos/gestao";
 import { brl, data, dataCurta, relativo } from "@/lib/formato";
@@ -19,7 +19,8 @@ import { situacaoMensalidade } from "@/lib/regras/financeiro";
 import { estaParado, nomeEtapa } from "@/lib/regras/funil";
 import { PainelPlanoIA } from "@/components/ia/plano-ia";
 import { estadoIa } from "@/lib/ia/estado";
-import { buscarLead, listarContratos, listarDiagnosticos, listarSocios, modoDemo, ultimoPlanoIa } from "@/lib/repositorio";
+import { buscarLead, listarContratos, listarDiagnosticos, listarLembretes, listarProjetos, listarSocios, modoDemo, ultimoPlanoIa } from "@/lib/repositorio";
+import { progressoLembretes } from "@/lib/regras/lembretes";
 import { exigirSocio } from "@/lib/sessao";
 import { EditarLead } from "./editar";
 
@@ -44,7 +45,8 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
   ]);
   const dono = socios.find((s) => s.id === l.donoId);
   const base = l.nome;
-  const projetos = PROJETOS.filter((p) => p.cliente === base);
+  const projetos = (await listarProjetos()).filter((p) => p.leadId === l.id || p.cliente === base);
+  const lembretesProjetos = await listarLembretes(projetos.map((p) => p.id));
   const contratos = todosContratos.filter((c) => c.leadId === l.id || c.cliente === base);
   const pagamentos = MENSALIDADES.filter((m) => m.cliente === base);
 
@@ -150,14 +152,21 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
           <Cartao>
             <CabecalhoCartao titulo="Projetos" />
             {projetos.length === 0 ? (
-              <EstadoVazio icone={FolderKanban} titulo="Sem projetos" texto="Projetos aparecem aqui quando o cliente fecha." />
+              <EstadoVazio icone={FolderKanban} titulo="Sem projetos" texto="Crie um projeto em Projetos e ligue-o a este lead." />
             ) : (
               <ul className="divide-y divide-areia">
                 {projetos.map((p) => (
                   <li key={p.id} className="flex items-center gap-4 px-5 py-3.5">
                     <div className="flex-1"><p className="text-sm font-medium">{p.nome}</p><p className="text-xs text-tinta-3">Prazo {dataCurta(p.prazo)}</p></div>
-                    <div className="w-32"><Medidor valor={p.tarefas.feitas / p.tarefas.total} rotulo={`Progresso de ${p.nome}`} /></div>
-                    <span className="numeros w-10 text-right text-xs text-tinta-3">{p.tarefas.feitas}/{p.tarefas.total}</span>
+                    {(() => {
+                      const pr = progressoLembretes(lembretesProjetos.filter((x) => x.projetoId === p.id));
+                      return (
+                        <>
+                          <div className="w-32"><Medidor valor={pr.fracao} rotulo={`Lembretes feitos em ${p.nome}`} tom={pr.concluido ? "ok" : "azul"} /></div>
+                          <span className="numeros w-10 text-right text-xs text-tinta-3">{pr.feitos}/{pr.total}</span>
+                        </>
+                      );
+                    })()}
                   </li>
                 ))}
               </ul>

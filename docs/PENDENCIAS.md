@@ -18,10 +18,9 @@
 
 ## Próximas telas (a camada de conexão já está pronta)
 - Financeiro: guardar o extrato no Neon (hoje é lido do banco com cache de 5 min) e conciliação manual das entradas que não batem sozinhas.
-- Projetos ainda são de demonstração; os lembretes já ficam no Neon (`lembretes.projeto_id`).
 - Guardar no Neon as mensagens recebidas pelo webhook do WhatsApp e enviar pela caixa de aprovações.
 
 ## Decisões em aberto
-- Fora do bloco comercial (leads, diagnóstico, análise), da empresa e dos contratos, as telas ainda usam dados de demonstração mesmo com o Neon ligado: financeiro, editais, projetos, produtos e automação. A agenda usa o Google quando a credencial existir. No Início, só leads e próximos passos são reais.
+- Fora do bloco comercial (leads, diagnóstico, análise), da empresa e dos contratos, as telas ainda usam dados de demonstração mesmo com o Neon ligado: financeiro (o extrato vem do banco quando o Inter está ligado), editais, produtos e automação. A agenda usa o Google quando a credencial existir. No Início, só leads e próximos passos são reais.
 - Não há como excluir um lead pela tela (decidir se será exclusão ou arquivamento).
 - Limite de tentativas de login por IP (hoje há só um atraso fixo por tentativa errada).

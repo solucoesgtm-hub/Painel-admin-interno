@@ -64,6 +64,13 @@
       "when": 1794968715853,
       "tag": "0008_lembretes",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794970218123,
+      "tag": "0009_projetos",
+      "breakpoints": true
     }
   ]
 }

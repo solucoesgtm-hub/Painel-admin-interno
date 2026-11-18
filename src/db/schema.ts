@@ -248,16 +248,36 @@ export const loginTentativas = pgTable(
   (t) => [index("login_tentativas_chave_idx").on(t.chave, t.criadoEm)],
 );
 
-/**
- * Lembretes de um projeto: checklist que cada sócio vai marcando como feito.
- * `projetoId` é texto porque os projetos ainda vêm da demonstração; quando ganharem tabela,
- * vira uma referência.
- */
+export const situacaoProjeto = pgEnum("situacao_projeto", ["planejado", "em_andamento", "em_teste", "entregue", "pausado"]);
+
+/** Projetos: um por entrega, ligado a um cliente (e, se houver, ao lead no funil). */
+export const projetos = pgTable(
+  "projetos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nome: text("nome").notNull(),
+    cliente: text("cliente").notNull(),
+    leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+    situacao: situacaoProjeto("situacao").notNull().default("planejado"),
+    donoId: uuid("dono_id").references(() => socios.id, { onDelete: "set null" }),
+    prazo: date("prazo").notNull(),
+    repositorio: text("repositorio").notNull().default(""),
+    descricao: text("descricao").notNull().default(""),
+    criadoPor: uuid("criado_por").references(() => socios.id),
+    criadoEm,
+    atualizadoEm,
+  },
+  (t) => [index("projetos_prazo_idx").on(t.prazo), index("projetos_lead_idx").on(t.leadId)],
+);
+
+/** Lembretes de um projeto: checklist que cada sócio vai marcando como feito. Somem com o projeto. */
 export const lembretes = pgTable(
   "lembretes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projetoId: text("projeto_id").notNull(),
+    projetoId: uuid("projeto_id")
+      .notNull()
+      .references(() => projetos.id, { onDelete: "cascade" }),
     texto: text("texto").notNull(),
     feito: boolean("feito").notNull().default(false),
     feitoEm: timestamp("feito_em", { withTimezone: true }),

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Mail, ShieldCheck } from "lucide-react";
 import { Avatar, CabecalhoPagina, Cartao, Etiqueta } from "@/components/ui/base";
-import { PROJETOS } from "@/lib/demo/dados";
-import { listarLeads, listarSocios } from "@/lib/repositorio";
+import { listarLeads, listarProjetos, listarSocios } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 import { PontoPresenca, ProvedorPresenca, TextoPresenca } from "@/components/presenca";
 
@@ -10,7 +9,7 @@ export const metadata: Metadata = { title: "Equipe" };
 
 export default async function Equipe() {
   const eu = await exigirSocio();
-  const [socios, leads] = await Promise.all([listarSocios(), listarLeads()]);
+  const [socios, leads, projetos] = await Promise.all([listarSocios(), listarLeads(), listarProjetos()]);
   return (
     <>
       <CabecalhoPagina titulo="Equipe" descricao="Os três sócios são administradores, cada um com login próprio." />
@@ -18,7 +17,7 @@ export default async function Equipe() {
       <ul className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {socios.map((s, i) => {
           const meusLeads = leads.filter((l) => l.donoId === s.id && !["perdido", "manutencao"].includes(l.etapa)).length;
-          const meusProjetos = PROJETOS.filter((p) => p.donoId === s.id && p.situacao !== "entregue").length;
+          const meusProjetos = projetos.filter((p) => p.donoId === s.id && p.situacao !== "entregue").length;
           return (
             <li key={s.id} className={`animate-surgir escala-${i + 1}`}>
               <Cartao className="overflow-hidden">
