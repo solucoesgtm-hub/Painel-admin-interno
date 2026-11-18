@@ -20,6 +20,17 @@ export const esquemaNovoLembrete = z.object({
   texto: z.string().trim().min(2, "Escreva o lembrete.").max(MAX_TEXTO_LEMBRETE, `Até ${MAX_TEXTO_LEMBRETE} caracteres.`),
 });
 
+export const esquemaEditarLembrete = z.object({
+  id: z.string().min(1).max(64),
+  projetoId: z.string().min(1).max(64),
+  texto: esquemaNovoLembrete.shape.texto,
+});
+
+export const esquemaExcluirLembrete = z.object({
+  id: z.string().min(1).max(64),
+  projetoId: z.string().min(1).max(64),
+});
+
 export const esquemaMarcarLembrete = z.object({
   id: z.string().min(1).max(64),
   projetoId: z.string().min(1).max(64),

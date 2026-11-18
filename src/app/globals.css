@@ -588,6 +588,14 @@
   display: flex;
   width: 100%;
   align-items: center;
+  gap: 4px;
+}
+.chk-alvo {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  align-items: center;
   gap: 10px;
   border: 0;
   background: none;
@@ -601,6 +609,29 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
+.chk-row[data-editando] .chk-alvo { flex: none; cursor: default; }
+.chk-alvo:focus-visible { outline: 2px solid var(--c-foco, var(--color-azul)); outline-offset: -2px; border-radius: 10px; }
+/* Lápis: discreto até passar o mouse ou focar a linha; no toque fica sempre visível. */
+.chk-acao {
+  display: grid;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--c-tinta-3);
+  cursor: pointer;
+}
+.chk-acao:hover { background: var(--c-superficie-2); color: var(--c-tinta); }
+.chk-acao:focus-visible { outline: 2px solid var(--c-foco, var(--color-azul)); outline-offset: -4px; }
+.chk-acao-perigo:hover { background: var(--c-risco-suave); color: var(--c-risco); }
+@media (hover: hover) and (pointer: fine) {
+  .chk-acao-discreta { opacity: 0; transition: opacity 120ms ease-out; }
+  .chk-row:hover .chk-acao-discreta, .chk-acao-discreta:focus-visible { opacity: 1; }
+}
+.chk-editar-campo { margin-left: 6px; }
 .chk-row::before {
   content: "";
   position: absolute;
@@ -611,7 +642,6 @@
   opacity: 0;
 }
 .chk-row[data-fell]::before { opacity: 1; box-shadow: 0 1px 0 var(--c-areia), 0 4px 10px -6px rgb(0 0 0 / 0.25); }
-.chk-row:focus-visible { outline: 2px solid var(--c-foco, var(--color-azul)); outline-offset: -2px; border-radius: 10px; }
 .chk-box {
   position: relative;
   flex: none;

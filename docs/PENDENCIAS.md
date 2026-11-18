@@ -18,7 +18,7 @@
 
 ## Próximas telas (a camada de conexão já está pronta)
 - Financeiro: guardar o extrato no Neon (hoje é lido do banco com cache de 5 min) e conciliação manual das entradas que não batem sozinhas.
-- Projetos ainda são de demonstração; os lembretes já ficam no Neon (`lembretes.projeto_id`). Falta excluir/editar lembrete.
+- Projetos ainda são de demonstração; os lembretes já ficam no Neon (`lembretes.projeto_id`).
 - Guardar no Neon as mensagens recebidas pelo webhook do WhatsApp e enviar pela caixa de aprovações.
 
 ## Decisões em aberto

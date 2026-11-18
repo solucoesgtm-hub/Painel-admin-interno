@@ -13,7 +13,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAviso } from "@/components/ui/toast";
 import { MAX_LEMBRETES, MAX_TEXTO_LEMBRETE, type Lembrete } from "@/lib/regras/lembretes";
-import { acaoCriarLembrete, acaoMarcarLembrete } from "@/app/(painel)/projetos/acoes";
+import { Check, Pencil, Trash2 } from "lucide-react";
+import { acaoCriarLembrete, acaoEditarLembrete, acaoExcluirLembrete, acaoMarcarLembrete } from "@/app/(painel)/projetos/acoes";
 
 /* ── uma mola, para tudo que assenta (em quadros, não em ms) ── */
 const springOf = (tune: number) => ({ k: 0.08 + (tune / 100) * 0.16, d: 0.62 + (tune / 100) * 0.2 });
@@ -118,6 +119,8 @@ export function Checklist({
     [aoMudar],
   );
   const [adding, setAdding] = useState(false);
+  /** Lembrete em edição (lápis): o texto vira campo, com Excluir ao lado. */
+  const [editando, setEditando] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [runs, setRuns] = useState<number[]>([]);
   const [line, setLine] = useState(20);
@@ -178,6 +181,32 @@ export function Checklist({
     });
   };
 
+  const salvarEdicao = (id: string, novo: string) => {
+    setEditando(null);
+    const texto = novo.trim().slice(0, MAX_TEXTO_LEMBRETE);
+    const antes = items.find((t) => t.id === id);
+    if (!antes || texto.length < 2 || texto === antes.texto) return;
+    setItems((v) => v.map((t) => (t.id === id ? { ...t, texto } : t)));
+    acaoEditarLembrete({ id, projetoId, texto }).then((r) => {
+      if (r.ok) return;
+      setItems((v) => v.map((t) => (t.id === id ? { ...t, texto: antes.texto } : t)));
+      avisar({ tom: "risco", texto: r.mensagem });
+    });
+  };
+
+  const excluir = (id: string) => {
+    const alvo = items.find((t) => t.id === id);
+    if (!alvo || !window.confirm(`Excluir o lembrete “${alvo.texto}”?`)) return;
+    setEditando(null);
+    const posicao = items.indexOf(alvo);
+    setItems((v) => v.filter((t) => t.id !== id));
+    acaoExcluirLembrete({ id, projetoId }).then((r) => {
+      if (r.ok) return avisar({ tom: "ok", texto: "Lembrete excluído" });
+      setItems((v) => [...v.slice(0, posicao), alvo, ...v.slice(posicao)]);
+      avisar({ tom: "risco", texto: r.mensagem });
+    });
+  };
+
   const add = () => {
     const texto = draft.trim().slice(0, MAX_TEXTO_LEMBRETE);
     setAdding(false);
@@ -219,6 +248,12 @@ export function Checklist({
             onRun={measure}
             layer={fell ? items.length - i : undefined}
             onToggle={() => alternar(i)}
+            editando={editando === task.id}
+            podeEditar={!task.id.startsWith("tmp-")}
+            onEditar={() => setEditando(task.id)}
+            onSalvar={(t) => salvarEdicao(task.id, t)}
+            onCancelar={() => setEditando(null)}
+            onExcluir={() => excluir(task.id)}
           />
         ))}
       </AnimatePresence>
@@ -275,7 +310,19 @@ function Row({
   index,
   onRun,
   onToggle,
+  editando,
+  podeEditar,
+  onEditar,
+  onSalvar,
+  onCancelar,
+  onExcluir,
 }: {
+  editando: boolean;
+  podeEditar: boolean;
+  onEditar: () => void;
+  onSalvar: (texto: string) => void;
+  onCancelar: () => void;
+  onExcluir: () => void;
   label: string;
   on: boolean;
   side: number;
@@ -306,33 +353,103 @@ function Row({
   const up = Math.min(REBOUND, drop * 0.22);
   const land = { duration: run, times: [0, 0.66, 0.84, 1], ease: [...FALL_EASE] };
   const lean = { duration: run, ease: "easeIn" as const };
+  const [rascunho, setRascunho] = useState(label);
+  // Enter e o blur que vem logo depois não podem salvar duas vezes.
+  const encerrado = useRef(false);
+  useEffect(() => {
+    if (editando) {
+      setRascunho(label);
+      encerrado.current = false;
+    }
+  }, [editando, label]);
+  const fechar = (salvar: boolean) => {
+    if (encerrado.current) return;
+    encerrado.current = true;
+    if (salvar) onSalvar(rascunho);
+    else onCancelar();
+  };
 
   return (
-    <motion.button
-      type="button"
+    <motion.div
       className="chk-row"
-      role="checkbox"
-      aria-checked={on}
       data-fell={fell || undefined}
-      onClick={onToggle}
+      data-editando={editando || undefined}
       style={{ height: ROW, zIndex: layer, "--slip": `${inset}px` } as React.CSSProperties}
       initial={false}
       exit={{ opacity: 0, transition: { duration: 0.16 } }}
       animate={fell ? { y: [0, drop, drop - up, drop], x: drift, rotate: tilt } : { y: 0, x: 0, rotate: 0 }}
       transition={fell ? { y: land, x: lean, rotate: lean } : { type: "spring", stiffness: 380, damping: 34, mass: 0.9 }}
     >
-      <span className="chk-box" style={{ width: side, height: side, borderRadius: side * 0.32 }}>
-        <span className="chk-fill" style={{ borderRadius: side * 0.32, transform: `scale(${t.toFixed(4)})` }} />
-        <svg className="chk-tick" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 12.4 L10.3 16.7 L18 7.6" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - held} />
-        </svg>
-      </span>
-      <span className="chk-say" ref={say}>
-        <span className="chk-word" style={{ opacity: mix(1, 0.42, held) }}>
-          {label}
+      <button type="button" className="chk-alvo" role="checkbox" aria-checked={on} onClick={onToggle} disabled={editando} tabIndex={editando ? -1 : 0}>
+        <span className="chk-box" style={{ width: side, height: side, borderRadius: side * 0.32 }}>
+          <span className="chk-fill" style={{ borderRadius: side * 0.32, transform: `scale(${t.toFixed(4)})` }} />
+          <svg className="chk-tick" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 12.4 L10.3 16.7 L18 7.6" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - held} />
+          </svg>
         </span>
-        <span className="chk-rule" aria-hidden="true" style={{ transform: `scaleX(${cut.toFixed(4)})` }} />
-      </span>
-    </motion.button>
+        {!editando && (
+          <span className="chk-say" ref={say}>
+            <span className="chk-word" style={{ opacity: mix(1, 0.42, held) }}>
+              {label}
+            </span>
+            <span className="chk-rule" aria-hidden="true" style={{ transform: `scaleX(${cut.toFixed(4)})` }} />
+          </span>
+        )}
+      </button>
+      {editando ? (
+        <>
+          <input
+            className="chk-field chk-editar-campo"
+            autoFocus
+            value={rascunho}
+            maxLength={MAX_TEXTO_LEMBRETE}
+            aria-label={`Editar lembrete: ${label}`}
+            onChange={(e) => setRascunho(e.target.value)}
+            onFocus={(e) => e.currentTarget.select()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                fechar(true);
+              }
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                fechar(false);
+              }
+            }}
+            onBlur={() => fechar(true)}
+          />
+          <button
+            type="button"
+            className="chk-acao chk-acao-perigo"
+            aria-label={`Excluir lembrete: ${label}`}
+            title="Excluir"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              encerrado.current = true;
+              onExcluir();
+            }}
+          >
+            <Trash2 aria-hidden className="size-4" />
+          </button>
+          <button
+            type="button"
+            className="chk-acao"
+            aria-label="Concluir edição"
+            title="Concluir"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => fechar(true)}
+          >
+            <Check aria-hidden className="size-4" />
+          </button>
+        </>
+      ) : (
+        !fell &&
+        podeEditar && (
+          <button type="button" className="chk-acao chk-acao-discreta" aria-label={`Editar ou excluir: ${label}`} title="Editar ou excluir" onClick={onEditar}>
+            <Pencil aria-hidden className="size-3.5" />
+          </button>
+        )
+      )}
+    </motion.div>
   );
 }

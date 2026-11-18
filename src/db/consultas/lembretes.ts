@@ -28,6 +28,45 @@ export async function criarLembrete(projetoId: string, texto: string, socioId: s
   return id;
 }
 
+export async function editarLembrete(id: string, projetoId: string, texto: string, socioId: string, projetoNome: string) {
+  const [linha] = await db
+    .select({ texto: lembretes.texto })
+    .from(lembretes)
+    .where(and(eq(lembretes.id, id), eq(lembretes.projetoId, projetoId)));
+  if (!linha) return false;
+  await db.batch([
+    db.update(lembretes).set({ texto }).where(eq(lembretes.id, id)),
+    db.insert(historico).values({
+      atorTipo: "socio",
+      atorId: socioId,
+      acao: "editou",
+      entidade: "lembrete",
+      entidadeId: id,
+      detalhes: { nome: `${projetoNome} — ${linha.texto} → ${texto}` },
+    }),
+  ]);
+  return true;
+}
+
+export async function excluirLembrete(id: string, projetoId: string, socioId: string, projetoNome: string) {
+  const [linha] = await db
+    .select({ texto: lembretes.texto })
+    .from(lembretes)
+    .where(and(eq(lembretes.id, id), eq(lembretes.projetoId, projetoId)));
+  if (!linha) return false;
+  await db.batch([
+    db.delete(lembretes).where(eq(lembretes.id, id)),
+    db.insert(historico).values({
+      atorTipo: "socio",
+      atorId: socioId,
+      acao: "excluiu",
+      entidade: "lembrete",
+      detalhes: { nome: `${projetoNome} — ${linha.texto}` },
+    }),
+  ]);
+  return true;
+}
+
 export async function marcarLembrete(id: string, projetoId: string, feito: boolean, socioId: string, projetoNome: string) {
   const [linha] = await db
     .select({ texto: lembretes.texto })

@@ -845,6 +845,29 @@ export async function criarLembrete(projeto: { id: string; nome: string }, texto
   return (await consultasLembretes()).criarLembrete(projeto.id, texto, socio.id, projeto.nome);
 }
 
+export async function editarLembrete(id: string, projeto: { id: string; nome: string }, texto: string, socio: { id: string; nome: string }): Promise<boolean> {
+  if (modoDemo) {
+    const l = (memoria().lembretes ?? []).find((x) => x.id === id && x.projetoId === projeto.id);
+    if (!l) return false;
+    registrar(socio.nome, "editou", "lembrete", `${projeto.nome} — ${l.texto} → ${texto}`);
+    l.texto = texto;
+    return true;
+  }
+  return (await consultasLembretes()).editarLembrete(id, projeto.id, texto, socio.id, projeto.nome);
+}
+
+export async function excluirLembrete(id: string, projeto: { id: string; nome: string }, socio: { id: string; nome: string }): Promise<boolean> {
+  if (modoDemo) {
+    const m = memoria();
+    const l = (m.lembretes ?? []).find((x) => x.id === id && x.projetoId === projeto.id);
+    if (!l) return false;
+    m.lembretes = (m.lembretes ?? []).filter((x) => x !== l);
+    registrar(socio.nome, "excluiu", "lembrete", `${projeto.nome} — ${l.texto}`);
+    return true;
+  }
+  return (await consultasLembretes()).excluirLembrete(id, projeto.id, socio.id, projeto.nome);
+}
+
 export async function marcarLembrete(id: string, projeto: { id: string; nome: string }, feito: boolean, socio: { id: string; nome: string }): Promise<boolean> {
   if (modoDemo) {
     const l = (memoria().lembretes ?? []).find((x) => x.id === id && x.projetoId === projeto.id);
