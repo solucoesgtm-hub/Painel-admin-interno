@@ -4,7 +4,7 @@ import { Aviso, CabecalhoPagina, Etiqueta } from "@/components/ui/base";
 import { emailContaServico } from "@/lib/google-agenda";
 import { hojeISO, somarDias } from "@/lib/formato";
 import { AGENDA_GTM } from "@/lib/regras/agenda";
-import { listarEventos, listarSocios } from "@/lib/repositorio";
+import { listarEventos, listarProjetos, listarSocios, listarTodosLembretes } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 import { Calendario } from "./calendario";
 
@@ -17,7 +17,26 @@ const DIAS_DEPOIS = 186;
 export default async function Agenda() {
   const socio = await exigirSocio();
   const hoje = hojeISO();
-  const [socios, agenda] = await Promise.all([listarSocios(), listarEventos(somarDias(hoje, -DIAS_ANTES), somarDias(hoje, DIAS_DEPOIS))]);
+  const [socios, agenda, lembretes, projetos] = await Promise.all([
+    listarSocios(),
+    listarEventos(somarDias(hoje, -DIAS_ANTES), somarDias(hoje, DIAS_DEPOIS)),
+    listarTodosLembretes().catch(() => []),
+    listarProjetos().catch(() => []),
+  ]);
+  const nomeProjeto = new Map(projetos.map((p) => [p.id, p.nome]));
+  const prazos = lembretes.flatMap((l) =>
+    !l.prazo
+      ? []
+      : [{
+      id: l.id,
+      texto: l.texto,
+      tipo: l.tipo,
+      prazo: l.prazo,
+      feito: l.feito,
+      responsavelId: l.responsavelId,
+      grupo: (l.projetoId && nomeProjeto.get(l.projetoId)) || l.assunto || "Sem vínculo",
+    }],
+  );
   const google = agenda.fonte === "google";
   const conta = emailContaServico();
   // No Google, eventos criados direto lá (sem sócio marcado) ficam sob "Agenda da GTM".
@@ -44,7 +63,7 @@ export default async function Agenda() {
           Os eventos abaixo são de demonstração e os novos ficam só neste servidor. Para usar a agenda real, siga o passo a passo em docs/GOOGLE-AGENDA.md.
         </Aviso>
       )}
-      <Calendario eventos={agenda.eventos} socios={donos} socioAtualId={socio.id} google={google} />
+      <Calendario eventos={agenda.eventos} socios={donos} socioAtualId={socio.id} google={google} prazos={prazos} />
     </>
   );
 }

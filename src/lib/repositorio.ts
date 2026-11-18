@@ -9,6 +9,7 @@ import { EMPRESA_VAZIA, type ContratoCliente, type DadosContrato, type DadosEmpr
 import { nomeEtapa, type DadosEditarLead, type DadosNovoLead, type EtapaId } from "./regras/funil";
 import { inicioDoMes, type ConteudoPlanoIA, type PlanoIASalvo } from "./regras/ia";
 import type { DadosItem, Lembrete } from "./regras/lembretes";
+import type { Ideia, Marcador } from "./regras/ideias";
 import { NOME_SITUACAO_PROJETO, type DadosProjeto, type ProjetoSalvo } from "./regras/projetos";
 import {
   calcularPontuacao,
@@ -49,6 +50,7 @@ type Memoria = {
   lembretes?: Lembrete[];
   projetos?: ProjetoSalvo[];
   fotos?: Record<string, { foto: string; em: string }>;
+  ideias?: Ideia[];
 };
 const g = globalThis as unknown as { __gtmMemoria?: Memoria };
 function memoria(): Memoria {
@@ -74,6 +76,30 @@ function memoria(): Memoria {
     observacoes: "",
   }));
   m.eventos ??= structuredClone(EVENTOS);
+  m.ideias ??= [
+    {
+      id: "id-demo-1",
+      autorId: "s-thalis",
+      titulo: "Pacote para pet shops (exemplo)",
+      texto: "Atendente no WhatsApp com agenda de banho e tosa e lembrete de vacina. Muitos pet shops da região ainda marcam tudo por telefone.",
+      situacao: "aberta",
+      criadoEm: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+      finalizadaEm: null,
+      finalizadaPor: null,
+      marcadores: [{ socioId: "s-mateus", marcador: "genial" }],
+    },
+    {
+      id: "id-demo-2",
+      autorId: "s-mateus",
+      titulo: "Vídeo curto mostrando o atendente (exemplo)",
+      texto: "Gravar um vídeo de 30 segundos com o atendente respondendo um cliente de verdade, para usar nas visitas.",
+      situacao: "aberta",
+      criadoEm: new Date(Date.now() - 5 * 86_400_000).toISOString(),
+      finalizadaEm: null,
+      finalizadaPor: null,
+      marcadores: [{ socioId: "s-thalis", marcador: "pode_melhorar" }],
+    },
+  ];
   m.projetos ??= PROJETOS.map((p) => ({
     id: p.id,
     nome: p.nome,
@@ -444,7 +470,22 @@ export async function listarContratos(): Promise<ContratoCliente[]> {
     valorImplantacao: c.valorImplantacaoCentavos / 100,
     situacao: c.situacao,
     observacoes: c.observacoes,
+    documento: c.documento,
+    documentoDados: c.documentoDados ?? null,
+    documentoEm: c.documentoEm?.toISOString() ?? null,
   }));
+}
+
+/** Guarda o documento gerado para o contrato (Markdown + campos usados). Fica no histórico. */
+export async function salvarDocumentoContrato(id: string, documento: string, dados: Record<string, unknown>, socio: { id: string; nome: string }): Promise<boolean> {
+  if (modoDemo) {
+    const c = memoria().contratos.find((x) => x.id === id);
+    if (!c) return false;
+    Object.assign(c, { documento, documentoDados: dados, documentoEm: new Date().toISOString() });
+    registrar(socio.nome, "editou", "contrato", `Documento gerado — ${c.cliente}`);
+    return true;
+  }
+  return (await consultasEmpresa()).salvarDocumentoContrato(id, documento, dados, socio.id);
 }
 
 const camposContrato = (d: DadosContrato) => ({
@@ -1066,4 +1107,75 @@ export async function excluirProjeto(id: string, socio: { id: string; nome: stri
   }
   await (await consultasProjetos()).excluirProjeto(id, antes.nome, socio.id);
   return true;
+}
+
+/* ---------------- Ideias (mural) ---------------- */
+async function consultasIdeias() {
+  return import("@/db/consultas/ideias");
+}
+
+export async function listarIdeias(): Promise<Ideia[]> {
+  if (modoDemo) return [...(memoria().ideias ?? [])].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+  return (await (await consultasIdeias()).listarIdeias()).map((i) => ({
+    id: i.id,
+    autorId: i.autorId,
+    titulo: i.titulo,
+    texto: i.texto,
+    situacao: i.situacao,
+    criadoEm: i.criadoEm.toISOString(),
+    finalizadaEm: i.finalizadaEm?.toISOString() ?? null,
+    finalizadaPor: i.finalizadaPor,
+    marcadores: i.marcadores,
+  }));
+}
+
+export async function buscarIdeia(id: string): Promise<Pick<Ideia, "id" | "autorId" | "titulo" | "situacao"> | null> {
+  if (modoDemo) return memoria().ideias?.find((i) => i.id === id) ?? null;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  return (await consultasIdeias()).buscarIdeia(id);
+}
+
+export async function criarIdeia(titulo: string, texto: string, socio: { id: string; nome: string }): Promise<string> {
+  if (modoDemo) {
+    const id = `id-${Date.now()}`;
+    (memoria().ideias ??= []).push({ id, autorId: socio.id, titulo, texto, situacao: "aberta", criadoEm: new Date().toISOString(), finalizadaEm: null, finalizadaPor: null, marcadores: [] });
+    registrar(socio.nome, "criou", "ideia", titulo);
+    return id;
+  }
+  return (await consultasIdeias()).criarIdeia(titulo, texto, socio.id);
+}
+
+export async function marcarIdeia(ideia: { id: string; titulo: string }, socio: { id: string; nome: string }, marcador: Marcador | null) {
+  if (modoDemo) {
+    const i = memoria().ideias?.find((x) => x.id === ideia.id);
+    if (!i) return;
+    i.marcadores = i.marcadores.filter((m) => m.socioId !== socio.id);
+    if (marcador) {
+      i.marcadores.push({ socioId: socio.id, marcador });
+      registrar(socio.nome, "aprovou", "ideia", `${ideia.titulo} — ${marcador}`);
+    }
+    return;
+  }
+  await (await consultasIdeias()).marcarIdeia(ideia.id, socio.id, marcador, ideia.titulo);
+}
+
+export async function mudarSituacaoIdeia(ideia: { id: string; titulo: string }, situacao: "aberta" | "finalizada", socio: { id: string; nome: string }) {
+  if (modoDemo) {
+    const i = memoria().ideias?.find((x) => x.id === ideia.id);
+    if (!i) return;
+    Object.assign(i, { situacao, finalizadaEm: situacao === "finalizada" ? new Date().toISOString() : null, finalizadaPor: situacao === "finalizada" ? socio.id : null });
+    registrar(socio.nome, situacao === "finalizada" ? "executou" : "editou", "ideia", `${ideia.titulo}${situacao === "finalizada" ? " (finalizada)" : " (reaberta)"}`);
+    return;
+  }
+  await (await consultasIdeias()).mudarSituacaoIdeia(ideia.id, situacao, socio.id, ideia.titulo);
+}
+
+export async function excluirIdeia(ideia: { id: string; titulo: string }, socio: { id: string; nome: string }) {
+  if (modoDemo) {
+    const m = memoria();
+    m.ideias = (m.ideias ?? []).filter((i) => i.id !== ideia.id);
+    registrar(socio.nome, "excluiu", "ideia", ideia.titulo);
+    return;
+  }
+  await (await consultasIdeias()).excluirIdeia(ideia.id, socio.id, ideia.titulo);
 }

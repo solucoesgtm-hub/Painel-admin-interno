@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, CalendarX2, ChevronLeft, ChevronRight, ExternalLink, FileSearch, Handshake, MapPin, Plus, Trash2, Users } from "lucide-react";
+import { BellRing, CalendarPlus, CalendarX2, Check, ChevronLeft, ChevronRight, ExternalLink, FileSearch, Handshake, ListTodo, MapPin, Plus, Trash2, Users } from "lucide-react";
 import { AreaTexto, Botao, Campo, Cartao, Entrada, EstadoVazio, Selecao, cn } from "@/components/ui/base";
 import { Modal } from "@/components/ui/modal";
 import { useConfirmar } from "@/components/ui/confirmar";
@@ -9,7 +9,8 @@ import { useAviso } from "@/components/ui/toast";
 import type { Evento, Socio } from "@/lib/demo/dados";
 import { hojeISO, paraData, somarDias } from "@/lib/formato";
 import { acaoCriarEvento, acaoExcluirEvento } from "./acoes";
-import { SeletorMes, VisaoMes } from "./mes";
+import { DetalhesPrazo, SeletorMes, VisaoMes, Popover, type ItemPrazo } from "./mes";
+import { acaoMarcarItem } from "../lembretes/acoes";
 
 const TIPO = {
   visita: { nome: "Visita", plural: "visitas", icone: MapPin },
@@ -26,7 +27,10 @@ export function Calendario({
   socios,
   socioAtualId,
   google,
+  prazos = [],
 }: {
+  /** Lembretes e tarefas com prazo (aba Lembretes), mostrados no dia do prazo. */
+  prazos?: ItemPrazo[];
   eventos: Evento[];
   socios: Socio[];
   socioAtualId: string;
@@ -69,6 +73,25 @@ export function Calendario({
   }, [destaque]);
 
   const visiveis = eventos.filter((e) => filtro.includes(e.socioId));
+  // Lembretes/tarefas: aparecem se não têm responsável ou se o responsável está no filtro.
+  const [mostrarPrazos, setMostrarPrazos] = useState(true);
+  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
+  useEffect(() => setMarcados({}), [prazos]);
+  const prazosVisiveis = mostrarPrazos
+    ? prazos.map((p) => (p.id in marcados ? { ...p, feito: marcados[p.id]! } : p)).filter((p) => !p.responsavelId || filtro.includes(p.responsavelId))
+    : [];
+  const [prazoAberto, setPrazoAberto] = useState<{ item: ItemPrazo; el: HTMLElement } | null>(null);
+  const marcarPrazo = async (p: ItemPrazo) => {
+    const feito = !p.feito;
+    setMarcados((m) => ({ ...m, [p.id]: feito }));
+    const r = await acaoMarcarItem({ id: p.id, feito });
+    if (!r.ok) {
+      setMarcados((m) => ({ ...m, [p.id]: !feito }));
+      return avisar({ tom: "risco", texto: r.mensagem });
+    }
+    avisar({ tom: "ok", texto: feito ? `${p.tipo === "tarefa" ? "Tarefa" : "Lembrete"} feito` : "Reaberto" });
+    router.refresh();
+  };
   const cor = (id: string) => socios.find((s) => s.id === id)?.cor ?? "#6b6e7a";
 
   const inicioSemana = somarDias(ref, -diaDaSemana(ref));
@@ -177,6 +200,20 @@ export function Calendario({
               </button>
             );
           })}
+          {prazos.length > 0 && (
+            <button
+              type="button"
+              aria-pressed={mostrarPrazos}
+              onClick={() => setMostrarPrazos((v) => !v)}
+              className={cn(
+                "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3 text-sm",
+                mostrarPrazos ? "border-areia-2 bg-superficie" : "border-dashed border-areia-2 text-tinta-3 opacity-70",
+              )}
+            >
+              <ListTodo aria-hidden className="size-4" />
+              Lembretes e tarefas
+            </button>
+          )}
         </div>
       </div>
 
@@ -186,6 +223,7 @@ export function Calendario({
         <ol className="grid grid-cols-1 divide-y divide-areia md:grid-cols-7 md:divide-x md:divide-y-0">
           {diasSemana.map((d) => {
             const doDia = visiveis.filter((e) => e.data === d).sort((a, b) => a.inicio.localeCompare(b.inicio));
+            const prazosDoDia = prazosVisiveis.filter((p) => p.prazo === d);
             const ehHoje = d === hoje;
             return (
               <li key={d} className={cn("min-h-28 min-w-0 p-2.5 md:min-h-[420px]", ehHoje && "bg-azul-suave/40", destaque === d && "rd-destaque")}>
@@ -205,6 +243,33 @@ export function Calendario({
                   </button>
                 </p>
                 <ul className="space-y-1.5">
+                  {prazosDoDia.map((p) => {
+                    const Icone = p.tipo === "tarefa" ? ListTodo : BellRing;
+                    const atrasado = !p.feito && p.prazo < hoje;
+                    return (
+                      <li key={`p-${p.id}`} className={cn("flex items-center gap-1 rounded-md border border-dashed p-1 pl-1.5", atrasado ? "border-risco/50" : "border-areia-2", p.feito && "opacity-60")}>
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={p.feito}
+                          aria-label={`${p.feito ? "Reabrir" : "Marcar como feito"}: ${p.texto}`}
+                          onClick={() => marcarPrazo(p)}
+                          className="grid size-9 shrink-0 place-items-center rounded-md hover:bg-superficie-2 pointer-coarse:size-11"
+                        >
+                          <span className={cn("grid size-4 place-items-center rounded-[5px] ring-[1.5px] ring-inset", p.feito ? "bg-azul text-white ring-azul" : "ring-areia-2")}>
+                            {p.feito && <Check aria-hidden className="size-3" strokeWidth={3} />}
+                          </span>
+                        </button>
+                        <button type="button" onClick={(ev) => setPrazoAberto({ item: p, el: ev.currentTarget })} className="min-w-0 flex-1 py-1 text-left">
+                          <span className={cn("block break-words text-[12.5px] font-medium leading-snug", p.feito && "line-through", atrasado && "text-risco")}>{p.texto}</span>
+                          <span className="mt-0.5 flex items-center gap-1 text-[11px] text-tinta-3">
+                            <Icone aria-hidden className="size-3" />
+                            {p.tipo === "tarefa" ? "Tarefa" : "Lembrete"} · {p.grupo}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
                   {doDia.map((e) => {
                     const T = TIPO[e.tipo];
                     return (
@@ -244,7 +309,7 @@ export function Calendario({
                       </li>
                     );
                   })}
-                  {doDia.length === 0 && <li className="px-1 text-xs text-tinta-3">Sem eventos</li>}
+                  {doDia.length === 0 && prazosDoDia.length === 0 && <li className="px-1 text-xs text-tinta-3">Sem eventos</li>}
                 </ul>
               </li>
             );
@@ -264,7 +329,22 @@ export function Calendario({
           aoVerSemana={verSemana}
           aoNovo={novoEm}
           aoExcluir={excluir}
+          prazos={prazosVisiveis}
+          aoMarcarPrazo={marcarPrazo}
         />
+      )}
+      {prazoAberto && (
+        <Popover ancora={{ el: prazoAberto.el, rect: prazoAberto.el.getBoundingClientRect() }} aoFechar={() => setPrazoAberto(null)} rotulo={`Detalhes: ${prazoAberto.item.texto}`}>
+          <DetalhesPrazo
+            item={prazoAberto.item}
+            socios={socios}
+            hoje={hoje}
+            aoMarcar={(p) => {
+              setPrazoAberto(null);
+              void marcarPrazo(p);
+            }}
+          />
+        </Popover>
       )}
       <ModalEvento
         key={novo?.n ?? -1}

@@ -1,6 +1,6 @@
 "use client";
 // Lista de contratos com cadastro, edição e encerramento.
-import { ChevronDown, ChevronUp, BellRing, FilePlus2, FileSignature, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, BellRing, FilePlus2, FileSignature, FileText, Pencil } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Botao, BotaoIcone, CabecalhoCartao, Cartao, EstadoVazio, Etiqueta, Tabela, Td, Th, Tr } from "@/components/ui/base";
@@ -8,6 +8,7 @@ import { brl, data } from "@/lib/formato";
 import { estadoContrato, type ContratoCliente, type EstadoContrato } from "@/lib/regras/empresa";
 import { ModalContrato, type OpcaoLead } from "../empresa/formularios";
 import { BotaoTexto } from "@/components/ui/botao-link";
+import { ModalDocumento } from "./documento";
 
 export function EtiquetaContrato({ estado }: { estado: EstadoContrato }) {
   switch (estado.tipo) {
@@ -36,7 +37,21 @@ export function BotaoNovoContrato({ leads, variante = "primario" }: { leads: Opc
   );
 }
 
-export function GestaoContratos({ contratos, leads }: { contratos: ContratoCliente[]; leads: OpcaoLead[] }) {
+export function GestaoContratos({
+  contratos,
+  leads,
+  cidade = "",
+  faltando = [],
+  iaLigada = false,
+}: {
+  contratos: ContratoCliente[];
+  leads: OpcaoLead[];
+  /** Para o documento: cidade da GTM, campos que faltam em Nossa empresa e se a IA está ligada. */
+  cidade?: string;
+  faltando?: string[];
+  iaLigada?: boolean;
+}) {
+  const [doc, setDoc] = useState<ContratoCliente | null>(null);
   const busca = useSearchParams();
   const router = useRouter();
   const caminho = usePathname();
@@ -79,11 +94,13 @@ export function GestaoContratos({ contratos, leads }: { contratos: ContratoClien
                 <Td>
                   <p className="font-medium">{c.cliente}</p>
                   <p className="text-xs text-tinta-3">{c.produto}</p>
+                  {c.documentoEm && <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-ok"><FileText aria-hidden className="size-3" />Documento gerado em {data(c.documentoEm)}</p>}
                 </Td>
                 <Td className="numeros whitespace-nowrap text-[13px]">{data(c.inicio)} – {data(c.fim)}</Td>
                 <Td><EtiquetaContrato estado={estadoContrato(c)} /></Td>
                 <Td className="numeros text-right">{brl(c.valorMensal)}</Td>
-                <Td className="w-14 text-right">
+                <Td className="w-28 whitespace-nowrap text-right">
+                  <BotaoIcone icone={FileText} rotulo={`Gerar documento do contrato de ${c.cliente}`} onClick={() => setDoc(c)} />
                   <BotaoIcone icone={Pencil} rotulo={`Editar contrato de ${c.cliente}`} onClick={() => abrir(c)} />
                 </Td>
               </Tr>
@@ -99,6 +116,7 @@ export function GestaoContratos({ contratos, leads }: { contratos: ContratoClien
         </div>
       )}
       <ModalContrato key={alvo?.n ?? -1} aberto={!!alvo} aoFechar={fechar} contrato={alvo?.contrato ?? null} leads={leads} />
+      {doc && <ModalDocumento key={doc.id} contrato={doc} cidade={cidade} faltando={faltando} iaLigada={iaLigada} aoFechar={() => setDoc(null)} />}
     </Cartao>
   );
 }

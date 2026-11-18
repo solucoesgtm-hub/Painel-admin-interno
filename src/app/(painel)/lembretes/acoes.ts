@@ -10,6 +10,7 @@ export type RespostaItem = { ok: true; id?: string } | { ok: false; mensagem: st
 const atualizar = () => {
   revalidatePath("/lembretes");
   revalidatePath("/projetos");
+  revalidatePath("/agenda");
 };
 
 export async function acaoCriarItem(dados: unknown): Promise<RespostaItem> {

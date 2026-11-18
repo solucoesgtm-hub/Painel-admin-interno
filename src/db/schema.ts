@@ -9,6 +9,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -209,6 +210,10 @@ export const contratos = pgTable(
     valorImplantacaoCentavos: integer("valor_implantacao_centavos").notNull().default(0),
     situacao: situacaoContrato("situacao").notNull().default("aguardando"),
     observacoes: text("observacoes").notNull().default(""),
+    /** Documento gerado pelo modelo (Markdown) e os campos usados para gerá-lo. */
+    documento: text("documento").notNull().default(""),
+    documentoDados: jsonb("documento_dados").$type<Record<string, unknown>>(),
+    documentoEm: timestamp("documento_em", { withTimezone: true }),
     criadoPor: uuid("criado_por").references(() => socios.id),
     criadoEm,
     atualizadoEm,
@@ -296,6 +301,41 @@ export const lembretes = pgTable(
     criadoEm,
   },
   (t) => [index("lembretes_projeto_idx").on(t.projetoId, t.criadoEm), index("lembretes_prazo_idx").on(t.feito, t.prazo)],
+);
+
+export const situacaoIdeia = pgEnum("situacao_ideia", ["aberta", "finalizada"]);
+export const marcadorIdeia = pgEnum("marcador_ideia", ["gostei", "pode_melhorar", "genial", "nao_curti"]);
+
+/** Mural de ideias dos sócios. Excluir apaga a ideia e os marcadores (cascade). */
+export const ideias = pgTable(
+  "ideias",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    autorId: uuid("autor_id").references(() => socios.id, { onDelete: "set null" }),
+    titulo: text("titulo").notNull(),
+    texto: text("texto").notNull().default(""),
+    situacao: situacaoIdeia("situacao").notNull().default("aberta"),
+    finalizadaEm: timestamp("finalizada_em", { withTimezone: true }),
+    finalizadaPor: uuid("finalizada_por").references(() => socios.id, { onDelete: "set null" }),
+    criadoEm,
+  },
+  (t) => [index("ideias_criado_idx").on(t.criadoEm)],
+);
+
+/** A opinião de cada sócio sobre uma ideia: um marcador por sócio (trocar substitui). */
+export const ideiasMarcadores = pgTable(
+  "ideias_marcadores",
+  {
+    ideiaId: uuid("ideia_id")
+      .notNull()
+      .references(() => ideias.id, { onDelete: "cascade" }),
+    socioId: uuid("socio_id")
+      .notNull()
+      .references(() => socios.id, { onDelete: "cascade" }),
+    marcador: marcadorIdeia("marcador").notNull(),
+    criadoEm,
+  },
+  (t) => [primaryKey({ columns: [t.ideiaId, t.socioId] })],
 );
 
 export const leadsRelacoes = relations(leads, ({ one, many }) => ({

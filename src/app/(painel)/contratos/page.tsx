@@ -3,7 +3,9 @@ import { Suspense } from "react";
 import { Aviso, CabecalhoPagina } from "@/components/ui/base";
 import { data } from "@/lib/formato";
 import { estadoContrato } from "@/lib/regras/empresa";
-import { listarContratos, listarLeads } from "@/lib/repositorio";
+import { buscarEmpresa, listarContratos, listarLeads } from "@/lib/repositorio";
+import { faltandoContratada } from "@/lib/regras/contrato-documento";
+import { iaConfigurada } from "@/lib/ia/claude";
 import { exigirSocio } from "@/lib/sessao";
 import { GestaoContratos } from "./gestao";
 
@@ -11,7 +13,7 @@ export const metadata: Metadata = { title: "Contratos" };
 
 export default async function Contratos() {
   await exigirSocio();
-  const [contratos, leads] = await Promise.all([listarContratos(), listarLeads()]);
+  const [contratos, leads, empresa] = await Promise.all([listarContratos(), listarLeads(), buscarEmpresa()]);
   const avisos = contratos
     .map((c) => ({ c, e: estadoContrato(c) }))
     .filter(({ e }) => e.tipo === "renovar" || e.tipo === "vencido");
@@ -20,7 +22,7 @@ export default async function Contratos() {
     <>
       <CabecalhoPagina
         titulo="Contratos"
-        descricao="Vigência, valores e situação de cada contrato. O Hub avisa 45 dias antes do fim."
+        descricao="Vigência, valores e situação de cada contrato. Gere o documento pelo modelo da GTM (ícone de documento na linha). O Hub avisa 45 dias antes do fim."
       />
 
       {avisos.map(({ c, e }) => (
@@ -33,6 +35,9 @@ export default async function Contratos() {
         <GestaoContratos
           contratos={contratos}
           leads={leads.filter((l) => l.etapa !== "perdido").map((l) => ({ id: l.id, nome: l.nome }))}
+          cidade={empresa.municipio.split(/[/-]/)[0]?.trim() ?? ""}
+          faltando={faltandoContratada(empresa)}
+          iaLigada={iaConfigurada()}
         />
       </Suspense>
     </>

@@ -64,3 +64,20 @@ export async function atualizarContrato(id: string, dados: CamposContrato, socio
     }),
   ]);
 }
+
+export async function salvarDocumentoContrato(id: string, documento: string, dados: Record<string, unknown>, socioId: string) {
+  const [c] = await db.select({ cliente: contratos.cliente }).from(contratos).where(eq(contratos.id, id));
+  if (!c) return false;
+  await db.batch([
+    db.update(contratos).set({ documento, documentoDados: dados, documentoEm: new Date() }).where(eq(contratos.id, id)),
+    db.insert(historico).values({
+      atorTipo: "socio",
+      atorId: socioId,
+      acao: "editou",
+      entidade: "contrato",
+      entidadeId: id,
+      detalhes: { nome: `Documento gerado — ${c.cliente}` },
+    }),
+  ]);
+  return true;
+}

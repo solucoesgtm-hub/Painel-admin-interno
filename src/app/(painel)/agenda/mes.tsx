@@ -3,7 +3,8 @@
 // grade com chips de evento que transbordam em "+N mais" e detalhes num popover ancorado.
 // No celular, a grade vira um mapa de pontos e o dia tocado lista os eventos logo abaixo.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { CalendarDays, CalendarPlus, ChevronDown, ChevronLeft, ChevronRight, Clock, ExternalLink, Plus, Trash2, X, type LucideIcon } from "lucide-react";
+import { BellRing, CalendarDays, CalendarPlus, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, ExternalLink, ListTodo, Plus, RotateCcw, Trash2, X, type LucideIcon } from "lucide-react";
+import { BotaoTexto } from "@/components/ui/botao-link";
 import { Avatar, cn } from "@/components/ui/base";
 import type { Evento, Socio } from "@/lib/demo/dados";
 import { hojeISO, paraData, somarDias } from "@/lib/formato";
@@ -216,8 +217,99 @@ export function SeletorMes({ mesRef: refMes, aoEscolher }: { mesRef: string; aoE
   );
 }
 
+/* ---------------- Lembretes e tarefas com prazo ---------------- */
+/** Item da aba Lembretes com prazo, mostrado no dia do prazo (dia inteiro). */
+export type ItemPrazo = {
+  id: string;
+  texto: string;
+  tipo: "lembrete" | "tarefa";
+  prazo: string;
+  feito: boolean;
+  responsavelId: string | null;
+  grupo: string;
+};
+
+export function DetalhesPrazo({ item, socios, hoje, aoMarcar }: { item: ItemPrazo; socios: Socio[]; hoje: string; aoMarcar: (p: ItemPrazo) => void }) {
+  const resp = socios.find((s) => s.id === item.responsavelId);
+  const Icone = item.tipo === "tarefa" ? ListTodo : BellRing;
+  const atrasado = !item.feito && item.prazo < hoje;
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-start gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-superficie-2 text-tinta-2">
+          <Icone aria-hidden className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className={cn("text-base font-semibold leading-snug", item.feito && "text-tinta-3 line-through")}>{item.texto}</p>
+          <p className={cn("mt-1 text-sm", atrasado ? "font-medium text-risco" : "text-tinta-3")}>
+            <span className="first-letter:uppercase">{item.tipo === "tarefa" ? "Tarefa" : "Lembrete"}</span> · prazo {fmt(item.prazo, { day: "numeric", month: "long" })}
+            {atrasado ? " (atrasado)" : ""}
+            {item.feito ? " · feito" : ""}
+          </p>
+        </div>
+      </div>
+      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 rounded-xl bg-superficie-2 p-3 text-sm">
+        <dt className="text-tinta-3">Grupo</dt>
+        <dd className="truncate">{item.grupo}</dd>
+        <dt className="text-tinta-3">Responsável</dt>
+        <dd className="inline-flex items-center gap-2">
+          {resp ? (
+            <>
+              <Avatar nome={resp.nome} cor={resp.cor} foto={fotoDoSocio(resp)} tamanho="sm" />
+              {resp.nome}
+            </>
+          ) : (
+            "Ninguém em especial"
+          )}
+        </dd>
+      </dl>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => aoMarcar(item)}
+          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-azul px-4 text-sm font-semibold text-white hover:bg-[#3461c9]"
+        >
+          {item.feito ? <RotateCcw aria-hidden className="size-4" /> : <Check aria-hidden className="size-4" />}
+          {item.feito ? "Reabrir" : "Marcar como feito"}
+        </button>
+        <BotaoTexto href="/lembretes" className="px-2">
+          Abrir em Lembretes
+        </BotaoTexto>
+      </div>
+    </div>
+  );
+}
+
+/** Chip de lembrete/tarefa: tracejado e com ícone, para não parecer um evento com horário. */
+function ChipPrazo({ item, hoje, aoAbrir }: { item: ItemPrazo; hoje: string; aoAbrir: (el: HTMLElement) => void }) {
+  const Icone = item.tipo === "tarefa" ? ListTodo : BellRing;
+  const atrasado = !item.feito && item.prazo < hoje;
+  return (
+    <button
+      type="button"
+      onClick={(ev) => {
+        ev.stopPropagation();
+        aoAbrir(ev.currentTarget);
+      }}
+      title={`${item.tipo === "tarefa" ? "Tarefa" : "Lembrete"}: ${item.texto}${atrasado ? " (atrasado)" : ""}`}
+      className={cn(
+        "flex w-full min-w-0 items-center gap-1 rounded-md border border-dashed px-1.5 py-px text-left text-[11.5px] leading-[18px] hover:bg-superficie-2",
+        atrasado ? "border-risco/50 text-risco" : "border-areia-2 text-tinta-2",
+        item.feito && "opacity-55",
+      )}
+    >
+      {item.feito ? <Check aria-hidden className="size-3 shrink-0" /> : <Icone aria-hidden className="size-3 shrink-0" />}
+      <span className={cn("truncate font-medium", item.feito && "line-through")}>{item.texto}</span>
+    </button>
+  );
+}
+
 /* ---------------- Grade do mês ---------------- */
-type Aberto = { tipo: "evento"; evento: Evento; ancora: Ancora } | { tipo: "dia"; dia: string; ancora: Ancora };
+type Entrada = { k: "evento"; e: Evento } | { k: "prazo"; p: ItemPrazo };
+type Aberto =
+  | { tipo: "evento"; evento: Evento; ancora: Ancora }
+  | { tipo: "prazo"; prazo: ItemPrazo; ancora: Ancora }
+  | { tipo: "dia"; dia: string; ancora: Ancora };
 
 export function VisaoMes({
   refData,
@@ -229,7 +321,11 @@ export function VisaoMes({
   aoVerSemana,
   aoNovo,
   aoExcluir,
+  prazos = [],
+  aoMarcarPrazo,
 }: {
+  prazos?: ItemPrazo[];
+  aoMarcarPrazo: (p: ItemPrazo) => void;
   refData: string;
   eventos: Evento[];
   socios: Socio[];
@@ -258,19 +354,25 @@ export function VisaoMes({
     return lista;
   }, [mes]);
 
+  // Por dia: lembretes/tarefas primeiro (dia inteiro), depois os eventos por horário.
   const porDia = useMemo(() => {
-    const m = new Map<string, Evento[]>();
-    for (const e of eventos) m.set(e.data, [...(m.get(e.data) ?? []), e]);
-    for (const l of m.values()) l.sort((a, b) => (a.inicio || "00:00").localeCompare(b.inicio || "00:00"));
+    const m = new Map<string, Entrada[]>();
+    const add = (d: string, x: Entrada) => m.set(d, [...(m.get(d) ?? []), x]);
+    for (const p of prazos) add(p.prazo, { k: "prazo", p });
+    for (const e of [...eventos].sort((a, b) => (a.inicio || "00:00").localeCompare(b.inicio || "00:00"))) add(e.data, { k: "evento", e });
     return m;
-  }, [eventos]);
+  }, [eventos, prazos]);
 
   const doMes = eventos.filter((e) => e.data.startsWith(mes));
+  const prazosDoMes = prazos.filter((p) => p.prazo.startsWith(mes) && !p.feito);
   const cor = (id: string) => socios.find((s) => s.id === id)?.cor ?? "#6b7280";
-  type SemAncora = { tipo: "evento"; evento: Evento } | { tipo: "dia"; dia: string };
+  type SemAncora = { tipo: "evento"; evento: Evento } | { tipo: "prazo"; prazo: ItemPrazo } | { tipo: "dia"; dia: string };
   const abrir = (a: SemAncora, el: HTMLElement) => setAberto({ ...a, ancora: { el, rect: el.getBoundingClientRect() } } as Aberto);
   const fechar = () => setAberto(null);
   const doSelecionado = porDia.get(selecionado) ?? [];
+
+  const entrada = (x: Entrada) =>
+    x.k === "prazo" ? <ChipPrazo key={`p-${x.p.id}`} item={x.p} hoje={hoje} aoAbrir={(el) => abrir({ tipo: "prazo", prazo: x.p }, el)} /> : chip(x.e);
 
   const chip = (e: Evento) => (
     <button
@@ -309,6 +411,12 @@ export function VisaoMes({
               </li>
             );
           })}
+          {prazosDoMes.length > 0 && (
+            <li className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-dashed border-areia-2 px-3 text-tinta-2">
+              <ListTodo aria-hidden className="size-3.5" />
+              <span className="numeros font-semibold text-tinta">{prazosDoMes.length}</span> lembrete{prazosDoMes.length === 1 ? "" : "s"}/tarefa{prazosDoMes.length === 1 ? "" : "s"} com prazo
+            </li>
+          )}
         </ul>
       </div>
 
@@ -375,7 +483,7 @@ export function VisaoMes({
                 </div>
                 {/* Computador: chips + "+N mais" */}
                 <div className="hidden flex-col gap-0.5 px-1 pb-1.5 sm:flex">
-                  {visiveis.map(chip)}
+                  {visiveis.map(entrada)}
                   {resto > 0 && (
                     <button
                       type="button"
@@ -389,9 +497,13 @@ export function VisaoMes({
                 {/* Celular: pontos */}
                 {lista.length > 0 && (
                   <span className="pointer-events-none relative mx-auto flex justify-center gap-0.5 pb-1.5 sm:hidden" aria-hidden>
-                    {lista.slice(0, 3).map((e) => (
-                      <span key={e.id} className="size-1.5 rounded-full" style={{ background: cor(e.socioId) }} />
-                    ))}
+                    {lista.slice(0, 3).map((x) =>
+                      x.k === "evento" ? (
+                        <span key={x.e.id} className="size-1.5 rounded-full" style={{ background: cor(x.e.socioId) }} />
+                      ) : (
+                        <span key={`p-${x.p.id}`} className="size-1.5 rounded-full border border-tinta-3" />
+                      ),
+                    )}
                   </span>
                 )}
               </div>
@@ -413,7 +525,14 @@ export function VisaoMes({
           <p className="rounded-xl bg-superficie-2 px-3 py-4 text-sm text-tinta-3">Nenhum evento neste dia.</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
-            {doSelecionado.map((e) => {
+            {doSelecionado.map((x) => {
+              if (x.k === "prazo")
+                return (
+                  <li key={`p-${x.p.id}`}>
+                    <ChipPrazo item={x.p} hoje={hoje} aoAbrir={(el) => abrir({ tipo: "prazo", prazo: x.p }, el)} />
+                  </li>
+                );
+              const e = x.e;
               const T = tipos[e.tipo];
               return (
                 <li key={e.id}>
@@ -455,6 +574,19 @@ export function VisaoMes({
           />
         </Popover>
       )}
+      {aberto?.tipo === "prazo" && (
+        <Popover ancora={aberto.ancora} aoFechar={fechar} rotulo={`Detalhes: ${aberto.prazo.texto}`}>
+          <DetalhesPrazo
+            item={aberto.prazo}
+            socios={socios}
+            hoje={hoje}
+            aoMarcar={(p) => {
+              fechar();
+              aoMarcarPrazo(p);
+            }}
+          />
+        </Popover>
+      )}
       {aberto?.tipo === "dia" && (
         <Popover ancora={aberto.ancora} aoFechar={fechar} rotulo={`Eventos de ${fmt(aberto.dia, { day: "numeric", month: "long" })}`} largura={300}>
           <div className="mb-2 flex items-center justify-between gap-2">
@@ -464,18 +596,31 @@ export function VisaoMes({
             </button>
           </div>
           <div className="flex flex-col gap-1">
-            {(porDia.get(aberto.dia) ?? []).map((e) => (
-              <button
-                key={e.id}
-                type="button"
-                onClick={() => setAberto({ tipo: "evento", evento: e, ancora: aberto.ancora })}
-                className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-left text-sm hover:bg-superficie-2"
-              >
-                <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: cor(e.socioId) }} />
-                <span className="numeros w-11 shrink-0 text-xs text-tinta-3">{e.inicio || "—"}</span>
-                <span className="truncate font-medium">{e.titulo}</span>
-              </button>
-            ))}
+            {(porDia.get(aberto.dia) ?? []).map((x) =>
+              x.k === "prazo" ? (
+                <button
+                  key={`p-${x.p.id}`}
+                  type="button"
+                  onClick={() => setAberto({ tipo: "prazo", prazo: x.p, ancora: aberto.ancora })}
+                  className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-left text-sm hover:bg-superficie-2"
+                >
+                  {x.p.tipo === "tarefa" ? <ListTodo aria-hidden className="size-3.5 shrink-0 text-tinta-3" /> : <BellRing aria-hidden className="size-3.5 shrink-0 text-tinta-3" />}
+                  <span className="w-11 shrink-0 text-xs text-tinta-3">Prazo</span>
+                  <span className={cn("truncate font-medium", x.p.feito && "text-tinta-3 line-through")}>{x.p.texto}</span>
+                </button>
+              ) : (
+                <button
+                  key={x.e.id}
+                  type="button"
+                  onClick={() => setAberto({ tipo: "evento", evento: x.e, ancora: aberto.ancora })}
+                  className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-left text-sm hover:bg-superficie-2"
+                >
+                  <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: cor(x.e.socioId) }} />
+                  <span className="numeros w-11 shrink-0 text-xs text-tinta-3">{x.e.inicio || "—"}</span>
+                  <span className="truncate font-medium">{x.e.titulo}</span>
+                </button>
+              ),
+            )}
           </div>
           <button
             type="button"

@@ -168,6 +168,10 @@ export type ContratoCliente = {
   valorImplantacao: number;
   situacao: SituacaoContrato;
   observacoes: string;
+  /** Documento gerado pelo modelo (Markdown), os campos usados e quando foi gerado. */
+  documento?: string;
+  documentoDados?: Record<string, unknown> | null;
+  documentoEm?: string | null;
 };
 
 export type EstadoContrato =

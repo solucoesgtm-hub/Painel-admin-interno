@@ -713,3 +713,10 @@
 }
 .chk-selo-risco { color: var(--c-risco); background: var(--c-risco-suave); }
 .chk-selo-alerta { color: var(--c-alerta); background: var(--c-alerta-suave); }
+
+/* Prévia do documento do contrato (papel branco nos dois temas). */
+.doc-contrato { font-size: 14px; line-height: 1.6; }
+.doc-contrato h1 { margin-bottom: 20px; text-align: center; font-size: 17px; font-weight: 700; }
+.doc-contrato h2 { margin: 18px 0 6px; font-size: 14px; font-weight: 700; }
+.doc-contrato p { margin: 6px 0; text-align: justify; }
+.doc-contrato ul { margin: 6px 0 6px 20px; list-style: disc; }
