@@ -144,8 +144,42 @@ export function numeroDoAmbiente(valor: string | undefined, padrao: number): num
   return valor?.trim() && Number.isFinite(n) && n >= 0 ? n : padrao;
 }
 
-export const TETO_PADRAO_BRL = 50;
+/**
+ * Orçamento da IA, pensado para os créditos de API (US$ 100):
+ * - teto por mês de R$ 55 (≈ US$ 10): cerca de 15 a 20 relatórios de diagnóstico, e os escopos de
+ *   contrato, que custam centavos. Assim os créditos duram uns 10 meses;
+ * - teto total: para de gerar ao chegar a 95% dos créditos (o custo aqui é estimado, a margem
+ *   evita a chave ficar sem saldo no meio de uma geração).
+ */
+export const TETO_PADRAO_BRL = 55;
 export const COTACAO_PADRAO = 5.5;
+export const CREDITOS_PADRAO_USD = 100;
+export const MARGEM_CREDITOS = 0.95;
+
+/** Os únicos usos permitidos da API do Claude. Qualquer outro é recusado no servidor. */
+export const FINALIDADES_IA = ["diagnostico", "contrato"] as const;
+export type FinalidadeIa = (typeof FINALIDADES_IA)[number];
+export const NOME_FINALIDADE: Record<FinalidadeIa, string> = { diagnostico: "relatório do diagnóstico", contrato: "escopo do contrato" };
+
+/** Quanto precisa sobrar (R$) para começar cada uso: uma geração não estoura o teto no meio. */
+export const RESERVA_POR_USO_BRL: Record<FinalidadeIa, number> = { diagnostico: 4, contrato: 0.3 };
+
+export const finalidadePermitida = (f: unknown): f is FinalidadeIa => (FINALIDADES_IA as readonly unknown[]).includes(f);
+
+/** Limite total em reais a partir dos créditos em dólar. */
+export const limiteCreditosBRL = (creditosUSD: number, cotacao: number) => creditosUSD * cotacao * MARGEM_CREDITOS;
+
+/**
+ * Motivo para não usar a IA agora, ou null quando pode. Regras: só as finalidades permitidas,
+ * cabe a reserva no teto do mês e cabe a reserva no que resta dos créditos.
+ */
+export function bloqueioIa(o: { finalidade: unknown; gastoMes: number; gastoTotal: number; tetoMes: number; limiteTotal: number }): string | null {
+  if (!finalidadePermitida(o.finalidade)) return "A IA está reservada para os contratos e o relatório do diagnóstico.";
+  const reserva = RESERVA_POR_USO_BRL[o.finalidade];
+  if (o.gastoTotal + reserva > o.limiteTotal) return "Os créditos da API do Claude estão no fim. Recarregue no console da Anthropic e ajuste IA_CREDITOS_USD.";
+  if (o.gastoMes + reserva > o.tetoMes) return "Teto mensal de IA atingido. As gerações voltam no próximo mês.";
+  return null;
+}
 
 /** Primeiro instante do mês corrente no fuso de São Paulo (UTC−3, sem horário de verão). */
 export function inicioDoMes(agora = new Date()): Date {

@@ -4,21 +4,8 @@
 import { z } from "zod";
 import { provedorEmail } from "@/lib/conexoes/gmail";
 import { LIMITE_EMAILS } from "@/lib/regras/email";
-import { triarEmails, type ResultadoTriagem } from "@/lib/ia/triagem-email";
-import { iaConfigurada } from "@/lib/ia/claude";
 import { registrarNoHistorico } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
-
-export async function acaoTriarComIa(): Promise<{ ok: true; triagem: ResultadoTriagem } | { ok: false; mensagem: string }> {
-  await exigirSocio();
-  if (!iaConfigurada()) return { ok: false, mensagem: "A IA ainda não está ligada. Veja em Conexões." };
-  try {
-    const emails = await provedorEmail().listarEntrada(LIMITE_EMAILS);
-    return { ok: true, triagem: await triarEmails(emails) };
-  } catch (e) {
-    return { ok: false, mensagem: e instanceof Error ? e.message : "Não foi possível ler a caixa de e-mail." };
-  }
-}
 
 const esquema = z.object({
   emailId: z.string().min(1).max(200),

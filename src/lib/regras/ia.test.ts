@@ -13,6 +13,8 @@ import {
   precoModelo,
   relatorioMarkdown,
   tetoAtingido,
+  bloqueioIa,
+  limiteCreditosBRL,
 } from "./ia";
 
 const base = exemploRelatorioPlano({ nome: "Padaria Exemplo", segmento: "Padaria", pontuacao: 72, veredito: "quente" });
@@ -108,5 +110,28 @@ describe("IA: relatório e plano", () => {
 
   it("gera nome de arquivo sem acento nem espaço", () => {
     expect(nomeArquivo("plano", "Ótica Vista Clara (exemplo)")).toBe("plano-otica-vista-clara-exemplo.md");
+  });
+});
+
+describe("trava de uso da IA", () => {
+  const base = { gastoMes: 0, gastoTotal: 0, tetoMes: 55, limiteTotal: limiteCreditosBRL(100, 5.5) };
+
+  it("só libera contratos e relatório do diagnóstico", () => {
+    expect(bloqueioIa({ ...base, finalidade: "diagnostico" })).toBeNull();
+    expect(bloqueioIa({ ...base, finalidade: "contrato" })).toBeNull();
+    expect(bloqueioIa({ ...base, finalidade: "email" })).toMatch(/reservada/);
+    expect(bloqueioIa({ ...base, finalidade: undefined })).toMatch(/reservada/);
+  });
+
+  it("guarda reserva no teto do mês antes de começar", () => {
+    expect(bloqueioIa({ ...base, gastoMes: 52, finalidade: "diagnostico" })).toMatch(/mensal/);
+    expect(bloqueioIa({ ...base, gastoMes: 52, finalidade: "contrato" })).toBeNull();
+    expect(bloqueioIa({ ...base, gastoMes: 54.9, finalidade: "contrato" })).toMatch(/mensal/);
+  });
+
+  it("para antes de acabar os créditos (95% de US$ 100)", () => {
+    expect(limiteCreditosBRL(100, 5.5)).toBeCloseTo(522.5);
+    expect(bloqueioIa({ ...base, gastoTotal: 520, finalidade: "diagnostico" })).toMatch(/créditos/);
+    expect(bloqueioIa({ ...base, gastoTotal: 500, finalidade: "diagnostico" })).toBeNull();
   });
 });

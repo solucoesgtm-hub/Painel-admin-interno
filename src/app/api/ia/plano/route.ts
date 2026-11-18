@@ -2,13 +2,13 @@
 // Duas chamadas em paralelo (relatório e plano), com o mesmo texto de sistema, para caber no tempo da rota.
 // Resposta em streaming: um JSON por linha (EventoGeracao), para a tela mostrar o andamento.
 import { revalidatePath } from "next/cache";
-import { gerarEstruturado, iaConfigurada, tetoMensalBRL } from "@/lib/ia/claude";
+import { gerarEstruturado, iaConfigurada } from "@/lib/ia/claude";
+import { liberarIa } from "@/lib/ia/estado";
 import { exemploRelatorioPlano } from "@/lib/ia/exemplo";
 import { filtrarObservacoes } from "@/lib/regras/observacoes";
 import { mensagemDoLead, PEDIDO_PLANO, PEDIDO_RELATORIO, SISTEMA } from "@/lib/ia/prompts/relatorio-plano";
-import { esquemaPedidoPlano, esquemaPlano, esquemaRelatorio, tetoAtingido, type EventoGeracao } from "@/lib/regras/ia";
-import { brl } from "@/lib/formato";
-import { buscarDiagnosticoParaIa, buscarLead, gastoIaDoMes, registrarGeracaoIa } from "@/lib/repositorio";
+import { esquemaPedidoPlano, esquemaPlano, esquemaRelatorio, type EventoGeracao } from "@/lib/regras/ia";
+import { buscarDiagnosticoParaIa, buscarLead, registrarGeracaoIa } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 // Limite de tempo da rota na Vercel (Fluid Compute).
@@ -31,11 +31,9 @@ export async function POST(req: Request) {
 
   const comIa = iaConfigurada();
   if (comIa) {
-    const gasto = await gastoIaDoMes();
-    const teto = tetoMensalBRL();
-    if (tetoAtingido(gasto, teto)) {
-      return erro(`Teto mensal de IA atingido (${brl(gasto)} de ${brl(teto)}). As gerações voltam no próximo mês ou com um teto maior.`, 429);
-    }
+    // Confere teto do mês e créditos antes de começar (a geração não pode estourar no meio).
+    const bloqueio = await liberarIa("diagnostico");
+    if (bloqueio) return erro(bloqueio, 429);
   }
 
   const diag = await buscarDiagnosticoParaIa(p.leadId, p.diagnosticoId);
@@ -83,8 +81,8 @@ export async function POST(req: Request) {
           : await (async () => {
               const dados = mensagemDoLead(lead, diag!);
               const [rel, pla] = await Promise.all([
-                gerarEstruturado({ sistema: SISTEMA, mensagens: [dados, PEDIDO_RELATORIO], esquema: esquemaRelatorio, aoProgresso: aoProgresso(0) }),
-                gerarEstruturado({ sistema: SISTEMA, mensagens: [dados, PEDIDO_PLANO], esquema: esquemaPlano, aoProgresso: aoProgresso(1) }),
+                gerarEstruturado({ finalidade: "diagnostico", sistema: SISTEMA, mensagens: [dados, PEDIDO_RELATORIO], esquema: esquemaRelatorio, aoProgresso: aoProgresso(0) }),
+                gerarEstruturado({ finalidade: "diagnostico", sistema: SISTEMA, mensagens: [dados, PEDIDO_PLANO], esquema: esquemaPlano, aoProgresso: aoProgresso(1) }),
               ]);
               const conteudo = rel.dados && pla.dados ? comObs({ ...rel.dados, ...pla.dados }) : null;
               const falha = rel.erro ?? pla.erro;

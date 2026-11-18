@@ -11,7 +11,6 @@ import {
   Mail,
   Megaphone,
   PenLine,
-  Sparkles,
   Truck,
   UserPlus,
   UserRound,
@@ -20,9 +19,9 @@ import {
 import { AreaTexto, Botao, Campo, Cartao, EstadoVazio, Etiqueta, cn, type Tom } from "@/components/ui/base";
 import { useAviso } from "@/components/ui/toast";
 import { dataCurta, hojeISO, hora } from "@/lib/formato";
-import type { ResultadoTriagem } from "@/lib/ia/triagem-email";
+import type { ResultadoTriagem } from "@/lib/regras/email";
 import { CATEGORIAS_EMAIL, NOME_CATEGORIA, ordenarTriagem, type CategoriaEmail, type ItemTriagem } from "@/lib/regras/email";
-import { acaoCriarRascunho, acaoTriarComIa } from "./acoes";
+import { acaoCriarRascunho } from "./acoes";
 import { BotaoTexto } from "@/components/ui/botao-link";
 
 const ICONE_CATEGORIA: Record<CategoriaEmail, LucideIcon> = {
@@ -43,12 +42,10 @@ const URGENCIA: Record<ItemTriagem["urgencia"], { tom: Tom; texto: string }> = {
 
 const quando = (iso: string) => (hojeISO(new Date(iso)) === hojeISO() ? hora(iso) : dataCurta(iso));
 
-export function CaixaEmail({ inicial, iaLigada, gmail }: { inicial: ResultadoTriagem; iaLigada: boolean; gmail: boolean }) {
-  const avisar = useAviso();
-  const [triagem, setTriagem] = useState(inicial);
+export function CaixaEmail({ inicial, gmail }: { inicial: ResultadoTriagem; gmail: boolean }) {
+  const triagem = inicial;
   const [filtro, setFiltro] = useState<CategoriaEmail | "todos">("todos");
   const [aberto, setAberto] = useState<string | null>(null);
-  const [triando, iniciarTriagem] = useTransition();
 
   const itens = useMemo(
     () => ordenarTriagem(triagem.itens.map((i) => ({ ...i, recebidoEm: i.email.recebidoEm }))),
@@ -62,14 +59,6 @@ export function CaixaEmail({ inicial, iaLigada, gmail }: { inicial: ResultadoTri
   const visiveis = filtro === "todos" ? itens : itens.filter((i) => i.categoria === filtro);
   const urgentes = itens.filter((i) => i.urgencia === "alta").length;
 
-  const triarComIa = () =>
-    iniciarTriagem(async () => {
-      const r = await acaoTriarComIa();
-      if (!r.ok) return avisar({ tom: "risco", texto: r.mensagem });
-      setTriagem(r.triagem);
-      avisar(r.triagem.aviso ? { tom: "info", texto: r.triagem.aviso } : { tom: "ok", texto: "Triagem feita pela IA" });
-    });
-
   return (
     <Cartao className="animate-surgir overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-areia p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -79,18 +68,9 @@ export function CaixaEmail({ inicial, iaLigada, gmail }: { inicial: ResultadoTri
           </p>
           <p className="text-xs text-tinta-3">
             {triagem.fonte === "ia" ? "Separados pela IA." : "Separados por regras simples (sem custo)."}
-            {!iaLigada && " Ligue a IA em Conexões para resumos e respostas melhores."}
+            {" A IA fica reservada para os contratos e o relatório do diagnóstico."}
           </p>
         </div>
-        <Botao
-          variante={triagem.fonte === "ia" ? "secundario" : "primario"}
-          icone={Sparkles}
-          onClick={triarComIa}
-          disabled={!iaLigada || triando || itens.length === 0}
-          title={iaLigada ? "Classifica, resume e sugere respostas com a IA" : "A IA ainda não está ligada"}
-        >
-          {triando ? "Analisando…" : triagem.fonte === "ia" ? "Analisar de novo" : "Analisar com IA"}
-        </Botao>
       </div>
 
       <div role="group" aria-label="Filtrar por assunto" className="sem-rolagem flex gap-1.5 overflow-x-auto border-b border-areia px-4 py-3 sm:px-6">

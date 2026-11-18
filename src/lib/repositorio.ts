@@ -765,7 +765,15 @@ export async function buscarDiagnosticoParaIa(leadId: string, diagnosticoId?: st
 
 /** Gasto estimado com IA no mês corrente (fuso de São Paulo), em reais. */
 export async function gastoIaDoMes(): Promise<number> {
-  const desde = inicioDoMes();
+  return gastoIaDesde(inicioDoMes());
+}
+
+/** Tudo o que a IA já gastou (R$), para não passar dos créditos comprados. */
+export async function gastoIaTotal(): Promise<number> {
+  return gastoIaDesde(new Date(0));
+}
+
+async function gastoIaDesde(desde: Date): Promise<number> {
   if (modoDemo) {
     const planos = memoria().planosIa.filter((p) => new Date(p.criadoEm) >= desde).reduce((a, p) => a + p.custoBRL, 0);
     const outros = (memoria().usoIa ?? []).filter((u) => new Date(u.em) >= desde).reduce((a, u) => a + u.custoBRL, 0);

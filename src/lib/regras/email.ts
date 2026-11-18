@@ -124,3 +124,10 @@ export function separarRemetente(de: string): { nome: string; email: string } {
 
 /** Assunto de resposta: acrescenta "Re:" uma vez só. */
 export const assuntoResposta = (assunto: string) => (/^\s*re:/i.test(assunto) ? assunto : `Re: ${assunto}`);
+
+/** Caixa organizada para a tela. A IA não é usada aqui: fica reservada a contratos e diagnóstico. */
+export type ResultadoTriagem = {
+  itens: (ItemTriagem & { email: EmailResumo })[];
+  fonte: "ia" | "regras";
+  aviso?: string;
+};

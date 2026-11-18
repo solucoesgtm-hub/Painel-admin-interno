@@ -40,12 +40,12 @@ export function estadoConexoes(): EstadoConexao[] {
     {
       id: "claude",
       nome: "IA (Claude)",
-      para: "Análise do diagnóstico com relatório e plano, e triagem da caixa de e-mail.",
+      para: "Somente o relatório do diagnóstico e o escopo dos contratos, dentro do teto do mês e dos créditos.",
       situacao: situacao(1, claude),
       faltando: claude,
-      detalhe: iaConfigurada() ? `Análise: ${modeloIa()} · triagem: ${modeloRapido()}` : "Sem a chave, o sistema usa um exemplo montado pelo diagnóstico e regras simples na triagem, sem custo.",
+      detalhe: iaConfigurada() ? `Diagnóstico: ${modeloIa()} · contrato: ${modeloRapido()}` : "Sem a chave, o diagnóstico usa um exemplo e o contrato o escopo padrão, sem custo.",
     },
-    { id: "gmail", nome: "Gmail", para: "Ler a caixa de entrada, fazer a triagem e criar rascunhos de resposta (nunca envia sozinho).", situacao: situacao(3, gmail), faltando: gmail },
+    { id: "gmail", nome: "Gmail", para: "Ler a caixa de entrada, separar por regras simples e criar rascunhos de resposta (nunca envia sozinho).", situacao: situacao(3, gmail), faltando: gmail },
     {
       id: "banco",
       nome: "Banco Inter",

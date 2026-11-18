@@ -11,24 +11,35 @@ Código: `src/lib/conexoes/` (Gmail, Inter, WhatsApp) e `src/lib/ia/` (Claude).
 
 ---
 
-## 1. IA (Claude): análise do diagnóstico e triagem do e-mail
+## 1. IA (Claude): só contratos e relatório do diagnóstico
+
+A API do Claude atende **apenas dois usos**, travados no servidor (`gerarEstruturado` recusa qualquer outra finalidade):
+
+| Uso | Modelo | Custo estimado por uso |
+| --- | --- | --- |
+| Relatório e plano do diagnóstico do lead (`/api/ia/plano`) | `CLAUDE_MODEL` (padrão `claude-sonnet-5-5`) | R$ 2 a R$ 4 (máx. ~R$ 6 com nova tentativa) |
+| Escopo do contrato (`/contratos` → Gerar documento) | `CLAUDE_MODELO_RAPIDO` (padrão `claude-haiku-5-5`) | menos de R$ 0,10 |
+
+A triagem do e-mail usa só regras simples, sem IA e sem custo.
 
 | Variável | O que é |
 | --- | --- |
 | `ANTHROPIC_API_KEY` | Chave criada em console.anthropic.com → API Keys |
-| `CLAUDE_MODEL` | Modelo da análise do diagnóstico (relatório e plano). Ex.: `claude-sonnet-5-5` |
-| `CLAUDE_MODELO_RAPIDO` | Modelo barato para a triagem de e-mail. Padrão: `claude-haiku-5-5` |
-| `IA_TETO_MENSAL_BRL` | Teto de gasto por mês. Padrão: 50. Vale para tudo que usa IA |
+| `CLAUDE_MODEL` | Modelo do relatório do diagnóstico. Padrão: `claude-sonnet-5-5` |
+| `CLAUDE_MODELO_RAPIDO` | Modelo do escopo do contrato. Padrão: `claude-haiku-5-5` |
+| `IA_CREDITOS_USD` | Total de créditos de API já comprados, em dólar. Padrão: 100. Ao recarregar, some o valor novo |
+| `IA_TETO_MENSAL_BRL` | Teto de gasto por mês. Padrão: 55 (≈ US$ 10, uns 15 a 20 relatórios) |
+| `IA_COTACAO_DOLAR` | Cotação usada para estimar o custo. Padrão: 5,50 |
 
-1. Crie a conta em console.anthropic.com, cadastre um cartão e crie uma chave.
-2. Recomendado: defina um limite de gasto também no próprio console da Anthropic.
-3. Cadastre as variáveis e aperte **Testar**. O teste só confere a chave e os modelos, sem gerar texto e sem custo.
+Como o orçamento funciona:
+- cada uso só começa se sobrar uma reserva (R$ 4 no relatório, R$ 0,30 no contrato) dentro do teto do mês **e** dentro de 95% dos créditos;
+- passou do limite, o relatório fica bloqueado com aviso e o contrato usa o escopo padrão do modelo, sem custo;
+- todo gasto fica registrado (planos de IA e histórico `uso_ia`).
 
-Sem a chave, a análise usa um exemplo montado pelo diagnóstico e a triagem usa regras simples. Nos dois casos não há custo.
+1. Crie a chave em console.anthropic.com e, por segurança, defina também um limite de gasto no próprio console (Settings → Limits).
+2. Cadastre as variáveis na Vercel e aperte **Testar** em Conexões. O teste só confere a chave e os modelos, sem custo.
 
-Com a chave, a triagem (`triarEmails` em `src/lib/ia/triagem-email.ts`):
-- registra o custo no histórico como `uso_ia`, e esse custo entra no teto do mês;
-- passa a usar as regras simples quando o teto é atingido.
+Sem a chave, o relatório usa um exemplo montado pelo diagnóstico e o contrato usa o escopo padrão, sem custo.
 
 ## 2. Gmail: caixa de entrada, triagem e rascunhos
 
@@ -51,7 +62,7 @@ O Hub **lê** e cria **rascunhos**. Nada é enviado sem um sócio abrir o Gmail 
 
 Escopo usado: `gmail.modify` (ler, marcar e criar rascunhos; não apaga definitivamente).
 
-Tela: **/email**. Ao abrir, a triagem é por regras (sem custo). O botão "Analisar com IA" usa o Claude, e cada e-mail aberto tem a resposta sugerida e o botão "Criar rascunho".
+Tela: **/email**. A triagem é por regras simples (sem custo, a IA não é usada aqui). Cada e-mail aberto tem a resposta sugerida e o botão "Criar rascunho".
 
 ## 3. Banco Inter: saldo e extrato (somente leitura)
 

@@ -4,9 +4,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { PRODUTOS } from "@/lib/demo/dados";
-import { gerarEstruturado, iaConfigurada, tetoMensalBRL } from "@/lib/ia/claude";
+import { gerarEstruturado, iaConfigurada, modeloRapido } from "@/lib/ia/claude";
+import { liberarIa } from "@/lib/ia/estado";
 import { escopoPadrao, esquemaDocumento, esquemaEscopoIa, montarContrato } from "@/lib/regras/contrato-documento";
-import { buscarEmpresa, gastoIaDoMes, listarContratos, registrarUsoIa, salvarDocumentoContrato } from "@/lib/repositorio";
+import { buscarEmpresa, listarContratos, registrarUsoIa, salvarDocumentoContrato } from "@/lib/repositorio";
 import { exigirSocio } from "@/lib/sessao";
 
 const SISTEMA_ESCOPO = `Você escreve o ESCOPO de contratos da GTM Soluções, empresa que cria atendentes de IA no WhatsApp,
@@ -28,9 +29,13 @@ export async function acaoSugerirEscopo(entrada: unknown): Promise<{ ok: true; e
   const padrao = escopoPadrao(produto, catalogo?.descricao);
 
   if (!iaConfigurada()) return { ok: true, escopo: padrao, fonte: "modelo", aviso: "IA desligada: escopo padrão do modelo. Ligue a IA em Conexões para um escopo sob medida." };
-  if ((await gastoIaDoMes().catch(() => 0)) >= tetoMensalBRL()) return { ok: true, escopo: padrao, fonte: "modelo", aviso: "Teto mensal de IA atingido: escopo padrão do modelo." };
+  const bloqueio = await liberarIa("contrato");
+  if (bloqueio) return { ok: true, escopo: padrao, fonte: "modelo", aviso: `${bloqueio} Usei o escopo padrão do modelo.` };
 
+  // Texto curto: modelo rápido (Haiku), custa centavos por escopo.
   const g = await gerarEstruturado({
+    finalidade: "contrato",
+    modelo: modeloRapido(),
     sistema: SISTEMA_ESCOPO,
     mensagens: [JSON.stringify({ servico: produto, descricaoDoCatalogo: catalogo?.descricao ?? null, cliente, observacoesDoContrato: observacoes })],
     esquema: esquemaEscopoIa,

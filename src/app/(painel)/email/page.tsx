@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { FlaskConical, MailCheck } from "lucide-react";
 import { Aviso, CabecalhoPagina, Etiqueta } from "@/components/ui/base";
 import { provedorEmail } from "@/lib/conexoes/gmail";
-import { iaConfigurada } from "@/lib/ia/claude";
-import type { ResultadoTriagem } from "@/lib/ia/triagem-email";
-import { LIMITE_EMAILS, triagemPorRegras } from "@/lib/regras/email";
+import { LIMITE_EMAILS, triagemPorRegras, type ResultadoTriagem } from "@/lib/regras/email";
 import { exigirSocio } from "@/lib/sessao";
 import { CaixaEmail } from "./caixa";
 
@@ -16,7 +14,7 @@ export default async function Email() {
   const gmail = provedor.tipo === "gmail";
   let erro: string | null = null;
   let inicial: ResultadoTriagem = { itens: [], fonte: "regras" };
-  // Ao abrir, a triagem é por regras (sem custo). A IA roda só quando um sócio pede.
+  // Triagem por regras simples (sem custo): a IA fica reservada a contratos e diagnóstico.
   try {
     const emails = await provedor.listarEntrada(LIMITE_EMAILS);
     inicial = { itens: emails.map((e) => ({ ...triagemPorRegras(e), email: e })), fonte: "regras" };
@@ -48,7 +46,7 @@ export default async function Email() {
           {erro}
         </Aviso>
       )}
-      <CaixaEmail inicial={inicial} iaLigada={iaConfigurada()} gmail={gmail} />
+      <CaixaEmail inicial={inicial} gmail={gmail} />
     </>
   );
 }

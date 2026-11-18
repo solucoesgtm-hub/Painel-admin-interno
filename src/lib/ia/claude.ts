@@ -5,14 +5,17 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
-import { COTACAO_PADRAO, custoEstimadoBRL, numeroDoAmbiente, TETO_PADRAO_BRL, type Uso } from "../regras/ia";
+import { COTACAO_PADRAO, CREDITOS_PADRAO_USD, custoEstimadoBRL, finalidadePermitida, numeroDoAmbiente, TETO_PADRAO_BRL, type FinalidadeIa, type Uso } from "../regras/ia";
 
 export const iaConfigurada = () => !!process.env.ANTHROPIC_API_KEY?.trim();
-export const modeloIa = () => process.env.CLAUDE_MODEL?.trim() || "claude-opus-4-7";
-/** Modelo barato e rápido para tarefas curtas e repetidas (triagem de e-mail). */
+/** Modelo do relatório do diagnóstico: Sonnet equilibra qualidade e custo (Opus custa ~1,7× mais). */
+export const modeloIa = () => process.env.CLAUDE_MODEL?.trim() || "claude-sonnet-5-5";
+/** Modelo barato e rápido para textos curtos (escopo do contrato). */
 export const modeloRapido = () => process.env.CLAUDE_MODELO_RAPIDO?.trim() || "claude-haiku-5-5";
 export const tetoMensalBRL = () => numeroDoAmbiente(process.env.IA_TETO_MENSAL_BRL, TETO_PADRAO_BRL);
 export const cotacaoDolar = () => numeroDoAmbiente(process.env.IA_COTACAO_DOLAR, COTACAO_PADRAO);
+/** Créditos de API comprados (US$). Ao recarregar, aumente IA_CREDITOS_USD pelo total já comprado. */
+export const creditosUSD = () => numeroDoAmbiente(process.env.IA_CREDITOS_USD, CREDITOS_PADRAO_USD);
 
 export type ResultadoChamada<T> = {
   dados: T | null;
@@ -26,15 +29,19 @@ export type ResultadoChamada<T> = {
 const LIMITE_MS = 280_000;
 
 export async function gerarEstruturado<T>(opcoes: {
+  /** Para que serve a chamada. Só "diagnostico" e "contrato" são aceitos. */
+  finalidade: FinalidadeIa;
   sistema: string;
   mensagens: string[];
   esquema: z.ZodType<T>;
   /** Outro modelo só para esta chamada (padrão: CLAUDE_MODEL). */
   modelo?: string;
-  /** Limite de tokens de saída (padrão 32000). */
+  /** Limite de tokens de saída (padrão 16000). Limita também o custo máximo de cada chamada. */
   maxTokens?: number;
   aoProgresso?: (fase: "pensando" | "escrevendo", caracteres: number) => void;
 }): Promise<ResultadoChamada<T>> {
+  // Trava no servidor: nenhum outro recurso do sistema consegue gastar os créditos da API.
+  if (!finalidadePermitida(opcoes.finalidade)) throw new Error("Uso da IA não permitido.");
   const modelo = opcoes.modelo ?? modeloIa();
   const cliente = new Anthropic({ timeout: LIMITE_MS, maxRetries: 1 });
   const total: Uso = { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 };
@@ -49,7 +56,7 @@ export async function gerarEstruturado<T>(opcoes: {
     try {
       const stream = cliente.messages.stream({
         model: modelo,
-        max_tokens: opcoes.maxTokens ?? 32000,
+        max_tokens: opcoes.maxTokens ?? 16000,
         ...(haiku ? {} : { thinking: { type: "adaptive" as const } }),
         output_config: { format: { type, schema }, ...(haiku ? {} : { effort: "medium" as const }) },
         system: [{ type: "text", text: opcoes.sistema, cache_control: { type: "ephemeral" } }],
